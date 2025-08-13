@@ -43,11 +43,9 @@ class _EditDriverOfOrderState extends State<EditDriverOfOrder>
   DriverModel? selectedDriver;
 
   final List<String> statusOptions = [
-    'ready',
-    'processing',
-    'under_delivery',
-    'Paid',
-    'Received'
+    'Processing',
+    'Approved',
+    'Rejected'
   ];
 
   @override

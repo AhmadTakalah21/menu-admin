@@ -55,8 +55,12 @@ class AdvertisementsCubit extends Cubit<GeneralAdvertisementsState> {
   Future<void> setImage() async {
     final ImagePicker picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
-    this.image = image;
+    if (image != null) {
+      this.image = image;
+      emit(AdvertisementImageUpdated(image: image)); // ✅ Emit image update state
+    }
   }
+
 
   void setId(int id) {
     addAdvertisementModel = addAdvertisementModel.copyWith(id: id);

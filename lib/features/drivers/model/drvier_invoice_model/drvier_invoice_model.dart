@@ -77,7 +77,6 @@ class DrvierInvoiceModel {
   final int? userId;
 
   final String? user;
-
   final String? username;
 
   @JsonKey(name: 'user_phone')
@@ -92,13 +91,20 @@ class DrvierInvoiceModel {
   @JsonKey(name: 'delivery_address')
   final String? deliveryAddress;
 
+  @NullableStringConverter()
   final String? price;
+
+  @NullableStringConverter()
   final String? status;
+
+  @NullableStringConverter()
   final String? total;
 
+  @NullableStringConverter()
   @JsonKey(name: 'total_with_delivery_price')
   final String? totalWithDeliveryPrice;
 
+  @NullableStringConverter()
   final String? discount;
 
   @JsonKey(name: 'table_id')
@@ -114,9 +120,7 @@ class DrvierInvoiceModel {
   final String? restaurantName;
 
   final String? logo;
-
   final String? waiter;
-
   final String? url;
   final String? region;
   final String? longitude;
@@ -128,11 +132,15 @@ class DrvierInvoiceModel {
 
   final List<OrderDetailsModel> orders;
 
+  @NullableStringConverter()
   @JsonKey(name: 'consumer_spending')
   final String? consumerSpending;
 
+  @NullableStringConverter()
   @JsonKey(name: 'local_administration')
   final String? localAdministration;
+
+  @NullableStringConverter()
   final String? reconstruction;
 
   factory DrvierInvoiceModel.fromJson(Map<String, dynamic> json) =>

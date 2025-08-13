@@ -16,17 +16,16 @@ import 'package:user_admin/global/widgets/main_drop_down_widget.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
 
+import '../model/cart_item_model/cart_item_model.dart';
+
 abstract class CartViewCallBacks {
-  void onAddTap(ItemModel item);
-
-  void onRemoveTap(ItemModel item);
-
+  void onAddTap(CartItemModel item);
+  void onRemoveTap(CartItemModel item);
   void onTryAgainTap();
-
   void onTableSelected(TableModel? table);
-
   void onAddOrder();
 }
+
 
 class CartView extends StatefulWidget {
   const CartView({
@@ -52,18 +51,16 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
   }
 
   @override
-  void onAddTap(ItemModel item) {
-    setState(() {
-      addOrderCubit.addItem(item);
-    });
+  void onAddTap(CartItemModel item) {
+    addOrderCubit.addItem(item);
   }
 
   @override
-  void onRemoveTap(ItemModel item) {
-    setState(() {
-      addOrderCubit.removeItem(item);
-    });
+  void onRemoveTap(CartItemModel item) {
+    addOrderCubit.removeItem(item);
   }
+
+
 
   @override
   void onAddOrder() {
@@ -123,9 +120,11 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                         ],
                       ),
                       const Divider(height: 30),
+
+
                       ...List.generate(
                         state.cartItems.length * 2 - 1,
-                        (index) {
+                            (index) {
                           if (index.isOdd) {
                             return const Divider(
                               height: 40,
@@ -133,11 +132,28 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                               thickness: 0.5,
                             );
                           }
+
                           final itemIndex = index ~/ 2;
                           final cartItem = state.cartItems[itemIndex];
                           final item = cartItem.item;
 
+                          final selectedSize = cartItem.selectedSizeId != null
+                              ? item.sizesTypes.firstWhere(
+                                (s) => s.id == cartItem.selectedSizeId,
+                            orElse: () => item.sizesTypes.first,
+                          )
+                              : null;
+
+                          final selectedToppings = item.itemTypes
+                              .where((t) => cartItem.selectedToppingIds.contains(t.id))
+                              .toList();
+
+                          final selectedComponents = item.componentsTypes
+                              .where((c) => cartItem.selectedComponentIds.contains(c.id))
+                              .toList();
+
                           return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               AppImageWidget(
                                 width: 80,
@@ -148,29 +164,51 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                                 errorWidget: const SizedBox.shrink(),
                               ),
                               const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.name,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: AppColors.greyShade2,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: AppColors.greyShade2,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Text(
-                                    "${item.price} \$",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color:
-                                          widget.signInModel.restaurant.color,
-                                      fontWeight: FontWeight.w700,
+                                    const SizedBox(height: 6),
+
+                                    if (selectedSize != null)
+                                      Text(
+                                        "${"size".tr()}: ${selectedSize.name}",
+                                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                      ),
+
+                                    if (selectedToppings.isNotEmpty)
+                                      Text(
+                                        "${"toppings".tr()}: ${selectedToppings.map((t) => t.name).join(", ")}",
+                                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                      ),
+
+                                    if (selectedComponents.isNotEmpty)
+                                      Text(
+                                        "${"components".tr()}: ${selectedComponents.map((c) => c.name).join(", ")}",
+                                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                      ),
+
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "${"price".tr()}: ${addOrderCubit.calculateCartItemPrice(cartItem)} \$",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: widget.signInModel.restaurant.color,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 5),
                               Container(
                                 padding: AppConstants.padding8,
                                 decoration: BoxDecoration(
@@ -187,26 +225,19 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                                 child: Row(
                                   children: [
                                     InkWell(
-                                      onTap: () => onAddTap(item),
-                                      child: Icon(Icons.add,
-                                          color: widget
-                                              .signInModel.restaurant.color),
+                                      onTap: () => onAddTap(cartItem),
+                                      child: Icon(Icons.add, color: widget.signInModel.restaurant.color),
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
                                       cartItem.count.toString(),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color: AppColors.black,
-                                      ),
+                                      style: const TextStyle(fontSize: 16, color: AppColors.black),
                                     ),
                                     const SizedBox(width: 5),
                                     InkWell(
-                                      onTap: () => onRemoveTap(item),
+                                      onTap: () => onRemoveTap(cartItem),
                                       child: Icon(
-                                        cartItem.count == 1
-                                            ? Icons.delete
-                                            : Icons.remove,
+                                        cartItem.count == 1 ? Icons.delete : Icons.remove,
                                         color: AppColors.greyShade3,
                                       ),
                                     ),
@@ -217,6 +248,8 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                           );
                         },
                       ),
+
+
                       const Divider(
                         indent: 8,
                         endIndent: 8,

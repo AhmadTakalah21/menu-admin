@@ -15,29 +15,16 @@ import 'package:user_admin/features/items/service/items_service.dart';
 import 'package:user_admin/global/model/paginated_model/paginated_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
 
-
-
 part 'states/items_state.dart';
-
 part 'states/general_items_state.dart';
-
 part 'states/edit_item_state.dart';
-
 part 'states/extras_state.dart';
-
 part 'states/sizes_state.dart';
-
 part 'states/components_state.dart';
-
 part 'states/nutrition_state.dart';
-
 part 'states/tables_state.dart';
-
 part 'states/add_order_state.dart';
-
 part 'states/item_image_updated.dart';
-
-
 
 @injectable
 class ItemsCubit extends Cubit<GeneralItemsState> {
@@ -50,10 +37,18 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
   XFile? selectedImage;
   XFile? selectedImage2;
   List<XFile?> imagesExtra = [];
+  List<XFile?> imagesSizes = [];
 
-  final Map<int, XFile?> _itemImages = {}; // الصور الرئيسية
-  final Map<int, XFile?> _itemIcons = {};  // الأيقونات
-  final Map<int, List<XFile?>> _itemExtraImages = {}; // صور الإضافات
+  XFile? tempSelectedImage;
+  XFile? tempSelectedImage2;
+  List<XFile?> tempImagesExtra = [];
+  List<XFile?> tempImagesSizes = [];
+
+  final Map<int, XFile?> _itemImages = {};
+  final Map<int, XFile?> _itemIcons = {};
+  final Map<int, List<XFile?>> _itemExtraImages = {};
+  final Map<int, XFile?> _itemExtraImagesMap = {};
+  final Map<int, XFile?> _itemSizeImages = {};
 
   List<AddExtraItemModel> extras = [];
   List<AddSizeItemModel> sizes = [];
@@ -132,14 +127,10 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
       final picker = ImagePicker();
       final image = await picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        if (itemId != null) {
-          _itemImages[itemId] = image;
-        } else {
-          selectedImage = image; // للعناصر الجديدة
-        }
+        tempSelectedImage = image; // نعرض الصورة فقط، لا نحفظها
         emit(ItemImageUpdated(
-          selectedImage: itemId != null ? _itemImages[itemId] : selectedImage,
-          selectedImage2: itemId != null ? _itemIcons[itemId] : selectedImage2,
+          selectedImage: tempSelectedImage,
+          selectedImage2: tempSelectedImage2,
         ));
       }
     } catch (e) {
@@ -147,21 +138,16 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     }
   }
 
-// نفس الشيء لـ setImage2
   Future<void> setImage2({int? itemId}) async {
     try {
       emit(ItemImageLoading());
       final picker = ImagePicker();
       final image = await picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        if (itemId != null) {
-          _itemIcons[itemId] = image;
-        } else {
-          selectedImage2 = image; // للعناصر الجديدة
-        }
+        tempSelectedImage2 = image; // فقط للمعاينة
         emit(ItemImageUpdated(
-          selectedImage: itemId != null ? _itemImages[itemId] : selectedImage,
-          selectedImage2: itemId != null ? _itemIcons[itemId] : selectedImage2,
+          selectedImage: tempSelectedImage,
+          selectedImage2: tempSelectedImage2,
         ));
       }
     } catch (e) {
@@ -169,31 +155,54 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     }
   }
 
+  Future<void> setImageExtra(int index, {int? itemId}) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final image = XFile(pickedFile.path);
+      _itemExtraImagesMap[index] = image;
+      emit(ExtrasSuccess(List.from(extras)));
+    }
+  }
+
+  Future<void> setImageSize(int index, {int? itemId}) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final image = XFile(pickedFile.path);
+      _itemSizeImages[index] = image;
+
+      if (index >= 0 && index < sizes.length) {
+        sizes[index] = sizes[index].copyWith(image: image.path);
+      }
+
+      emit(SizesSuccess(List.from(sizes)));
+    }
+  }
+
+
+  void applyTempImages() {
+    selectedImage = tempSelectedImage;
+    selectedImage2 = tempSelectedImage2;
+    imagesExtra = List.from(tempImagesExtra);
+    imagesSizes = List.from(tempImagesSizes);
+  }
+
+  void clearTempImages() {
+    tempSelectedImage = null;
+    tempSelectedImage2 = null;
+    tempImagesExtra.clear();
+    tempImagesSizes.clear();
+  }
+
   List<XFile?>? getItemExtraImages(int itemId) {
     return _itemExtraImages[itemId];
   }
-  Future<void> setImageExtra(int index, {int? itemId}) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      if (itemId != null) {
-        if (!_itemExtraImages.containsKey(itemId)) {
-          _itemExtraImages[itemId] = [];
-        }
-        if (_itemExtraImages[itemId]!.length <= index) {
-          _itemExtraImages[itemId]!.add(image);
-        } else {
-          _itemExtraImages[itemId]![index] = image;
-        }
-      } else {
-        if (imagesExtra.length <= index) {
-          imagesExtra.add(image);
-        } else {
-          imagesExtra[index] = image;
-        }
-      }
-    }
-  }
+
+
+  XFile? getExtraImage(int index) => _itemExtraImagesMap[index];
 
   XFile? getItemImage(int itemId) => _itemImages[itemId];
   XFile? getItemIcon(int itemId) => _itemIcons[itemId];
@@ -202,44 +211,55 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     AddExtraItemModel addExtraItemModel = const AddExtraItemModel();
     extras.add(addExtraItemModel);
     imagesExtra.add(null);
-
     getExtras(item, isRemove: false);
   }
 
   void removeExtra(ItemModel? item, int index) {
     extras.removeAt(index);
     imagesExtra.removeAt(index);
-
     getExtras(item, isRemove: true);
   }
 
   void clearExtras() {
     extras.clear();
     imagesExtra.clear();
-
     getExtras(null, isRemove: true);
   }
 
   void getExtras(ItemModel? item, {required bool isRemove}) {
-    if (!isRemove) {
-      if (item != null) {
-        for (var i in item.itemTypes) {
-          AddExtraItemModel addExtraItemModel = AddExtraItemModel(
-            nameAr: i.nameAr,
-            nameEn: i.nameEn,
-            price: i.price,
-          );
-          int index = extras.indexWhere(
-            (element) => element.nameAr == addExtraItemModel.nameAr,
-          );
-          if (index == -1) {
-            extras.add(addExtraItemModel);
-            imagesExtra.add(null);
-          }
+    emit(ExtrasLoading());
+
+    if (!isRemove && item != null) {
+      final itemId = item.id;
+      if (itemId == null) return;
+
+      for (var i in item.itemTypes) {
+        AddExtraItemModel addExtraItemModel = AddExtraItemModel(
+          nameAr: i.nameAr,
+          nameEn: i.nameEn,
+          price: i.price,
+          itemId: itemId,
+          icon: i.image,
+        );
+
+        int index = extras.indexWhere(
+              (element) => element.nameAr == addExtraItemModel.nameAr &&
+              element.itemId == itemId,
+        );
+
+        if (index == -1) {
+          extras.add(addExtraItemModel);
+          imagesExtra.add(null);
         }
       }
     }
-    emit(ExtrasSuccess(extras));
+
+    if (isRemove) {
+      extras.clear();
+      imagesExtra.clear();
+    }
+
+    emit(ExtrasSuccess(List.from(extras)));
   }
 
   void setNameEnSize(String? nameEn, int index) {
@@ -254,11 +274,29 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     sizes[index] = sizes[index].copyWith(price: price);
   }
 
+  void setDescriptionArSize(String description, int index) {
+    if (index >= 0 && index < sizes.length) {
+      sizes[index] = sizes[index].copyWith(descriptionAr: description);
+      emit(SizesSuccess(List.from(sizes)));
+    }
+  }
+
+  void setDescriptionEnSize(String description, int index) {
+    if (index >= 0 && index < sizes.length) {
+      sizes[index] = sizes[index].copyWith(descriptionEn: description);
+      emit(SizesSuccess(List.from(sizes)));
+    }
+  }
+
   void addSize(ItemModel? item) {
     AddSizeItemModel addSizeItemModel = const AddSizeItemModel();
     sizes.add(addSizeItemModel);
     getSizes(item, isRemove: false);
   }
+
+
+
+  XFile? getSizeImage(int index) => _itemSizeImages[index];
 
   void removeSize(ItemModel? item, int index) {
     sizes.removeAt(index);
@@ -271,23 +309,37 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
   }
 
   void getSizes(ItemModel? item, {required bool isRemove}) {
+    if (isRemove) {
+      sizes.clear();
+    }
+
     if (!isRemove && item != null) {
       for (var size in item.sizesTypes) {
         AddSizeItemModel addSizeItemModel = AddSizeItemModel(
           nameAr: size.nameAr,
           nameEn: size.nameEn,
           price: size.price,
+          itemId: item.id,
+          descriptionAr: size.descriptionAr,
+          descriptionEn: size.descriptionEn,
+          image: size.image,
         );
+
         int index = sizes.indexWhere(
-              (element) => element.nameAr == addSizeItemModel.nameAr,
+              (element) =>
+          element.nameAr == addSizeItemModel.nameAr &&
+              element.itemId == item.id,
         );
+
         if (index == -1) {
           sizes.add(addSizeItemModel);
         }
       }
     }
-    emit(SizesSuccess(sizes));
+
+    emit(SizesSuccess(List.from(sizes)));
   }
+
 
   void setNameEnComponent(String? nameEn, int index) {
     components[index] = components[index].copyWith(nameEn: nameEn);
@@ -332,12 +384,14 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
         AddComponentItemModel addComponentItemModel = AddComponentItemModel(
           nameAr: component.nameAr,
           nameEn: component.nameEn,
-          isBasicComponent: component.isBasicComponent == 1
+          itemId: item.id,
+          isBasicComponent: component.isSelectable
               ? IsBasicComponent.yes
               : IsBasicComponent.no,
         );
         int index = components.indexWhere(
-              (element) => element.nameAr == addComponentItemModel.nameAr,
+              (element) => element.nameAr == addComponentItemModel.nameAr &&
+                  element.itemId == item.id,
         );
         if (index == -1) {
           components.add(addComponentItemModel);
@@ -346,6 +400,7 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     }
     emit(ComponentsSuccess(List.from(components)));
   }
+
 
   void addNutrition() {
     editItemModel = editItemModel.copyWith(nutrition: AddNutritionItemModel.empty());
@@ -483,17 +538,16 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     emit(ItemsSuccess(searchedItems));
   }
 
+
   Future<void> editItem({required bool isEdit, int? itemId}) async {
     if (isEdit && itemId != null) {
       setId(itemId);
-      // استرجاع الصور الخاصة بهذا العنصر قبل الحفظ
-      selectedImage = _itemImages[itemId];
-      selectedImage2 = _itemIcons[itemId];
-      if (_itemExtraImages.containsKey(itemId)) {
-        imagesExtra = _itemExtraImages[itemId]!;
-      }
+
+      selectedImage = tempSelectedImage ?? selectedImage;
+      selectedImage2 = tempSelectedImage2 ?? selectedImage2;
     }
 
+    applyTempImages();
     emit(EditItemLoading());
 
     try {
@@ -505,6 +559,7 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
         selectedImage,
         selectedImage2,
         imagesExtra,
+        imagesSizes,
         isEdit: isEdit,
       );
       final successMessage =

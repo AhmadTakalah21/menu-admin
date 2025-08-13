@@ -11,26 +11,37 @@ class SignInServiceImp implements SignInService {
 
       final response = await dio.post(
         "/admin_api/login?model=Admin",
-        data: FormData.fromMap(
-          signInPostModel.toJson(),
-        ),
+        data: FormData.fromMap(signInPostModel.toJson()),
       );
+
       final data = response.data["data"] as Map<String, dynamic>;
       final token = data["token"];
-      prefs.setString("token", token);
+      final restaurantId = data["restaurant_id"];
+
+      await prefs.setString("token", token);
+      if (restaurantId != null) {
+        await prefs.setInt("restaurant_id", restaurantId);
+      }
 
       return SignInModel.fromJson(data);
-    } catch (e) {
+    } catch (e, stacktrace) {
+      print(stacktrace);
       rethrow;
     }
   }
+
 
   @override
   Future<void> signOut() async {
     try {
       await dio.get("/api/logout");
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove("token");
+      await prefs.remove("restaurant_id");
     } catch (e) {
       rethrow;
     }
   }
+
 }

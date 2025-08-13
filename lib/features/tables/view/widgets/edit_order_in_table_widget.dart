@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -153,185 +154,162 @@ class _EditOrderInTableWidgetState extends State<EditOrderInTableWidget>
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final orderDetailsModel = widget.orderDetailsModel;
     OrderStatusEnum? orderStatusEnum;
     if (orderDetailsModel != null) {
-      orderStatusEnum = OrderStatusEnum.getStatus(
-        orderDetailsModel.status,
-      );
+      orderStatusEnum = OrderStatusEnum.getStatus(orderDetailsModel.status);
     }
-    return AlertDialog(
-      insetPadding: AppConstants.padding16,
-      contentPadding: AppConstants.padding16,
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const SizedBox(width: 20),
-                const Spacer(),
-                Text(
-                  widget.isEdit ? "edit_order".tr() : "add_order".tr(),
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 20,
-                  ),
-                ),
-                const Spacer(),
-                InkWell(
-                  onTap: onIgnoreTap,
-                  child: const Icon(
-                    Icons.close,
-                    color: AppColors.greyShade,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 30),
-            if (!widget.isEdit)
-              BlocBuilder<ItemsCubit, GeneralItemsState>(
-                buildWhen: (previous, current) => current is ItemsState,
-                builder: (context, state) {
-                  if (state is ItemsLoading) {
-                    return const LoadingIndicator(color: AppColors.black);
-                  } else if (state is ItemsSuccess) {
-                    return MainDropDownWidget(
-                      items: state.items,
-                      text: "item".tr(),
-                      expandedHeight: 300,
-                      onChanged: onItemSelected,
-                      focusNode: itemFocusNode,
-                    );
-                  } else if (state is ItemsEmpty) {
-                    return MainErrorWidget(error: state.message);
-                  } else {
-                    return const SizedBox.shrink();
-                  }
-                },
-              ),
-            if (!widget.isEdit) const SizedBox(height: 20),
-            MainTextField(
-              initialText: widget.orderDetailsModel?.count.toString(),
-              onChanged: onQuantityChanged,
-              onSubmitted: onQuantitySubmitted,
-              focusNode: quantityFocusNode,
-              labelText: "quantity".tr(),
-              textInputType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-            ),
-            if (widget.isEdit) const SizedBox(height: 20),
-            if (widget.isEdit)
-              MainDropDownWidget(
-                items: OrderStatusEnum.values,
-                text: "status".tr(),
-                onChanged: onStatusSelected,
-                focusNode: statusFocusNode,
-                selectedValue: orderStatusEnum,
-              ),
-            if (widget.isEdit) const SizedBox(height: 20),
-            if (widget.isEdit)
-              BlocBuilder<ItemsCubit, GeneralItemsState>(
-                buildWhen: (previous, current) => current is ItemsState,
-                builder: (context, state) {
-                  if (state is ItemsLoading) {
-                    return const LoadingIndicator(color: AppColors.black);
-                  } else if (state is ItemsSuccess) {
-                    final item = selectedItem;
-                    return Column(
-                      children: [
-                        MainDropDownWidget(
-                          items: state.items,
-                          text: "item".tr(),
-                          expandedHeight: 300,
-                          onChanged: onItemSelected,
-                          focusNode: itemFocusNode,
-                        ),
-                        if (item != null && item.itemTypes.isNotEmpty)
-                          const SizedBox(height: 20),
-                        if (item != null && item.itemTypes.isNotEmpty)
-                          MainDropDownWidget(
-                            items: item.itemTypes,
-                            text: "extra_item".tr(),
-                            expandedHeight: 300,
-                            onChanged: onExtraItemSelected,
-                            focusNode: FocusNode(),
-                          ),
-                      ],
-                    );
-                  } else if (state is ItemsEmpty) {
-                    return MainErrorWidget(error: state.message);
-                  } else {
-                    return const SizedBox.shrink();
-                  }
-                },
-              ),
-            const Divider(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                MainActionButton(
-                  padding: AppConstants.padding14,
-                  onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
-                  text: "ignore".tr(),
-                  shadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4),
+
+    return BlocListener<ItemsCubit, GeneralItemsState>(
+      listener: (context, state) {
+        if (widget.isEdit && selectedItem == null && state is ItemsSuccess) {
+          final matchedItem = state.items.firstWhereOrNull(
+                (element) => element.name == orderDetailsModel?.name,
+          );
+
+          if (matchedItem != null) {
+            selectedItem = matchedItem;
+            tablesCubit.setItemId(matchedItem);
+          }
+        }
+      },
+      child: AlertDialog(
+        insetPadding: AppConstants.padding16,
+        contentPadding: AppConstants.padding16,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const SizedBox(width: 20),
+                  const Spacer(),
+                  Text(
+                    widget.isEdit ? "edit_order".tr() : "add_order".tr(),
+                    style: const TextStyle(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 20,
                     ),
-                  ],
-                ),
-                const SizedBox(width: 8),
-                BlocConsumer<TablesCubit, GeneralTablesState>(
-                  listener: (context, state) {
-                    if (state is EditOrderInTableSuccess) {
-                      tablesCubit.getTableOrders(
-                        widget.table.id,
-                        page: widget.selectedPage,
-                      );
-                      onIgnoreTap();
-                      MainSnackBar.showSuccessMessage(context, state.message);
-                    } else if (state is EditOrderInTableFail) {
-                      MainSnackBar.showErrorMessage(context, state.error);
-                    }
-                  },
+                  ),
+                  const Spacer(),
+                  InkWell(
+                    onTap: onIgnoreTap,
+                    child: const Icon(
+                      Icons.close,
+                      color: AppColors.greyShade,
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 30),
+              if (!widget.isEdit)
+                BlocBuilder<ItemsCubit, GeneralItemsState>(
+                  buildWhen: (previous, current) => current is ItemsState,
                   builder: (context, state) {
-                    var onTap = onSaveTap;
-                    Widget? child;
-                    if (state is EditOrderInTableLoading) {
-                      onTap = () {};
-                      child = const LoadingIndicator(size: 20);
+                    if (state is ItemsLoading) {
+                      return const LoadingIndicator(color: AppColors.black);
+                    } else if (state is ItemsSuccess) {
+                      return MainDropDownWidget(
+                        items: state.items,
+                        text: "item".tr(),
+                        expandedHeight: 300,
+                        onChanged: onItemSelected,
+                        focusNode: itemFocusNode,
+                      );
+                    } else if (state is ItemsEmpty) {
+                      return MainErrorWidget(error: state.message);
+                    } else {
+                      return const SizedBox.shrink();
                     }
-                    return MainActionButton(
-                      padding: AppConstants.padding14,
-                      onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
-                      text: "save".tr(),
-                      shadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      child: child,
-                    );
                   },
                 ),
-                const SizedBox(width: 10),
-              ],
-            ),
-            const SizedBox(height: 20),
-          ],
+              if (!widget.isEdit) const SizedBox(height: 20),
+              MainTextField(
+                initialText: widget.orderDetailsModel?.count.toString(),
+                onChanged: onQuantityChanged,
+                onSubmitted: onQuantitySubmitted,
+                focusNode: quantityFocusNode,
+                labelText: "quantity".tr(),
+                textInputType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+              ),
+              if (widget.isEdit) const SizedBox(height: 20),
+              if (widget.isEdit)
+                MainDropDownWidget(
+                  items: OrderStatusEnum.values,
+                  text: "status".tr(),
+                  onChanged: onStatusSelected,
+                  focusNode: statusFocusNode,
+                  selectedValue: orderStatusEnum,
+                ),
+              const Divider(height: 30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  MainActionButton(
+                    padding: AppConstants.padding14,
+                    onPressed: onIgnoreTap,
+                    borderRadius: AppConstants.borderRadius5,
+                    buttonColor: AppColors.blueShade3,
+                    text: "ignore".tr(),
+                    shadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  BlocConsumer<TablesCubit, GeneralTablesState>(
+                    listener: (context, state) {
+                      if (state is EditOrderInTableSuccess) {
+                        tablesCubit.getTableOrders(
+                          widget.table.id,
+                          page: widget.selectedPage,
+                        );
+                        onIgnoreTap();
+                        MainSnackBar.showSuccessMessage(context, state.message);
+                      } else if (state is EditOrderInTableFail) {
+                        MainSnackBar.showErrorMessage(context, state.error);
+                      }
+                    },
+                    builder: (context, state) {
+                      var onTap = onSaveTap;
+                      Widget? child;
+                      if (state is EditOrderInTableLoading) {
+                        onTap = () {};
+                        child = const LoadingIndicator(size: 20);
+                      }
+                      return MainActionButton(
+                        padding: AppConstants.padding14,
+                        onPressed: onTap,
+                        borderRadius: AppConstants.borderRadius5,
+                        buttonColor: AppColors.blueShade3,
+                        text: "save".tr(),
+                        shadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        child: child,
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

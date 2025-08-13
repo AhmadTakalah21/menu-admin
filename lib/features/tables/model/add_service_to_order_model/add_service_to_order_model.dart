@@ -12,13 +12,9 @@ class AddServiceToOrderModel {
   const AddServiceToOrderModel({
     this.invoiceId,
     this.tableId,
-    String? count,
-    int? id,
-  })  : _count = count,
-        _id = id;
-
-  final String? _count;
-  final int? _id;
+    this.count,
+    this.serviceId,
+  });
 
   @JsonKey(name: "invoice_id")
   final int? invoiceId;
@@ -26,29 +22,30 @@ class AddServiceToOrderModel {
   @JsonKey(name: "table_id")
   final int? tableId;
 
-  String get count {
-    if (_count == null || _count.isEmpty) {
-      throw "quantity_empty".tr();
-    }
-    return _count;
-  }
+  final String? count;
 
   @JsonKey(name: "service_id")
-  int get id {
-    return _id ?? (throw "service_id_empty".tr());
+  final int? serviceId;
+
+  String get safeCount {
+    if (count == null || count!.isEmpty) {
+      throw Exception("quantity_empty".tr());
+    }
+    return count!;
   }
 
+  int get safeServiceId =>
+      serviceId ?? (throw Exception("service_id_empty".tr()));
 
   AddServiceToOrderModel copyWith({
     String? count,
-    int? id,
+    int? serviceId,
     int? tableId,
     int? invoiceId,
   }) {
     return AddServiceToOrderModel(
-      count: count ?? _count,
-      //id: id ?? _id,
-      id: id,
+      count: count ?? this.count,
+      serviceId: serviceId ?? this.serviceId,
       tableId: tableId ?? this.tableId,
       invoiceId: invoiceId ?? this.invoiceId,
     );
@@ -60,11 +57,5 @@ class AddServiceToOrderModel {
   Map<String, dynamic> toJson() => _$AddServiceToOrderModelToJson(this);
 
   @override
-  String toString() {
-    return jsonEncode(toJson());
-  }
-
-  factory AddServiceToOrderModel.fromString(String jsonString) {
-    return AddServiceToOrderModel.fromJson(json.decode(jsonString));
-  }
+  String toString() => jsonEncode(toJson());
 }

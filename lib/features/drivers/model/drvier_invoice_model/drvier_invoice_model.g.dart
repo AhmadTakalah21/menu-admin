@@ -23,11 +23,12 @@ DrvierInvoiceModel _$DrvierInvoiceModelFromJson(Map<String, dynamic> json) =>
       deliveryName: json['delivery_name'] as String?,
       deliveryPhone: json['delivery_phone'] as String?,
       deliveryAddress: json['delivery_address'] as String?,
-      price: json['price'] as String?,
-      status: json['status'] as String?,
-      total: json['total'] as String?,
-      totalWithDeliveryPrice: json['total_with_delivery_price'] as String?,
-      discount: json['discount'] as String?,
+      price: const NullableStringConverter().fromJson(json['price']),
+      status: const NullableStringConverter().fromJson(json['status']),
+      total: const NullableStringConverter().fromJson(json['total']),
+      totalWithDeliveryPrice: const NullableStringConverter()
+          .fromJson(json['total_with_delivery_price']),
+      discount: const NullableStringConverter().fromJson(json['discount']),
       tableId: (json['table_id'] as num?)?.toInt(),
       tableNumber: (json['number_table'] as num?)?.toInt(),
       restaurantId: (json['restaurant_id'] as num).toInt(),
@@ -43,9 +44,12 @@ DrvierInvoiceModel _$DrvierInvoiceModelFromJson(Map<String, dynamic> json) =>
       orders: (json['orders'] as List<dynamic>)
           .map((e) => OrderDetailsModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      consumerSpending: json['consumer_spending'] as String?,
-      localAdministration: json['local_administration'] as String?,
-      reconstruction: json['reconstruction'] as String?,
+      consumerSpending:
+          const NullableStringConverter().fromJson(json['consumer_spending']),
+      localAdministration: const NullableStringConverter()
+          .fromJson(json['local_administration']),
+      reconstruction:
+          const NullableStringConverter().fromJson(json['reconstruction']),
     );
 
 Map<String, dynamic> _$DrvierInvoiceModelToJson(DrvierInvoiceModel instance) =>
@@ -65,11 +69,12 @@ Map<String, dynamic> _$DrvierInvoiceModelToJson(DrvierInvoiceModel instance) =>
       'delivery_name': instance.deliveryName,
       'delivery_phone': instance.deliveryPhone,
       'delivery_address': instance.deliveryAddress,
-      'price': instance.price,
-      'status': instance.status,
-      'total': instance.total,
-      'total_with_delivery_price': instance.totalWithDeliveryPrice,
-      'discount': instance.discount,
+      'price': const NullableStringConverter().toJson(instance.price),
+      'status': const NullableStringConverter().toJson(instance.status),
+      'total': const NullableStringConverter().toJson(instance.total),
+      'total_with_delivery_price': const NullableStringConverter()
+          .toJson(instance.totalWithDeliveryPrice),
+      'discount': const NullableStringConverter().toJson(instance.discount),
       'table_id': instance.tableId,
       'number_table': instance.tableNumber,
       'restaurant_id': instance.restaurantId,
@@ -83,7 +88,10 @@ Map<String, dynamic> _$DrvierInvoiceModelToJson(DrvierInvoiceModel instance) =>
       'delivery_price':
           const NullableStringConverter().toJson(instance.deliveryPrice),
       'orders': instance.orders,
-      'consumer_spending': instance.consumerSpending,
-      'local_administration': instance.localAdministration,
-      'reconstruction': instance.reconstruction,
+      'consumer_spending':
+          const NullableStringConverter().toJson(instance.consumerSpending),
+      'local_administration':
+          const NullableStringConverter().toJson(instance.localAdministration),
+      'reconstruction':
+          const NullableStringConverter().toJson(instance.reconstruction),
     };

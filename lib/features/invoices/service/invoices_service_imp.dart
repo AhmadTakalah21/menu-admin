@@ -27,7 +27,9 @@ class InvoicesServiceImp implements InvoicesService {
           json as Map<String, dynamic>,
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print("🛑 ERROR in getInvoices: $e");
+      print("📍 STACK TRACE: $stackTrace");
       rethrow;
     }
   }

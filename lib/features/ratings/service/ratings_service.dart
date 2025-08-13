@@ -1,4 +1,5 @@
 import 'package:injectable/injectable.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:user_admin/features/ratings/model/rate_model/rate_model.dart';
 import 'package:user_admin/global/dio/dio_client.dart';
 import 'package:user_admin/global/model/paginated_model/paginated_model.dart';

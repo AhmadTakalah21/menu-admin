@@ -26,6 +26,11 @@ abstract class UpdateAdminWidgetCallBack {
 
   void onUsernameSubmitted(String username);
 
+  void onEmailChanged(String email);
+
+  void onEmailSubmitted(String email);
+
+
   void onPasswordChanged(String password);
 
   void onPasswordSubmitted(String password);
@@ -67,6 +72,7 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
 
   final nameFocusNode = FocusNode();
   final usernameFocusNode = FocusNode();
+  final emailFocusNode = FocusNode();
   final passwordFocusNode = FocusNode();
   final mobileFocusNode = FocusNode();
 
@@ -125,6 +131,17 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
   void onUsernameSubmitted(String name) {
     passwordFocusNode.requestFocus();
   }
+
+  @override
+  void onEmailChanged(String email) {
+    adminsCubit.setEmail(email);
+  }
+
+  @override
+  void onEmailSubmitted(String email) {
+    passwordFocusNode.requestFocus();
+  }
+
 
   @override
   void onPasswordChanged(String password) {
@@ -219,6 +236,7 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
 
     nameFocusNode.dispose();
     usernameFocusNode.dispose();
+    emailFocusNode.dispose();
     passwordFocusNode.dispose();
     mobileFocusNode.dispose();
 
@@ -273,6 +291,16 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
               focusNode: usernameFocusNode,
               labelText: "username".tr(),
             ),
+            const SizedBox(height: 20),
+            MainTextField(
+              initialText: widget.admin?.email,
+              onChanged: onEmailChanged,
+              onSubmitted: onEmailSubmitted,
+              focusNode: emailFocusNode,
+              labelText: "email".tr(),
+              textInputType: TextInputType.emailAddress,
+            ),
+
             const SizedBox(height: 20),
             MainTextField(
               onChanged: onPasswordChanged,

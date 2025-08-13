@@ -6,17 +6,24 @@ class RatingsServiceImp implements RatingsService {
 
   @override
   Future<PaginatedModel<RateModel>> getRatings(
-    int? page, {
-    String? fromDate,
-    String? toDate,
-    String? gender,
-    String? type,
-    int? rate,
-    int? fromAge,
-    int? toAge,
-  }) async {
+      int? page, {
+        String? fromDate,
+        String? toDate,
+        String? gender,
+        String? type,
+        int? rate,
+        int? fromAge,
+        int? toAge,
+      }) async {
     try {
-      const restaurantIdParam = "restaurant_id=${AppConstants.restaurantId}";
+      final prefs = await SharedPreferences.getInstance();
+      final restaurantId = prefs.getInt("restaurant_id");
+
+      if (restaurantId == null) {
+        throw Exception("restaurant_id is not available. Please log in again.");
+      }
+
+      final restaurantIdParam = "restaurant_id=$restaurantId";
       const perPageParam = "per_page=10";
       final pageParam = page != null ? "page=$page" : "";
       final genderParam = gender != null ? "gender=$gender" : "";
@@ -30,15 +37,16 @@ class RatingsServiceImp implements RatingsService {
       final response = await dio.get(
         "/admin_api/show_rates?$rateParam&$perPageParam&$restaurantIdParam&$genderParam&$fromAgeParam&$toAgeParam&$fromDateParam&$toDateParam&$pageParam&$typeParam",
       );
+
       final data = response.data as Map<String, dynamic>;
+
       return PaginatedModel.fromJson(
         data,
-        (json) => RateModel.fromJson(
-          json as Map<String, dynamic>,
-        ),
+            (json) => RateModel.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
       rethrow;
     }
   }
+
 }

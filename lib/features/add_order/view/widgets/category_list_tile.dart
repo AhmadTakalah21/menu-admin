@@ -88,7 +88,11 @@ class _CategoryListTileState extends State<CategoryListTile> {
                   items.length,
                   (index) {
                     final item = items[index];
-                    return ItemListTile(item: item);
+                    return ItemListTile(
+                      key: ValueKey('${item.id}_${item.sizesTypes.map((s) => s.id).join("-")}_${item.itemTypes.map((t) => t.id).join("-")}_${item.componentsTypes.map((c) => c.id).join("-")}'),
+                      item: item,
+                    );
+
                   },
                 ),
               ],

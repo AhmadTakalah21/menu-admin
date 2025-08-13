@@ -1,11 +1,10 @@
 import 'dart:convert';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import '../add_nutrition_item_model/add_nutrition_item_model.dart';
-import '../item_model/item_model.dart'; // ← لكي تستخدم NutritionModel للتحويل منه
+import '../item_model/item_model.dart';
 
 part 'edit_item_model.g.dart';
 
@@ -22,34 +21,41 @@ class EditItemModel {
     this.descriptionAr,
     this.isPanorama = 0,
     this.nutrition,
+    this.image,
+    this.icon,
   })  : _categoryId = categoryId,
         _nameAr = nameAr,
         _nameEn = nameEn,
         _price = price;
 
   final int? id;
+
   final String? _nameAr;
   final String? _nameEn;
+
   @JsonKey(name: "description_ar")
   final String? descriptionAr;
+
   @JsonKey(name: "description_en")
   final String? descriptionEn;
+
   final String? _price;
+
   @JsonKey(name: "is_panorama")
   final int? isPanorama;
+
   final int? _categoryId;
 
   @JsonKey(name: "nutrition")
   final AddNutritionItemModel? nutrition;
 
-  // Getters for safe values
-  double get safeAmount => nutrition?.amount ?? 0.0;
-  String get safeUnit => nutrition?.unit ?? 'g';
-  double get safeKcal => nutrition?.kcal ?? 0.0;
-  double get safeProtein => nutrition?.protein ?? 0.0;
-  double get safeFat => nutrition?.fat ?? 0.0;
-  double get safeCarbs => nutrition?.carbs ?? 0.0;
+  @JsonKey(name: "image")
+  final String? image;
 
+  @JsonKey(name: "icon")
+  final String? icon;
+
+  // Getters with validation
   @JsonKey(name: "name_ar")
   String get nameAr {
     if (_nameAr == null || _nameAr!.isEmpty) {
@@ -78,6 +84,15 @@ class EditItemModel {
     return _categoryId ?? (throw "category_id_empty".tr());
   }
 
+  // Nutrition Safe Access
+  double get safeAmount => nutrition?.amount ?? 0.0;
+  String get safeUnit => nutrition?.unit ?? 'g';
+  double get safeKcal => nutrition?.kcal ?? 0.0;
+  double get safeProtein => nutrition?.protein ?? 0.0;
+  double get safeFat => nutrition?.fat ?? 0.0;
+  double get safeCarbs => nutrition?.carbs ?? 0.0;
+
+  // Factory & serialization
   factory EditItemModel.fromJson(Map<String, dynamic> json) {
     if (json['nutrition'] == null) {
       json['nutrition'] = {
@@ -94,11 +109,11 @@ class EditItemModel {
 
   Map<String, dynamic> toJson() => _$EditItemModelToJson(this);
 
-  @override
-  String toString() => jsonEncode(toJson());
-
   factory EditItemModel.fromString(String jsonString) =>
       EditItemModel.fromJson(json.decode(jsonString));
+
+  @override
+  String toString() => jsonEncode(toJson());
 
   EditItemModel copyWith({
     int? id,
@@ -110,6 +125,8 @@ class EditItemModel {
     int? isPanorama,
     int? categoryId,
     AddNutritionItemModel? nutrition,
+    String? image,
+    String? icon,
   }) {
     return EditItemModel(
       id: id ?? this.id,
@@ -121,10 +138,12 @@ class EditItemModel {
       isPanorama: isPanorama ?? this.isPanorama,
       categoryId: categoryId ?? _categoryId,
       nutrition: nutrition ?? this.nutrition,
+      image: image ?? this.image,
+      icon: icon ?? this.icon,
     );
   }
 
-  /// ✅ دالة لتحديث جزء من بيانات التغذية فقط
+  // Partial update for nutrition
   EditItemModel copyWithNutrition({
     double? amount,
     String? unit,
@@ -145,7 +164,6 @@ class EditItemModel {
     );
   }
 
-  /// ✅ دالة لتحويل NutritionModel إلى AddNutritionItemModel
   static AddNutritionItemModel fromNutritionModel(NutritionModel model) {
     return AddNutritionItemModel(
       id: model.id,

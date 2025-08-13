@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:user_admin/features/home/cubit/home_cubit.dart';
 import 'package:user_admin/features/home/model/category_model/category_model.dart';
 import 'package:user_admin/features/home/model/edit_category_model/edit_category_model.dart';
@@ -15,19 +18,12 @@ import 'package:user_admin/global/widgets/main_text_field.dart';
 
 abstract class EditCategoryWidgetCallBacks {
   void onCategoryChanged(CategoryModel? category);
-
   void onNameArChanged(String nameAr);
-
   void onNameArSubmitted(String nameAr);
-
   void onNameEnChanged(String nameEn);
-
   void onNameEnSubmitted(String nameEn);
-
   void onImageTap();
-
   void onSaveTap();
-
   void onIgnoreTap();
 }
 
@@ -38,6 +34,7 @@ class EditCategoryWidget extends StatefulWidget {
     required this.isEdit,
     this.masterCategory,
   });
+
   final CategoryModel? masterCategory;
   final CategoryModel? category;
   final bool isEdit;
@@ -49,14 +46,20 @@ class EditCategoryWidget extends StatefulWidget {
 class _EditCategoryWidgetState extends State<EditCategoryWidget>
     implements EditCategoryWidgetCallBacks {
   late final HomeCubit homeCubit = context.read<HomeCubit>();
-
   final categoryFocusNode = FocusNode();
   final nameArFocusNode = FocusNode();
   final nameEnFocusNode = FocusNode();
 
+  XFile? localImage; // ✅ صورة مؤقتة محلية
+
   @override
-  void onImageTap() {
-    homeCubit.setImage();
+  void onImageTap() async {
+    final picked = await homeCubit.pickImage();
+    if (picked != null) {
+      setState(() {
+        localImage = picked;
+      });
+    }
   }
 
   @override
@@ -66,35 +69,27 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
   }
 
   @override
-  void onNameArChanged(String nameAr) {
-    homeCubit.setNameAr(nameAr);
-  }
+  void onNameArChanged(String nameAr) => homeCubit.setNameAr(nameAr);
+  @override
+  void onNameArSubmitted(String nameAr) => nameEnFocusNode.requestFocus();
+  @override
+  void onNameEnChanged(String nameEn) => homeCubit.setNameEn(nameEn);
+  @override
+  void onNameEnSubmitted(String nameEn) => nameEnFocusNode.unfocus();
 
   @override
-  void onNameArSubmitted(String nameAr) {
-    nameEnFocusNode.requestFocus();
-  }
-
-  @override
-  void onNameEnChanged(String nameEn) {
-    homeCubit.setNameEn(nameEn);
-  }
-
-  @override
-  void onNameEnSubmitted(String nameEn) {
-    nameEnFocusNode.unfocus();
-  }
-
-  @override
-  void onIgnoreTap() {
-    Navigator.pop(context);
-  }
+  void onIgnoreTap() => Navigator.pop(context);
 
   @override
   void onSaveTap() {
+    if (!widget.isEdit && widget.masterCategory != null) {
+      homeCubit.setCategoryId(widget.masterCategory!.id);
+    }
+
     homeCubit.editCategory(
       isEdit: widget.isEdit,
       categoryId: widget.masterCategory?.id,
+      imageFile: localImage, // ✅ نمرر الصورة فقط عند الحفظ
     );
   }
 
@@ -113,7 +108,6 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
 
   @override
   Widget build(BuildContext context) {
-    final category = widget.category;
     return AlertDialog(
       insetPadding: AppConstants.padding16,
       contentPadding: AppConstants.padding16,
@@ -130,29 +124,32 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
               ),
             ),
             const Divider(height: 30),
+
+            /// ✅ عرض الصورة (من الإنترنت أو محلي)
             InkWell(
               onTap: onImageTap,
-              child: category != null
+              child: localImage != null
+                  ? Image.file(File(localImage!.path), width: 200)
+                  : (widget.category?.image != null &&
+                  widget.category!.image.isNotEmpty)
                   ? AppImageWidget(
-                      width: 200,
-                      fit: BoxFit.contain,
-                      url: category.image,
-                      errorWidget: Image.asset(
-                        "assets/images/upload_image.png",
-                        scale: 1.5,
-                      ),
-                    )
-                  : Image.asset("assets/images/upload_image.png", scale: 1.5),
+                url: widget.category!.image,
+                width: 200,
+                fit: BoxFit.contain,
+              )
+                  : Image.asset("assets/images/upload_image.png",
+                  scale: 1.5),
             ),
+
             const SizedBox(height: 10),
+
             if (widget.category != null)
               BlocBuilder<HomeCubit, GeneralHomeState>(
-                buildWhen: (previous, current) => current is SubCategoriesState,
+                buildWhen: (previous, current) =>
+                current is SubCategoriesState,
                 builder: (context, state) {
                   if (state is SubCategoriesLoading) {
-                    return const LoadingIndicator(
-                      color: AppColors.black,
-                    );
+                    return const LoadingIndicator(color: AppColors.black);
                   } else if (state is SubCategoriesSuccess) {
                     return MainDropDownWidget<CategoryModel>(
                       items: state.categories,
@@ -165,6 +162,7 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
                   }
                 },
               ),
+
             const SizedBox(height: 10),
             MainTextField(
               initialText: widget.category?.nameAr,
@@ -181,6 +179,7 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
               focusNode: nameEnFocusNode,
               labelText: "name_en".tr(),
             ),
+
             const Divider(height: 40),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -191,13 +190,6 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
                   borderRadius: AppConstants.borderRadius5,
                   buttonColor: AppColors.blueShade3,
                   text: "ignore".tr(),
-                  shadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
                 const SizedBox(width: 8),
                 BlocConsumer<HomeCubit, GeneralHomeState>(
@@ -226,18 +218,10 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
                       borderRadius: AppConstants.borderRadius5,
                       buttonColor: AppColors.blueShade3,
                       text: "save".tr(),
-                      shadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                       child: child,
                     );
                   },
                 ),
-                const SizedBox(width: 10),
               ],
             ),
           ],

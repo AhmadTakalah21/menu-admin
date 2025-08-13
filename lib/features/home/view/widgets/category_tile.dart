@@ -76,8 +76,10 @@ class CategoryTile<T extends ItemTileModel> extends StatelessWidget {
             Text(
               name,
               style: TextStyle(
-                color: restaurant.fColorCategory,
-                overflow: TextOverflow.ellipsis,
+                // color: restaurant.fColorCategory,
+                color: Colors.black,
+
+              overflow: TextOverflow.ellipsis,
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
               ),

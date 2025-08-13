@@ -1,12 +1,12 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
-
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 part 'update_restaurant_model.g.dart';
 
 @JsonSerializable()
-@immutable
 class UpdateRestaurantModel {
   const UpdateRestaurantModel({
     this.nameEn,
@@ -75,7 +75,34 @@ class UpdateRestaurantModel {
   final String? reconstruction;
 
   @JsonKey(name: "price_km")
-  final String? priceKm;
+  final double? priceKm;
+
+  FormData toFormData() {
+    final map = <String, dynamic>{
+      if (nameEn != null) 'name_en': nameEn,
+      if (nameAr != null) 'name_ar': nameAr,
+      if (backgroundColor != null) 'background_color': backgroundColor,
+      if (color != null) 'color': color,
+      if (facebookUrl != null) 'facebook_url': facebookUrl,
+      if (instagramUrl != null) 'instagram_url': instagramUrl,
+      if (whatsappPhone != null) 'whatsapp_phone': whatsappPhone,
+      if (noteEn != null) 'note_en': noteEn,
+      if (noteAr != null) 'note_ar': noteAr,
+      if (messageBad != null) 'message_bad': messageBad,
+      if (messageGood != null) 'message_good': messageGood,
+      if (messagePerfect != null) 'message_perfect': messagePerfect,
+      if (nameUrl != null) 'name_url': nameUrl,
+      if (consumerSpending != null) 'consumer_spending': consumerSpending,
+      if (localAdministration != null) 'local_administration': localAdministration,
+      if (reconstruction != null) 'reconstruction': reconstruction,
+    };
+
+    if (priceKm != null) {
+      map['price_km'] = priceKm.toString();
+    }
+
+    return FormData.fromMap(map);
+  }
 
   factory UpdateRestaurantModel.fromJson(Map<String, dynamic> json) =>
       _$UpdateRestaurantModelFromJson(json);
@@ -83,13 +110,10 @@ class UpdateRestaurantModel {
   Map<String, dynamic> toJson() => _$UpdateRestaurantModelToJson(this);
 
   @override
-  String toString() {
-    return jsonEncode(toJson());
-  }
+  String toString() => jsonEncode(toJson());
 
-  factory UpdateRestaurantModel.fromString(String jsonString) {
-    return UpdateRestaurantModel.fromJson(json.decode(jsonString));
-  }
+  factory UpdateRestaurantModel.fromString(String jsonString) =>
+      UpdateRestaurantModel.fromJson(json.decode(jsonString));
 
   UpdateRestaurantModel copyWith({
     String? nameEn,
@@ -107,7 +131,7 @@ class UpdateRestaurantModel {
     String? consumerSpending,
     String? localAdministration,
     String? reconstruction,
-    String? priceKm,
+    double? priceKm,
     String? nameUrl,
   }) {
     return UpdateRestaurantModel(

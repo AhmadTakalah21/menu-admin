@@ -8,26 +8,29 @@ class AddComponentItemModel {
   const AddComponentItemModel({
     this.nameAr,
     this.nameEn,
-    this.isBasicComponent = IsBasicComponent.no, // القيمة الافتراضية
+    this.itemId,
+    this.isBasicComponent = IsBasicComponent.no,
   });
 
   final String? nameEn;
   final String? nameAr;
+  final int? itemId;
   final IsBasicComponent isBasicComponent;
 
   AddComponentItemModel copyWith({
     String? nameEn,
     String? nameAr,
+    int? itemId,
     IsBasicComponent? isBasicComponent,
   }) {
     return AddComponentItemModel(
       nameEn: nameEn ?? this.nameEn,
       nameAr: nameAr ?? this.nameAr,
+      itemId: itemId ?? this.itemId,
       isBasicComponent: isBasicComponent ?? this.isBasicComponent,
     );
   }
 
-  // يمكنك إضافة دوال مساعدة لتحويل القيم إذا لزم الأمر
   bool get isBasic => isBasicComponent == IsBasicComponent.yes;
 
   String get isBasicDisplayName {

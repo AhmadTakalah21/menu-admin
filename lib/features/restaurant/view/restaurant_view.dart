@@ -65,6 +65,7 @@ abstract class RestaurantViewCallbacks {
   void onSetLogo();
 
   void onSetCover();
+
 }
 
 class RestaurantView extends StatelessWidget {
@@ -110,15 +111,16 @@ class _RestaurantPageState extends State<RestaurantPage>
   TextEditingController reconstructionController = TextEditingController();
   TextEditingController priceKmController = TextEditingController();
 
+
   @override
   void initState() {
     super.initState();
     restaurantCubit.getRestaurant();
-    restaurantCubit.setNameAr(widget.signInModel.restaurant.nameAr);
-    restaurantCubit.setNameEn(widget.signInModel.restaurant.nameEn);
-    restaurantCubit.setNoteAr(widget.signInModel.restaurant.noteAr);
-    restaurantCubit.setNoteEn(widget.signInModel.restaurant.noteAr);
-    restaurantCubit.setNameUrl(widget.signInModel.restaurant.nameUrl);
+    restaurantCubit.setNameAr(widget.signInModel.restaurant.nameAr ?? "");
+    restaurantCubit.setNameEn(widget.signInModel.restaurant.nameEn ?? "");
+    restaurantCubit.setNoteAr(widget.signInModel.restaurant.noteAr ?? "");
+    restaurantCubit.setNoteEn(widget.signInModel.restaurant.noteAr ?? "");
+    restaurantCubit.setNameUrl(widget.signInModel.restaurant.nameUrl ?? "");
     restaurantCubit
         .setFacebookUrl(widget.signInModel.restaurant.facebookUrl ?? "");
     restaurantCubit
@@ -139,9 +141,18 @@ class _RestaurantPageState extends State<RestaurantPage>
         widget.signInModel.restaurant.reconstruction.toString());
     restaurantCubit
         .setPriceKm(widget.signInModel.restaurant.priceKm.toString());
-    restaurantCubit.setBackgroundColor(
-        widget.signInModel.restaurant.backgroundColor.toString());
+
     restaurantCubit.setColor(widget.signInModel.restaurant.color.toString());
+    restaurantCubit.setBackgroundColor(widget.signInModel.restaurant.backgroundColor.toString());
+
+
+
+
+
+
+
+
+
   }
 
   @override
@@ -150,15 +161,22 @@ class _RestaurantPageState extends State<RestaurantPage>
   }
 
   void changeColor(Color color) {
-    setState(() => pickerColor = color);
+    setState(() {
+      pickerColor = color;
+    });
   }
 
   void changeBackgroundColor(Color color) {
-    setState(() => pickerBackgroundColor = color);
+    setState(() {
+      pickerBackgroundColor = color;
+    });
   }
+
 
   @override
   void onBackgroundColorSelected(Color color) {
+    pickerBackgroundColor = color;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -166,7 +184,7 @@ class _RestaurantPageState extends State<RestaurantPage>
           title: const Text('Pick a color!'),
           content: SingleChildScrollView(
             child: ColorPicker(
-              pickerColor: color,
+              pickerColor: pickerBackgroundColor!,
               onColorChanged: changeBackgroundColor,
             ),
           ),
@@ -174,7 +192,9 @@ class _RestaurantPageState extends State<RestaurantPage>
             ElevatedButton(
               child: const Text('Got it'),
               onPressed: () {
-                restaurantCubit.setBackgroundColor(color.toString());
+                setState(() {
+                  restaurantCubit.setBackgroundColor(pickerBackgroundColor.toString());
+                });
                 Navigator.of(context).pop();
               },
             ),
@@ -184,8 +204,11 @@ class _RestaurantPageState extends State<RestaurantPage>
     );
   }
 
+
   @override
   void onColorSelected(Color color) {
+    pickerColor = color;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -193,7 +216,7 @@ class _RestaurantPageState extends State<RestaurantPage>
           title: const Text('Pick a color!'),
           content: SingleChildScrollView(
             child: ColorPicker(
-              pickerColor: color,
+              pickerColor: pickerColor!,
               onColorChanged: changeColor,
             ),
           ),
@@ -201,7 +224,9 @@ class _RestaurantPageState extends State<RestaurantPage>
             ElevatedButton(
               child: const Text('Got it'),
               onPressed: () {
-                restaurantCubit.setColor(color.toString());
+                setState(() {
+                  restaurantCubit.setColor(pickerColor.toString());
+                });
                 Navigator.of(context).pop();
               },
             ),
@@ -210,6 +235,7 @@ class _RestaurantPageState extends State<RestaurantPage>
       },
     );
   }
+
 
   @override
   void onConsumerSpendingChanged(String consumerSpending) {
@@ -384,16 +410,16 @@ class _RestaurantPageState extends State<RestaurantPage>
                       logoUrl = restaurant.logo;
                       qrOffline = restaurant.qrOffline;
                       qrTakeout = restaurant.qrTakeout;
-                      nameArController.text = restaurant.nameAr;
-                      nameEnController.text = restaurant.nameEn;
-                      nameUrlController.text = restaurant.nameUrl;
+                      nameArController.text = restaurant.nameAr ?? "";
+                      nameEnController.text = restaurant.nameEn ?? "";
+                      nameUrlController.text = restaurant.nameUrl ?? "";
                       facebookUrlController.text = restaurant.facebookUrl ?? "";
                       instagramUrlController.text =
                           restaurant.instagramUrl ?? "";
                       whatsappPhoneController.text =
                           restaurant.whatsappPhone ?? "";
-                      noteEnController.text = restaurant.noteEn;
-                      noteArController.text = restaurant.noteAr;
+                      noteEnController.text = restaurant.noteEn ?? "";
+                      noteArController.text = restaurant.noteAr ?? "";
                       messageBadController.text = restaurant.messageBad ?? "";
                       messageGoodController.text = restaurant.messageGood ?? "";
                       messagePerfectController.text =
@@ -404,7 +430,8 @@ class _RestaurantPageState extends State<RestaurantPage>
                           restaurant.localAdmin.toString();
                       reconstructionController.text =
                           restaurant.reconstruction.toString();
-                      priceKmController.text = restaurant.priceKm.toString();
+                      priceKmController.text =
+                      restaurant.priceKm != null ? restaurant.priceKm.toString() : "";
                       color = restaurant.color;
                       backgroundColor = restaurant.backgroundColor;
                     }
@@ -425,7 +452,7 @@ class _RestaurantPageState extends State<RestaurantPage>
                             if (logoUrl != null)
                               Padding(
                                 padding:
-                                    const EdgeInsets.only(top: 220, left: 50),
+                                const EdgeInsets.only(top: 220, left: 50),
                                 child: InkWell(
                                   onTap: onSetLogo,
                                   child: AppImageWidget(
@@ -440,7 +467,7 @@ class _RestaurantPageState extends State<RestaurantPage>
                                       ),
                                     ],
                                     borderRadius:
-                                        AppConstants.borderRadiusCircle,
+                                    AppConstants.borderRadiusCircle,
                                   ),
                                 ),
                               ),
@@ -624,10 +651,10 @@ class _RestaurantPageState extends State<RestaurantPage>
                                         child: MainActionButton(
                                           onPressed: () =>
                                               onBackgroundColorSelected(
-                                            pickerBackgroundColor ??
-                                                backgroundColor ??
-                                                AppColors.black,
-                                          ),
+                                                pickerBackgroundColor ??
+                                                    backgroundColor ??
+                                                    AppColors.black,
+                                              ),
                                           text: "",
                                           buttonColor: pickerBackgroundColor ??
                                               backgroundColor ??

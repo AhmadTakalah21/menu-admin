@@ -341,8 +341,8 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
                         (index) {
                           final details = state.paginatedModel.data[index];
                           final values = [
-                            Text(details.name),
-                            Text(details.type),
+                            Text(details!.name),
+                            Text(details!.type),
                             Text(details.numberTable.toString()),
                             Text(details.responseTime),
                           ];

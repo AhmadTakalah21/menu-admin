@@ -49,7 +49,7 @@ class _AddOrderPageState extends State<AddOrderPage>
 
   @override
   void initState() {
-    addOrderCubit.getCategories();
+    addOrderCubit.getCategories(widget.signInModel.restaurant.id);
     itemsCubit.getTables();
     super.initState();
   }
@@ -66,109 +66,104 @@ class _AddOrderPageState extends State<AddOrderPage>
 
   @override
   Future<void> onRefresh() async {
-    addOrderCubit.getCategories();
+    addOrderCubit.getCategories(widget.signInModel.restaurant.id);
     itemsCubit.getTables();
   }
 
   @override
   void onTryAgainTap() {
-    addOrderCubit.getCategories();
+    addOrderCubit.getCategories(widget.signInModel.restaurant.id);
     itemsCubit.getTables();
   }
 
   @override
   Widget build(BuildContext context) {
     final restColor = widget.signInModel.restaurant.color;
-    return BlocListener<AddOrderCubit, GeneralAddOrderState>(
-      listener: (context, state) {
-        if (state is AddToCartSuccess) {
-          setState(() {});
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
-        body: RefreshIndicator(
-          onRefresh: onRefresh,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: AppConstants.padding16,
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      MainBackButton(color: restColor ?? AppColors.black),
-                      const Spacer(),
-                      InkWell(
-                        onTap: onShowCartTap,
-                        child: Badge(
-                          backgroundColor: AppColors.red,
-                          textColor: AppColors.black,
-                          padding: AppConstants.padding2,
-                          label: Padding(
-                            padding: const EdgeInsets.only(bottom: 0),
-                            child: Text(
-                              addOrderCubit.cartItems.length.toString(),
+
+    return Scaffold(
+      appBar: AppBar(),
+      drawer: MainDrawer(signInModel: widget.signInModel),
+      body: RefreshIndicator(
+        onRefresh: onRefresh,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: AppConstants.padding16,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    MainBackButton(color: restColor ?? AppColors.black),
+                    const Spacer(),
+                    BlocBuilder<AddOrderCubit, GeneralAddOrderState>(
+                      buildWhen: (previous, current) => current is CartState,
+                      builder: (context, state) {
+                        final cartLength = addOrderCubit.cartItems.length;
+                        return InkWell(
+                          onTap: onShowCartTap,
+                          child: Badge(
+                            backgroundColor: AppColors.red,
+                            textColor: AppColors.black,
+                            padding: AppConstants.padding2,
+                            label: Padding(
+                              padding: const EdgeInsets.only(bottom: 0),
+                              child: Text(cartLength.toString()),
                             ),
-                          ),
-                          child: const Icon(Icons.shopping_cart, size: 30),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Text(
-                        "categories".tr(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const Spacer(),
-                      MainActionButton(
-                        padding: AppConstants.padding10,
-                        onPressed: onRefresh,
-                        text: "",
-                        child:
-                            const Icon(Icons.refresh, color: AppColors.white),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  BlocBuilder<AddOrderCubit, GeneralAddOrderState>(
-                    buildWhen: (previous, current) =>
-                        current is CategoriesSubsItemsState,
-                    builder: (context, state) {
-                      if (state is CategoriesSubsItemsLoading) {
-                        return const LoadingIndicator(color: AppColors.black);
-                      } else if (state is CategoriesSubsItemsSuccess) {
-                        final categories = state.categories;
-                        return Column(
-                          children: List.generate(
-                            categories.length,
-                            (index) {
-                              final category = categories[index];
-                              return CategoryListTile(category: category);
-                            },
+                            child: const Icon(Icons.shopping_cart, size: 30),
                           ),
                         );
-                      } else if (state is CategoriesSubsItemsEmpty) {
-                        return Text(state.message);
-                      } else if (state is CategoriesSubsItemsFail) {
-                        return MainErrorWidget(
-                          error: state.error,
-                          onTryAgainTap: onTryAgainTap,
-                        );
-                      } else {
-                        return const SizedBox.shrink();
-                      }
-                    },
-                  ),
-                ],
-              ),
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Text(
+                      "categories".tr(),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    MainActionButton(
+                      padding: AppConstants.padding10,
+                      onPressed: onRefresh,
+                      text: "",
+                      child: const Icon(Icons.refresh, color: AppColors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                BlocBuilder<AddOrderCubit, GeneralAddOrderState>(
+                  buildWhen: (previous, current) => current is CategoriesSubsItemsState,
+                  builder: (context, state) {
+                    if (state is CategoriesSubsItemsLoading) {
+                      return const LoadingIndicator(color: AppColors.black);
+                    } else if (state is CategoriesSubsItemsSuccess) {
+                      return Column(
+                        children: List.generate(
+                          state.categories.length,
+                              (index) {
+                            final category = state.categories[index];
+                            return CategoryListTile(category: category);
+                          },
+                        ),
+                      );
+                    } else if (state is CategoriesSubsItemsEmpty) {
+                      return Text(state.message);
+                    } else if (state is CategoriesSubsItemsFail) {
+                      return MainErrorWidget(
+                        error: state.error,
+                        onTryAgainTap: onTryAgainTap,
+                      );
+                    } else {
+                      return const SizedBox.shrink();
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ),

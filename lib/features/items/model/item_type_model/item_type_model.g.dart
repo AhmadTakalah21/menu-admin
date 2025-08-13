@@ -15,7 +15,9 @@ ItemTypeModel _$ItemTypeModelFromJson(Map<String, dynamic> json) =>
       price: const StringConverter().fromJson(json['price']),
       image: json['image'] as String?,
       itemId: (json['item_id'] as num?)?.toInt(),
-      isBasicComponent: (json['is_basic'] as num?)?.toInt() ?? 0,
+      descriptionAr: json['description_ar'] as String?,
+      descriptionEn: json['description_en'] as String?,
+      status: (json['status'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$ItemTypeModelToJson(ItemTypeModel instance) =>
@@ -28,7 +30,9 @@ Map<String, dynamic> _$ItemTypeModelToJson(ItemTypeModel instance) =>
       'price': _$JsonConverterToJson<dynamic, String>(
           instance.price, const StringConverter().toJson),
       'image': instance.image,
-      'is_basic': instance.isBasicComponent,
+      'description_ar': instance.descriptionAr,
+      'description_en': instance.descriptionEn,
+      'status': instance.status,
     };
 
 Json? _$JsonConverterToJson<Json, Value>(

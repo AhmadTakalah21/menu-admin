@@ -44,32 +44,45 @@ class HomeServiceImp implements HomeService {
       rethrow;
     }
   }
-
   @override
   Future<CategoryModel> editCategory(
-    EditCategoryModel editCategoryModel,
-    XFile? image, {
-    required bool isEdit,
-  }) async {
+      EditCategoryModel editCategoryModel,
+      XFile? image, {
+        required bool isEdit,
+      }) async {
     try {
       final url = isEdit ? "update" : "add";
       Map<String, dynamic> map = editCategoryModel.toJson();
-      
-     if(image != null){
-      map['image'] = await MultipartFile.fromFile(
-        image.path,
-        filename: image.name,
-      );
-     }
+      print("📦 editCategoryModel data: $map");
+
+      if (image != null) {
+        map['image'] = await MultipartFile.fromFile(
+          image.path,
+          filename: image.name,
+        );
+      }
 
       final response = await dio.post(
         "/admin_api/${url}_category",
         data: FormData.fromMap(map),
       );
+
       final categoryJson = response.data["data"] as Map<String, dynamic>;
       return CategoryModel.fromJson(categoryJson);
+    } on DioException catch (e) {
+      // طباعة مفصلة للخطأ في حالة DioException
+      print("❌ DioException in editCategory:");
+      print("🔹 URL: ${e.requestOptions.uri}");
+      print("🔹 Method: ${e.requestOptions.method}");
+      print("🔹 Status Code: ${e.response?.statusCode}");
+      print("🔹 Response Data: ${e.response?.data}");
+      print("🔹 Message: ${e.message}");
+      throw Exception("فشل تعديل التصنيف: ${e.response?.data}");
     } catch (e) {
+      // طباعة أي خطأ آخر غير معروف
+      print("❌ Unknown exception in editCategory: $e");
       rethrow;
     }
   }
+
 }

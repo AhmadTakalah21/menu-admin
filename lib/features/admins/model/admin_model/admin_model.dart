@@ -1,10 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'package:user_admin/features/admins/model/permission_model/permission_model.dart';
 import 'package:user_admin/global/utils/json_converters/bool_converter.dart';
+import 'package:user_admin/global/utils/json_converters/nullable_string_converter.dart'; // تأكد من وجود هذا
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
 import 'package:user_admin/global/widgets/main_drop_down_widget.dart';
 
@@ -16,6 +16,7 @@ class AdminModel implements DeleteModel, DropDownItemModel {
   const AdminModel({
     required this.id,
     required this.userName,
+    this.email,
     required this.name,
     required this.mobile,
     this.number,
@@ -35,6 +36,8 @@ class AdminModel implements DeleteModel, DropDownItemModel {
   @JsonKey(name: 'user_name')
   final String userName;
 
+  final String? email;
+
   final String name;
   final String mobile;
   final int? number;
@@ -42,6 +45,7 @@ class AdminModel implements DeleteModel, DropDownItemModel {
   @JsonKey(name: 'type_id')
   final int typeId;
 
+  @NullableStringConverter()
   final String? type;
 
   @override
@@ -49,14 +53,17 @@ class AdminModel implements DeleteModel, DropDownItemModel {
   @JsonKey(name: 'is_active')
   final bool isActive;
 
+  @NullableStringConverter()
   final String? avg;
 
   @JsonKey(name: 'restaurant_id')
   final int restaurantId;
 
+  @NullableStringConverter()
   @JsonKey(name: 'fcm_token')
   final String? fcmToken;
 
+  @NullableStringConverter()
   final String? roles;
 
   final List<PermissionModel>? permissions;

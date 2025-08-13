@@ -21,17 +21,28 @@ part 'states/sub_categories_in_master_state.dart';
 
 part 'states/image_state.dart';
 
+
 @injectable
 class HomeCubit extends Cubit<GeneralHomeState> {
   HomeCubit(this.homeService) : super(GeneralHomeInitial());
+
   final HomeService homeService;
 
   EditCategoryModel editCategoryModel = const EditCategoryModel();
   List<CategoryModel>? localSubCategories;
-  XFile? image;
+
+  /// ❌ لم نعد نستخدم image هنا مباشرة
+  // XFile? image;
 
   void setCategory(CategoryModel? category) {
-    editCategoryModel = editCategoryModel.copyWith(id: category?.id);
+    if (category == null) return;
+    editCategoryModel = editCategoryModel.copyWith(
+      id: category.id,
+      nameAr: category.nameAr,
+      nameEn: category.nameEn,
+      categoryId: category.categoryId,
+      image: category.image,
+    );
   }
 
   void setNameAr(String? nameAr) {
@@ -46,33 +57,66 @@ class HomeCubit extends Cubit<GeneralHomeState> {
     editCategoryModel = editCategoryModel.copyWith(categoryId: categoryId);
   }
 
-  Future<void> setImage() async {
+  /// ✅ اختيار صورة فقط بدون تخزينها مباشرة في المتغير العام
+  Future<XFile?> pickImage() async {
     try {
       emit(ImageLoading());
-      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        this.image = image;
-        emit(ImageUpdated(image));
-        // للحفاظ على حالة الفئات الحالية
-        if (state is CategoriesSuccess) {
-          emit(CategoriesSuccess((state as CategoriesSuccess).categories));
-        }
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        emit(ImageUpdated(picked));
+        return picked;
+      } else {
+        emit(ImageInitial());
       }
     } catch (e) {
       emit(ImageError(e.toString()));
-      // استعادة الحالة السابقة
-      if (state is CategoriesSuccess) {
-        emit(CategoriesSuccess((state as CategoriesSuccess).categories));
+    }
+    return null;
+  }
+
+  /// ✅ التعديل ليأخذ الصورة بشكل وسيط من الشاشة فقط
+  Future<void> editCategory({
+    required bool isEdit,
+    int? categoryId,
+    XFile? imageFile,
+  }) async {
+    final localSubCategories = this.localSubCategories;
+
+    if (isEdit) {
+      setCategoryId(categoryId);
+    } else {
+      setCategoryId(null);
+    }
+
+    if (editCategoryModel.id == null && isEdit) {
+      emit(EditCategoryFail("category_empty".tr()));
+      return;
+    }
+
+    emit(EditCategoryLoading());
+
+    try {
+      final editedCategory = await homeService.editCategory(
+        editCategoryModel,
+        imageFile,
+        isEdit: isEdit,
+      );
+
+      final successMessage =
+      isEdit ? "edit_category_success".tr() : "add_category_success".tr();
+
+      emit(EditCategorySuccess(editedCategory, successMessage));
+
+      if (localSubCategories != null && isEdit) {
+        emit(SubCategoriesSuccess(localSubCategories));
       }
+    } catch (e) {
+      emit(EditCategoryFail(e.toString()));
     }
   }
 
-
   bool isShowItems(List<RoleModel> permissions) {
-    int index = permissions.indexWhere(
-      (element) => element.name == "item.index",
-    );
-    return index != -1;
+    return permissions.any((e) => e.name == "item.index");
   }
 
   Future<void> getCategories({
@@ -83,96 +127,45 @@ class HomeCubit extends Cubit<GeneralHomeState> {
     final data = prefs.getStringList("cafe_categories_$categoryId");
 
     if (data != null && !isRefresh) {
-      List<CategoryModel> categories;
-      categories = List.generate(
-        data.length,
-        (index) => CategoryModel.fromString(data[index]),
-      );
-      if (categoryId == null) {
-        emit(CategoriesSuccess(categories));
-      } else {
-        emit(SubCategoriesInMasterSuccess(categories));
-      }
+      final categories = data.map(CategoryModel.fromString).toList();
+      emit(categoryId == null
+          ? CategoriesSuccess(categories)
+          : SubCategoriesInMasterSuccess(categories));
       return;
-    } else {
-      if (categoryId == null) {
-        emit(CategoriesLoading());
-      } else {
-        emit(SubCategoriesInMasterLoading());
-      }
+    }
 
-      try {
-        final response = await homeService.getCategories(
-          categoryId: categoryId,
-        );
+    emit(categoryId == null
+        ? CategoriesLoading()
+        : SubCategoriesInMasterLoading());
 
-        List<String> categoriesString;
-        categoriesString = List.generate(
-          response.length,
-          (index) => response[index].toString(),
-        );
-        prefs.setStringList(
-          "cafe_categories_$categoryId",
-          categoriesString,
-        );
-
-        if (categoryId == null) {
-          emit(CategoriesSuccess(response));
-        } else {
-          emit(SubCategoriesInMasterSuccess(response));
-        }
-      } catch (e) {
-        if (categoryId == null) {
-          emit(CategoriesFail(e.toString()));
-        } else {
-          emit(SubCategoriesInMasterFail(e.toString()));
-        }
-      }
+    try {
+      final response = await homeService.getCategories(categoryId: categoryId);
+      final encoded = response.map((e) => e.toString()).toList();
+      prefs.setStringList("cafe_categories_$categoryId", encoded);
+      emit(categoryId == null
+          ? CategoriesSuccess(response)
+          : SubCategoriesInMasterSuccess(response));
+    } catch (e) {
+      emit(categoryId == null
+          ? CategoriesFail(e.toString())
+          : SubCategoriesInMasterFail(e.toString()));
     }
   }
 
   Future<void> getCategoriesSub({required bool isRefresh}) async {
-    final localSubCategories = this.localSubCategories;
     if (localSubCategories != null && !isRefresh) {
-      emit(SubCategoriesSuccess(localSubCategories));
+      emit(SubCategoriesSuccess(localSubCategories!));
       return;
     }
+
     emit(SubCategoriesLoading());
 
     try {
       final response = await homeService.getCategoriesSub();
+      localSubCategories = response;
       emit(SubCategoriesSuccess(response));
-      this.localSubCategories = response;
     } catch (e) {
       emit(SubCategoriesFail(e.toString()));
-    }
-  }
-
-  Future<void> editCategory({required bool isEdit, int? categoryId}) async {
-    final localSubCategories = this.localSubCategories;
-    setCategoryId(categoryId);
-
-    if (editCategoryModel.id == null && isEdit) {
-      emit(EditCategoryFail("category_empty".tr()));
-      return;
-    }
-    emit(EditCategoryLoading());
-
-    try {
-      final editedCategory = await homeService.editCategory(
-        editCategoryModel,
-        image,
-        isEdit: isEdit,
-      );
-      final successMessage =
-          isEdit ? "edit_category_success".tr() : "add_category_success".tr();
-      emit(EditCategorySuccess(editedCategory, successMessage));
-
-      if (localSubCategories != null && isEdit) {
-        emit(SubCategoriesSuccess(localSubCategories));
-      }
-    } catch (e) {
-      emit(EditCategoryFail(e.toString()));
     }
   }
 }

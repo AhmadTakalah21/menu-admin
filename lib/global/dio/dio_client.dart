@@ -5,7 +5,10 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:user_admin/global/dio/app_interceptor.dart';
 import 'package:user_admin/global/utils/constants.dart';
 
-const baseUrl ="https://medical-clinic.serv00.net";
+// const baseUrl ="https://tmenuback.le.sy";
+const baseUrl ="http://192.168.1.34:4444";
+// const baseUrl = "https://tmenuback.addresses.sy";
+
 const apiUrl = '$baseUrl/user_api/';
 
 @singleton

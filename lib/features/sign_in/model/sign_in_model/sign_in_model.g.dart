@@ -11,7 +11,7 @@ SignInModel _$SignInModelFromJson(Map<String, dynamic> json) => SignInModel(
       userName: json['user_name'] as String,
       name: json['name'] as String,
       token: json['token'] as String,
-      type: json['type'] as String,
+      type: json['type'] as String?,
       typeId: (json['type_id'] as num).toInt(),
       restaurantId: (json['restaurant_id'] as num).toInt(),
       restaurant:

@@ -8,6 +8,7 @@ part 'order_details_model.g.dart';
 class OrderDetailsModel implements DeleteModel {
   OrderDetailsModel({
     this.id,
+    this.itemId,
     required this.name,
     this.type,
     this.nameEn,
@@ -27,6 +28,9 @@ class OrderDetailsModel implements DeleteModel {
   });
 
   final int? id;
+
+  @JsonKey(name: "item_id")
+  final int? itemId;
 
   final String name;
 

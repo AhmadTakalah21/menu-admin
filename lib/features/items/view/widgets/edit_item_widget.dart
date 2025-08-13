@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +22,7 @@ import 'package:user_admin/global/widgets/main_drop_down_widget.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
 import 'package:user_admin/global/widgets/main_text_field.dart';
 
+import '../../../../global/widgets/edit_item_image_section.dart';
 import '../../model/add_component_item_model/add_component_item_model.dart';
 import '../../model/add_nutrition_item_model/add_nutrition_item_model.dart';
 
@@ -72,6 +74,11 @@ abstract class EditItemWidgetCallBacks {
 
   void onPriceSizeChanged(String price, int index);
 
+  void onSetImageSize(int index, int? itemId);
+  void onDescriptionArSizeChanged(String desc, int index);
+  void onDescriptionEnSizeChanged(String desc, int index);
+
+
   void onRemoveSize(int index);
 
   void onAddComponentItem();
@@ -116,19 +123,19 @@ class _EditItemWidgetState extends State<EditItemWidget>
   final priceFocusNode = FocusNode();
   final isPanoramaFocusNode = FocusNode();
 
-  @override
-  @override
+
   @override
   void initState() {
     super.initState();
-
     final item = widget.item;
     final itemsCubit = context.read<ItemsCubit>();
-
     homeCubit.getCategoriesSub(isRefresh: true);
 
+    if (!widget.isEdit) {
+      itemsCubit.setCategory(widget.category.id);
+    }
+
     if (widget.isEdit && item != null) {
-      // ✅ تغذية البيانات من كائن nutrition
       final nutrition = item.nutrition;
 
       itemsCubit
@@ -145,15 +152,16 @@ class _EditItemWidgetState extends State<EditItemWidget>
         ..setFat(nutrition?.fat)
         ..setCarbs(nutrition?.carbs);
 
-      // ✅ إذا أردت تعيين وحدة القياس داخل موديل التعديل
       if (nutrition?.unit != null) {
         itemsCubit.editItemModel = itemsCubit.editItemModel.copyWith(
           nutrition: AddNutritionItemModel.fromJson(nutrition!.toJson()),
-
         );
       }
 
-      itemsCubit.getExtras(item, isRemove: false);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        itemsCubit.getExtras(item, isRemove: false);
+      });
+
       itemsCubit.getSizes(item, isRemove: false);
       itemsCubit.getComponents(item, isRemove: false);
     } else {
@@ -162,6 +170,8 @@ class _EditItemWidgetState extends State<EditItemWidget>
       itemsCubit.clearComponents();
     }
   }
+
+
 
 
   @override
@@ -272,6 +282,7 @@ class _EditItemWidgetState extends State<EditItemWidget>
     itemsCubit.setImageExtra(index, itemId: itemId);
   }
 
+
   @override
   void onAddSizeItem() {
     itemsCubit.addSize(widget.item);
@@ -291,6 +302,22 @@ class _EditItemWidgetState extends State<EditItemWidget>
   void onPriceSizeChanged(String price, int index) {
     itemsCubit.setPriceSize(price, index);
   }
+
+  @override
+  void onSetImageSize(int index, int? itemId) {
+    itemsCubit.setImageSize(index, itemId: itemId);
+  }
+
+  @override
+  void onDescriptionArSizeChanged(String desc, int index) {
+    itemsCubit.setDescriptionArSize(desc, index);
+  }
+
+  @override
+  void onDescriptionEnSizeChanged(String desc, int index) {
+    itemsCubit.setDescriptionEnSize(desc, index);
+  }
+
 
   @override
   void onRemoveSize(int index) {
@@ -341,25 +368,49 @@ class _EditItemWidgetState extends State<EditItemWidget>
 
   @override
   void onSaveTap() {
-    final cubit = context.read<ItemsCubit>();
-    final itemId = widget.item?.id;
+    final selectedCategoryId = itemsCubit.editItemModel.categoryId;
 
-    if (itemId != null) {
-      // استرجاع الصور الخاصة بهذا العنصر قبل الحفظ
-      cubit.selectedImage = cubit.getItemImage(itemId);
-      cubit.selectedImage2 = cubit.getItemIcon(itemId);
-
-      final extraImages = cubit.getItemExtraImages(itemId);
-      if (extraImages != null) {
-        cubit.imagesExtra = extraImages;
-      }
+    if (selectedCategoryId == null) {
+      MainSnackBar.showErrorMessage(
+        context,
+        "الرجاء اختيار تصنيف.".tr(),
+      );
+      return;
     }
 
-    cubit.editItem(
+    // ✅ تضمين التصنيف الممرر ضمن allCategories
+    final allCategories = [
+      ...(homeCubit.localSubCategories ?? []),
+      if (homeCubit.state is SubCategoriesInMasterSuccess)
+        ...(homeCubit.state as SubCategoriesInMasterSuccess).categories,
+      widget.category, // ✅ التصنيف الأساسي الممرر
+    ];
+
+    final selectedCategory = allCategories.firstWhereOrNull(
+          (c) => c.id == selectedCategoryId,
+    );
+
+    final isMainCategoryWithSub = selectedCategory != null &&
+        selectedCategory.categoryId == null &&
+        selectedCategory.content == 1;
+
+    if (isMainCategoryWithSub) {
+      MainSnackBar.showErrorMessage(
+        context,
+        "لا يمكن إضافة عنصر إلى تصنيف رئيسي يحتوي على تصنيفات فرعية.".tr(),
+      );
+      return;
+    }
+
+    // ✅ إذا كل شيء سليم، احفظ العنصر
+    itemsCubit.editItem(
       isEdit: widget.isEdit,
-      itemId: itemId,
+      itemId: widget.item?.id,
     );
   }
+
+
+
 
   @override
   void dispose() {
@@ -407,51 +458,46 @@ class _EditItemWidgetState extends State<EditItemWidget>
             ),
             const Divider(height: 30),
             BlocBuilder<ItemsCubit, GeneralItemsState>(
-              buildWhen: (previous, current) {
-                if (current is ItemImageUpdated && previous is ItemImageUpdated) {
-                  return current.selectedImage != previous.selectedImage ||
-                      current.selectedImage2 != previous.selectedImage2;
-                }
-                return false;
-              },
+              buildWhen: (previous, current) => current is ItemImageUpdated,
               builder: (context, state) {
                 final cubit = context.read<ItemsCubit>();
-                final item = widget.item;
+
+                final selectedImage =
+                state is ItemImageUpdated ? state.selectedImage : null;
+                final selectedImage2 =
+                state is ItemImageUpdated ? state.selectedImage2 : null;
 
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // الصورة الرئيسية
+                    /// ✅ الصورة الرئيسية
                     Column(
                       children: [
-                        InkWell(
-                          onTap: () => onImageTap(item?.id),
-                          child: _buildImageWidget(
-                            itemId: item?.id,
-                            isFirstImage: true,
-                            state: state,
-                          ),
+                        EditItemImageSection(
+                          networkImage: widget.item?.image,
+                          tempImage: selectedImage,
+                          onImageSelected: (_) => cubit.setImage(itemId: widget.item?.id),
+                          isMainImage: true,
                         ),
                         const SizedBox(height: 8),
-                        Text("product_image".tr()),
+                        // Text("product_image".tr()),
                       ],
                     ),
 
                     SizedBox(width: MediaQuery.of(context).size.width / 10),
 
-                    // الصورة الثانوية
+                    /// ✅ الصورة الثانوية (أيقونة)
                     Column(
                       children: [
-                        InkWell(
-                          onTap: () => onImage2Tap(item?.id),
-                          child: _buildImageWidget(
-                            itemId: item?.id,
-                            isFirstImage: false,
-                            state: state,
-                          ),
+                        EditItemImageSection(
+                          networkImage: widget.item?.icon,
+                          tempImage: selectedImage2,
+                          onImageSelected: (_) =>
+                              cubit.setImage2(itemId: widget.item?.id),
+                          isMainImage: false,
                         ),
                         const SizedBox(height: 8),
-                        Text("product_icon".tr()),
+                        // Text("product_icon".tr()),
                       ],
                     ),
                   ],
@@ -459,36 +505,36 @@ class _EditItemWidgetState extends State<EditItemWidget>
               },
             ),
 
-            const SizedBox(height: 10),
-            BlocBuilder<HomeCubit, GeneralHomeState>(
-              buildWhen: (previous, current) => current is SubCategoriesState,
-              builder: (context, state) {
-                if (state is SubCategoriesLoading) {
-                  return const LoadingIndicator(
-                    color: AppColors.black,
-                  );
-                } else if (state is SubCategoriesSuccess) {
-                  CategoryModel? initialCategory;
-                  if (item == null) {
-                    initialCategory = null;
-                  } else {
-                    initialCategory = state.categories.firstWhere(
-                      (element) => element.id == item.categoryId,
-                    );
-                  }
-                  return MainDropDownWidget<CategoryModel>(
-                    items: state.categories,
-                    text: "category".tr(),
-                    onChanged: onCategoryChanged,
-                    focusNode: categoryFocusNode,
-                    selectedValue: initialCategory,
-                  );
-                } else {
-                  return const SizedBox.shrink();
-                }
-              },
-            ),
-            const SizedBox(height: 10),
+            // const SizedBox(height: 10),
+            // BlocBuilder<HomeCubit, GeneralHomeState>(
+            //   buildWhen: (previous, current) => current is SubCategoriesState,
+            //   builder: (context, state) {
+            //     if (state is SubCategoriesLoading) {
+            //       return const LoadingIndicator(
+            //         color: AppColors.black,
+            //       );
+            //     } else if (state is SubCategoriesSuccess) {
+            //       CategoryModel? initialCategory;
+            //       if (item == null) {
+            //         initialCategory = null;
+            //       } else {
+            //         initialCategory = state.categories.firstWhere(
+            //           (element) => element.id == item.categoryId,
+            //         );
+            //       }
+            //       return MainDropDownWidget<CategoryModel>(
+            //         items: state.categories,
+            //         text: "category".tr(),
+            //         onChanged: onCategoryChanged,
+            //         focusNode: categoryFocusNode,
+            //         selectedValue: initialCategory,
+            //       );
+            //     } else {
+            //       return const SizedBox.shrink();
+            //     }
+            //   },
+            // ),
+            const SizedBox(height: 20),
             MainTextField(
               initialText: widget.item?.nameAr,
               onChanged: onNameArChanged,
@@ -721,73 +767,41 @@ class _EditItemWidgetState extends State<EditItemWidget>
                   return Column(
                     children: List.generate(
                       state.extras.length,
-                      (index) {
+                          (index) {
                         final extra = state.extras[index];
+                        final image = context.read<ItemsCubit>().getExtraImage(index);
+
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Center(
-                              child: InkWell(
-                                onTap: () => onSetImageExtra(index, widget.item?.id),
-                                child: item != null
-                                    ? BlocBuilder<ItemsCubit, GeneralItemsState>(
-                                  builder: (context, state) {
-                                    final cubit = context.read<ItemsCubit>();
-                                    XFile? extraImage;
-
-                                    if (widget.item?.id != null) {
-                                      final extraImages = cubit.getItemExtraImages(widget.item!.id);
-                                      if (extraImages != null && extraImages.length > index) {
-                                        extraImage = extraImages[index];
-                                      }
-                                    } else {
-                                      if (cubit.imagesExtra.length > index) {
-                                        extraImage = cubit.imagesExtra[index];
-                                      }
-                                    }
-
-                                    if (extraImage != null) {
-                                      return Image.file(
-                                        File(extraImage.path),
-                                        width: 200,
-                                        height: 200,
-                                        fit: BoxFit.contain,
-                                      );
-                                    }
-
-                                    return AppImageWidget(
-                                      width: 200,
-                                      fit: BoxFit.contain,
-                                      url: extra.icon ?? "",
-                                      errorWidget: _buildErrorWidget(),
-                                    );
-                                  },
-                                )
-                                    : Image.asset(
-                                    "assets/images/upload_image.png",
-                                    scale: 1.5),
-                              ),
+                              child:
+                                EditItemImageSection(
+                                  networkImage: extra.icon,
+                                  tempImage: image,
+                                  isMainImage: true, // or false, if needed
+                                  onImageSelected: (file) => setState(() {
+                                    onSetImageExtra(index, widget.item?.id);
+                                  }),
+                                ),
                             ),
                             const SizedBox(height: 5),
                             MainTextField(
                               initialText: extra.nameAr,
                               labelText: 'name_ar'.tr(),
-                              onChanged: (value) =>
-                                  onNameArExtraChanged(value, index),
+                              onChanged: (value) => onNameArExtraChanged(value, index),
                             ),
                             const SizedBox(height: 5),
                             MainTextField(
                               initialText: extra.nameEn,
                               labelText: 'name_en'.tr(),
-                              onChanged: (value) =>
-                                  onNameEnExtraChanged(value, index),
+                              onChanged: (value) => onNameEnExtraChanged(value, index),
                             ),
                             const SizedBox(height: 5),
                             MainTextField(
                               initialText: extra.price,
                               labelText: 'price'.tr(),
-                              onChanged: (value) =>
-                                  onPriceExtraChanged(value, index),
+                              onChanged: (value) => onPriceExtraChanged(value, index),
                               textInputType: TextInputType.phone,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
@@ -825,6 +839,7 @@ class _EditItemWidgetState extends State<EditItemWidget>
               fontWeight: FontWeight.w700,
               border: Border.all(color: AppColors.blueShade3),
             ),
+
             const Divider(height: 40),
             const SizedBox(height: 20),
             Text(
@@ -843,34 +858,59 @@ class _EditItemWidgetState extends State<EditItemWidget>
                   return Column(
                     children: List.generate(
                       state.sizes.length,
-                      (index) {
+                          (index) {
                         final size = state.sizes[index];
+                        final image = context.read<ItemsCubit>().getSizeImage(index);
+
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Center(
+                              child:
+                                EditItemImageSection(
+                                  networkImage: size.image,
+                                  tempImage: image,
+                                  isMainImage: true, // or false, if needed
+                                  onImageSelected: (file) => setState(() {
+                                    onSetImageExtra(index, widget.item?.id);
+                                  }),
+                                ),
+
+
+                            ),
+                            const SizedBox(height: 5),
                             MainTextField(
                               initialText: size.nameAr,
                               labelText: 'name_ar'.tr(),
-                              onChanged: (value) =>
-                                  onNameArSizeChanged(value, index),
+                              onChanged: (value) => onNameArSizeChanged(value, index),
                             ),
                             const SizedBox(height: 5),
                             MainTextField(
                               initialText: size.nameEn,
                               labelText: 'name_en'.tr(),
-                              onChanged: (value) =>
-                                  onNameEnSizeChanged(value, index),
+                              onChanged: (value) => onNameEnSizeChanged(value, index),
                             ),
                             const SizedBox(height: 5),
                             MainTextField(
                               initialText: size.price,
                               labelText: 'price'.tr(),
-                              onChanged: (value) =>
-                                  onPriceSizeChanged(value, index),
+                              onChanged: (value) => onPriceSizeChanged(value, index),
                               textInputType: TextInputType.phone,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
+                            ),
+                            const SizedBox(height: 5),
+                            MainTextField(
+                              initialText: size.descriptionAr,
+                              labelText: 'description_ar'.tr(),
+                              onChanged: (value) => onDescriptionArSizeChanged(value, index),
+                            ),
+                            const SizedBox(height: 5),
+                            MainTextField(
+                              initialText: size.descriptionEn,
+                              labelText: 'description_en'.tr(),
+                              onChanged: (value) => onDescriptionEnSizeChanged(value, index),
                             ),
                             const SizedBox(height: 5),
                             MainActionButton(
@@ -886,7 +926,8 @@ class _EditItemWidgetState extends State<EditItemWidget>
                             const SizedBox(height: 10),
                           ],
                         );
-                      },
+
+                          },
                     ),
                   );
                 } else {
@@ -904,6 +945,7 @@ class _EditItemWidgetState extends State<EditItemWidget>
               fontWeight: FontWeight.w700,
               border: Border.all(color: AppColors.blueShade3),
             ),
+
 
             const Divider(height: 40),
             const SizedBox(height: 20),
@@ -947,7 +989,7 @@ class _EditItemWidgetState extends State<EditItemWidget>
                               minHeight: 40.0,
                               initialLabelIndex: component.isBasicComponent == IsBasicComponent.yes ? 0 : 1,
                               totalSwitches: 2,
-                              labels: ["basic".tr(), "optional".tr()],
+                              labels: ["optional".tr(), "basic".tr()],
                               activeBgColor: const [AppColors.primaryDark],
                               activeFgColor: AppColors.white,
                               inactiveBgColor: AppColors.grey.shade100,
@@ -1074,22 +1116,14 @@ class _EditItemWidgetState extends State<EditItemWidget>
   }) {
     final cubit = context.read<ItemsCubit>();
 
-    // الحصول على الصورة الصحيحة بناءً على itemId
-    XFile? currentImage;
-    String? networkImage;
+    // 🟢 اعتمد دائمًا على الصور المؤقتة من الكيوبت
+    XFile? currentImage = isFirstImage
+        ? cubit.tempSelectedImage
+        : cubit.tempSelectedImage2;
 
-    if (itemId != null) {
-      currentImage = isFirstImage
-          ? cubit.getItemImage(itemId)
-          : cubit.getItemIcon(itemId);
-      networkImage = isFirstImage
-          ? widget.item?.image
-          : widget.item?.icon;
-    } else {
-      currentImage = isFirstImage
-          ? cubit.selectedImage
-          : cubit.selectedImage2;
-    }
+    String? networkImage = isFirstImage
+        ? widget.item?.image
+        : widget.item?.icon;
 
     // حالة التحميل
     if (state is ItemImageLoading) {
@@ -1109,7 +1143,7 @@ class _EditItemWidgetState extends State<EditItemWidget>
       );
     }
 
-    // عرض صورة مختارة من الجهاز
+    // 🟢 صورة من الجهاز (مختارة مؤقتًا)
     if (currentImage != null) {
       return Image.file(
         File(currentImage.path),
@@ -1119,7 +1153,7 @@ class _EditItemWidgetState extends State<EditItemWidget>
       );
     }
 
-    // عرض صورة من الشبكة
+    // 🔵 صورة من السيرفر
     else if (networkImage != null && networkImage.isNotEmpty) {
       return AppImageWidget(
         width: 150,
@@ -1130,11 +1164,12 @@ class _EditItemWidgetState extends State<EditItemWidget>
       );
     }
 
-    // صورة افتراضية
+    // ⚪ صورة افتراضية
     else {
       return _buildPlaceholder();
     }
   }
+
 
   Widget _buildErrorWidget() {
     return SizedBox(

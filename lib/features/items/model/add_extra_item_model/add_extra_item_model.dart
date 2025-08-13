@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'add_extra_item_model.g.dart';
@@ -13,6 +14,8 @@ class AddExtraItemModel {
     this.name,
     this.nameEn,
     this.nameAr,
+    this.itemId,
+    this.localImage,
   });
 
   final int? id;
@@ -26,6 +29,11 @@ class AddExtraItemModel {
   @JsonKey(name: 'name_ar')
   final String? nameAr;
 
+  final int? itemId;
+
+  @JsonKey(ignore: true)
+  final XFile? localImage;
+
   AddExtraItemModel copyWith({
     int? id,
     String? price,
@@ -33,6 +41,8 @@ class AddExtraItemModel {
     String? name,
     String? nameEn,
     String? nameAr,
+    int? itemId,
+    XFile? localImage,
   }) {
     return AddExtraItemModel(
       id: id ?? this.id,
@@ -41,6 +51,8 @@ class AddExtraItemModel {
       name: name ?? this.name,
       nameEn: nameEn ?? this.nameEn,
       nameAr: nameAr ?? this.nameAr,
+      itemId: itemId ?? this.itemId,
+      localImage: localImage ?? this.localImage,
     );
   }
 

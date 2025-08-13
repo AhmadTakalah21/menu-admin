@@ -26,28 +26,27 @@ class AddCouponModel {
   final String? _percent;
 
   @JsonKey(name: "from_date")
-  String get fromDate {
-    if (_fromDate == null || _fromDate.isEmpty) {
-      throw "from_date_empty".tr();
-    }
-    return _fromDate;
-  }
+  String? get fromDate => _fromDate;
 
   @JsonKey(name: "to_date")
-  String get toDate {
-    if (_toDate == null || _toDate.isEmpty) {
+  String? get toDate => _toDate;
+
+  String? get percent => _percent;
+
+  /// دالة تحقق من القيم المطلوبة
+  void validateFields() {
+    if (_fromDate == null || _fromDate!.isEmpty) {
+      throw "from_date_empty".tr();
+    }
+    if (_toDate == null || _toDate!.isEmpty) {
       throw "to_date_empty".tr();
     }
-    return _toDate;
-  }
-
-  String get percent {
-    if (_percent == null || _percent.isEmpty) {
+    if (_percent == null || _percent!.isEmpty) {
       throw "percent_empty".tr();
     }
-    return _percent;
   }
 
+  /// تحقق فقط من الكود
   bool validateCode() {
     final code = this.code;
     return code != null && code.isNotEmpty;

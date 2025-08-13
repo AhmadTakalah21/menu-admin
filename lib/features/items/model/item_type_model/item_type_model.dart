@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:user_admin/global/utils/json_converters/string_converter.dart';
@@ -18,7 +17,9 @@ class ItemTypeModel implements DropDownItemModel {
     @StringConverter() this.price,
     this.image,
     this.itemId,
-    this.isBasicComponent = 0,
+    @JsonKey(name: "description_ar") this.descriptionAr,
+    @JsonKey(name: "description_en") this.descriptionEn,
+    @JsonKey(name: "status") this.status = 0,
   });
 
   @override
@@ -40,8 +41,15 @@ class ItemTypeModel implements DropDownItemModel {
 
   final String? image;
 
-  @JsonKey(name: "is_basic")
-  final int isBasicComponent;
+  @JsonKey(name: "description_ar")
+  final String? descriptionAr;
+
+  @JsonKey(name: "description_en")
+  final String? descriptionEn;
+
+  final int status;
+
+  bool get isSelectable => status == 1;
 
   factory ItemTypeModel.fromJson(Map<String, dynamic> json) =>
       _$ItemTypeModelFromJson(json);
@@ -49,13 +57,10 @@ class ItemTypeModel implements DropDownItemModel {
   Map<String, dynamic> toJson() => _$ItemTypeModelToJson(this);
 
   @override
-  String toString() {
-    return jsonEncode(toJson());
-  }
+  String toString() => jsonEncode(toJson());
 
-  factory ItemTypeModel.fromString(String jsonString) {
-    return ItemTypeModel.fromJson(json.decode(jsonString));
-  }
+  factory ItemTypeModel.fromString(String jsonString) =>
+      ItemTypeModel.fromJson(json.decode(jsonString));
 
   ItemTypeModel copyWith({
     int? id,
@@ -65,7 +70,9 @@ class ItemTypeModel implements DropDownItemModel {
     String? nameAr,
     String? price,
     String? image,
-    int? isBasicComponent,
+    String? descriptionAr,
+    String? descriptionEn,
+    int? status,
   }) {
     return ItemTypeModel(
       id: id ?? this.id,
@@ -75,12 +82,12 @@ class ItemTypeModel implements DropDownItemModel {
       nameAr: nameAr ?? this.nameAr,
       price: price ?? this.price,
       image: image ?? this.image,
-      isBasicComponent: isBasicComponent ?? this.isBasicComponent,
+      descriptionAr: descriptionAr ?? this.descriptionAr,
+      descriptionEn: descriptionEn ?? this.descriptionEn,
+      status: status ?? this.status,
     );
   }
 
   @override
   String get displayName => name ?? '';
-
-  bool get isBasic => isBasicComponent == 1;
 }

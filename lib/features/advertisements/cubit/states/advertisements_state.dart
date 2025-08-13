@@ -24,3 +24,9 @@ class AdvertisementsFail extends AdvertisementsState {
 
   AdvertisementsFail(this.error);
 }
+class AdvertisementImageUpdated extends AdvertisementsState {
+  final XFile image;
+
+  AdvertisementImageUpdated({required this.image});
+}
+

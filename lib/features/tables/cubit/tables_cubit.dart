@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:user_admin/features/customer_service/model/service_model/service_model.dart';
 import 'package:user_admin/features/items/model/add_order_item/add_order_item.dart';
 import 'package:user_admin/features/items/model/is_panorama_enum.dart';
@@ -39,7 +40,7 @@ part 'states/add_service_to_order_state.dart';
 @Injectable()
 class TablesCubit extends Cubit<GeneralTablesState> {
   TablesCubit(this.tablesService) : super(GeneralTablesInitial()) {
-    initWebSocket(); // يتم التنفيذ عند الإنشاء
+    initWebSocket();
   }
   final TablesService tablesService;
   final ItemsService itemsService = ItemsServiceImp();
@@ -68,7 +69,7 @@ class TablesCubit extends Cubit<GeneralTablesState> {
     _channel?.sink.close();
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.1.102:8080/app/bqfkpognxb0xxeax5bjc'),
+      Uri.parse('ws://192.168.1.34:8080/app/bqfkpognxb0xxeax5bjc'),
     );
 
     _channel?.stream.listen(
@@ -134,28 +135,41 @@ class TablesCubit extends Cubit<GeneralTablesState> {
       }
 
       if (decoded['event'] == 'App\\Events\\TableUpdatedEvent') {
-        final rawData = decoded['data']; // هذا String
-        final parsedData = jsonDecode(rawData); // ✅ فك التشفير الثاني
-        _processTableData(parsedData); // ⬅️ الآن سترى البيانات بشكل صحيح
+        final rawData = decoded['data'];
+        final parsedData = jsonDecode(rawData);
+        _processTableData(parsedData);
       }
     } catch (e) {
       print("❌ خطأ في تحليل الرسالة: $e");
     }
   }
 
-  void _subscribeToChannel() {
+  void _subscribeToChannel() async {
+    final prefs = await SharedPreferences.getInstance();
+    final restaurantId = prefs.getInt('restaurantId');
+
+    if (restaurantId == null) {
+      print("⚠️ لم يتم العثور على restaurantId في SharedPreferences");
+      return;
+    }
+
+    final channelName = "restaurant$restaurantId";
+
     _channel?.sink.add(jsonEncode({
       "event": "pusher:subscribe",
-      "data": {"channel": "restaurant46"}
+      "data": {
+        "channel": channelName,
+      }
     }));
-    print("🔄 جاري الاشتراك في القناة...");
+
+    print("✅ تم الاشتراك في القناة: $channelName");
   }
 
 
 
   void _reconnect() {
     _isConnected = false;
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       print("⚡ محاولة إعادة اتصال...");
       initWebSocket();
     });
@@ -215,7 +229,7 @@ class TablesCubit extends Cubit<GeneralTablesState> {
   }
 
   void setServiceId(ServiceModel? service) {
-    addServiceToOrderModel = addServiceToOrderModel.copyWith(id: service?.id);
+    addServiceToOrderModel = addServiceToOrderModel.copyWith(serviceId: service?.id);
   }
 
   void setCountOfService(String count) {
@@ -242,9 +256,14 @@ class TablesCubit extends Cubit<GeneralTablesState> {
         editTableModel,
         isEdit: isEdit,
       );
-      final successMessage =
-          isEdit ? "edit_table_success".tr() : "add_table_success".tr();
+
+      final successMessage = isEdit
+          ? "edit_table_success".tr()
+          : "add_table_success".tr();
+
       emit(EditTableSuccess(editedTable, successMessage));
+
+      await getTables();
     } catch (e) {
       emit(EditTableFail(e.toString()));
     }
@@ -321,6 +340,7 @@ class TablesCubit extends Cubit<GeneralTablesState> {
   }
 
   Future<void> addService() async {
+    emit(AddServiceToOrderLoading());
     try {
       await tablesService.addService(addServiceToOrderModel);
       emit(AddServiceToOrderSuccess("add_service_success".tr()));
@@ -329,4 +349,5 @@ class TablesCubit extends Cubit<GeneralTablesState> {
       emit(AddServiceToOrderFail(e.toString()));
     }
   }
+
 }

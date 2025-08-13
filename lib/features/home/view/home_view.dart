@@ -21,6 +21,8 @@ import 'package:user_admin/global/widgets/main_back_button.dart';
 import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 
+import '../../items/view/items_view.dart';
+
 abstract class HomeViewCallBacks {
   void onAddCategoryTap();
 
@@ -118,18 +120,124 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
 
   @override
   void onCategoryTap(CategoryModel category) {
-    if (category.content == 1) {
+    final hasContent = category.content == 1 || category.content == 2;
+
+    if (hasContent) {
+      // الصنف يحتوي على بيانات (subcategories أو items) ← الدخول مباشرة
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SubCategoriesView(
+          builder: (context) => category.content == 1
+              ? SubCategoriesView(
             masterCategory: category,
+            signInModel: widget.signInModel,
+          )
+              : ItemsView(
+            category: category,
             signInModel: widget.signInModel,
           ),
         ),
       );
+    } else {
+      // الصنف فارغ → عرض مربع اختيار
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.category, size: 48, color: Theme.of(context).primaryColor),
+                  const SizedBox(height: 16),
+                  Text(
+                    'اختيار الإجراء'.tr(),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'هل ترغب بإضافة عنصر مباشرة أو إدارة التصنيفات الفرعية؟'.tr(),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.add),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ItemsView(
+                                  category: category,
+                                  signInModel: widget.signInModel,
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          label: Text('إضافة عنصر'.tr()),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.list),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SubCategoriesView(
+                                  masterCategory: category,
+                                  signInModel: widget.signInModel,
+                                ),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(color: Theme.of(context).primaryColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          label: Text(
+                            'إدارة التصنيفات الفرعية'.tr(),
+                            style: TextStyle(color: Theme.of(context).primaryColor),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
     }
   }
+
+
+
+
 
   @override
   void onDeleteTap(CategoryModel category) {
@@ -147,6 +255,10 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
 
   @override
   void onEditTap(CategoryModel category) {
+    // 🟢 إعداد بيانات الصنف للتعديل
+    context.read<HomeCubit>().setCategory(category);
+
+    // 🔄 فتح نافذة التعديل
     showDialog(
       context: context,
       builder: (context) {
@@ -157,6 +269,7 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
       },
     );
   }
+
 
   @override
   Future<void> onRefresh() async {
@@ -206,7 +319,7 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
                   const SizedBox(height: 20),
                   BlocBuilder<HomeCubit, GeneralHomeState>(
                     buildWhen: (previous, current) =>
-                        current is CategoriesState,
+                    current is CategoriesState || current is ImageState,
                     builder: (context, state) =>
                         _buildCategoriesList(state, isEdit, isDelete, isActive),
                   ),

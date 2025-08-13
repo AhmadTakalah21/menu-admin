@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 abstract class AppConstants {
-  static const restaurantId = "46";
+  static const restaurantId = "2";
   static const languages = ["EN", "AR"];
 
   static const duration20s = Duration(seconds: 20);

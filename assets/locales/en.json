@@ -265,6 +265,8 @@
     "fat": "Fat",
     "carbs": "Carbs",
     "unit" : "Unit",
-  "add_nutrition_info": "Add nutrition info"
+  "add_nutrition_info": "Add nutrition info",
+    "add_item_success" : "Add item success",
+    "edit_item_success" : "Edit item success"
 
 }

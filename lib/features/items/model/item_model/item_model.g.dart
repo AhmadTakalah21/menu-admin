@@ -29,9 +29,6 @@ ItemModel _$ItemModelFromJson(Map<String, dynamic> json) => ItemModel(
       componentsTypes: (json['components'] as List<dynamic>?)
           ?.map((e) => ItemTypeModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      isBasicComponent: json['is_basic_component'] == null
-          ? 0
-          : const IntConverter().fromJson(json['is_basic_component']),
       price: const StringConverter().fromJson(json['price']),
       description: json['description'] as String?,
       descriptionEn: json['description_en'] as String?,
@@ -60,8 +57,6 @@ Map<String, dynamic> _$ItemModelToJson(ItemModel instance) => <String, dynamic>{
       'toppings': instance.itemTypes.map((e) => e.toJson()).toList(),
       'sizes': instance.sizesTypes.map((e) => e.toJson()).toList(),
       'components': instance.componentsTypes.map((e) => e.toJson()).toList(),
-      'is_basic_component':
-          const IntConverter().toJson(instance.isBasicComponent),
       'nutrition': instance.nutrition?.toJson(),
     };
 

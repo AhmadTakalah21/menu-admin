@@ -13,6 +13,7 @@ class UpdateAdminModel {
     this.id,
     String? name,
     String? username,
+    String? email,
     String? password,
     String? mobile,
     int? typeId,
@@ -20,7 +21,8 @@ class UpdateAdminModel {
     List<int> categories = const [],
   })  : _name = name,
         _username = username,
-        _password = password,
+        _email = email,
+      _password = password,
         _mobile = mobile,
         _typeId = typeId,
         _role = role,
@@ -31,6 +33,8 @@ class UpdateAdminModel {
   final String? _name;
 
   final String? _username;
+
+  final String? _email;
 
   final String? _password;
 
@@ -55,6 +59,13 @@ class UpdateAdminModel {
       throw "username_empty".tr();
     }
     return _username;
+  }
+
+  String get email {
+    if (_email == null || _email.isEmpty) {
+      throw "email_empty".tr();
+    }
+    return _email;
   }
 
   String get password {
@@ -91,13 +102,11 @@ class UpdateAdminModel {
   @JsonKey(name: "category")
   List<int>? get categories {
     if (_typeId == 4 || _typeId == 8) {
-      if (_categories.isEmpty) {
-        throw "categories_empty".tr();
-      }
-      return _categories;
+      return _categories.isEmpty ? [] : _categories;
     }
     return null;
   }
+
 
   Map<String, dynamic> toJson() => _$UpdateAdminModelToJson(this);
 
@@ -117,6 +126,7 @@ class UpdateAdminModel {
     int? id,
     String? name,
     String? username,
+    String? email,
     String? password,
     String? mobile,
     int? typeId,
@@ -127,6 +137,7 @@ class UpdateAdminModel {
       id: id ?? this.id,
       name: name ?? _name,
       username: username ?? _username,
+      email: email ?? _email,
       password: password ?? _password,
       mobile: mobile ?? _mobile,
       typeId: typeId ?? _typeId,

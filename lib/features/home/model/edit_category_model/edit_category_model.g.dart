@@ -12,6 +12,7 @@ EditCategoryModel _$EditCategoryModelFromJson(Map<String, dynamic> json) =>
       nameAr: json['name_ar'] as String?,
       nameEn: json['name_en'] as String?,
       categoryId: (json['category_id'] as num?)?.toInt(),
+      image: json['image'] as String?,
     );
 
 Map<String, dynamic> _$EditCategoryModelToJson(EditCategoryModel instance) =>
@@ -20,4 +21,5 @@ Map<String, dynamic> _$EditCategoryModelToJson(EditCategoryModel instance) =>
       'name_ar': instance.nameAr,
       'name_en': instance.nameEn,
       'category_id': instance.categoryId,
+      'image': instance.image,
     };

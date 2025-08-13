@@ -191,7 +191,7 @@ class _TakeoutOrdersPageState extends State<TakeoutOrdersPage>
                           final values = [
                             Text(invoice.user ?? "_"),
                             Text(invoice.deliveryName ?? "_"),
-                            Text(invoice.deliveryAddress ?? "_"),
+                            Text(invoice.region ?? "_"),
                             Text(invoice.userPhone ?? "_"),
                             Text(invoice.createdAt),
                             Text(invoice.receivedAt ?? "_"),

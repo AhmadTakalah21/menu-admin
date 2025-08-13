@@ -53,6 +53,10 @@ class AdminsCubit extends Cubit<GeneralAdminsState> {
     updateAdminModel = updateAdminModel.copyWith(username: username);
   }
 
+  void setEmail(String? email) {
+    updateAdminModel = updateAdminModel.copyWith(email: email);
+  }
+
   void setPassword(String? password) {
     updateAdminModel = updateAdminModel.copyWith(password: password);
   }

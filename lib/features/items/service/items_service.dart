@@ -22,20 +22,22 @@ abstract class ItemsService {
   });
 
   Future<ItemModel> editItem(
-    EditItemModel editItemModel,
-    List<AddExtraItemModel> extras,
+      EditItemModel editItemModel,
+      List<AddExtraItemModel> extras,
       List<AddSizeItemModel> sizes,
       List<AddComponentItemModel> components,
-
-    XFile? image,
+      XFile? image,
       XFile? icon,
-    List<XFile?> imagesExtra, {
-    required bool isEdit,
-  });
+      List<XFile?> imagesExtra,
+      List<XFile?> imagesSizes,
+          {
+        required bool isEdit,
+      }
+      );
 
   Future<PaginatedModel<TableModel>> getTables({int? page});
 
-  Future<void> addOrder(Map<String,dynamic> map);
+  Future<void> addOrder(Map<String, dynamic> map);
 
   Future<List<ItemModel>> getSimilarItems(String type);
 }

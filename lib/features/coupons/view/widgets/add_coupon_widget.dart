@@ -151,11 +151,17 @@ class _AddCouponWidgetState extends State<AddCouponWidget>
 
   @override
   void onSaveTap() {
-    couponsCubit.addCoupon(
-      isEdit: widget.isEdit,
-      couponId: widget.coupon?.id,
-    );
+    try {
+      couponsCubit.addCouponModel.validateFields(); // ✅ تحقق يدوي من الحقول المطلوبة
+      couponsCubit.addCoupon(
+        isEdit: widget.isEdit,
+        couponId: widget.coupon?.id,
+      );
+    } catch (e) {
+      MainSnackBar.showErrorMessage(context, e.toString());
+    }
   }
+
 
   @override
   void onIgnoreTap() {

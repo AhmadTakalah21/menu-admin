@@ -64,6 +64,7 @@ class _AdvertisemntsPageState extends State<AdvertisemntsPage>
   @override
   void initState() {
     super.initState();
+    advertisementsCubit.getAdvertisements(isRefresh: true);
     subscription = Connectivity()
         .onConnectivityChanged
         .listen((List<ConnectivityResult> result) {

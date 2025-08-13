@@ -20,6 +20,8 @@ EditItemModel _$EditItemModelFromJson(Map<String, dynamic> json) =>
           ? null
           : AddNutritionItemModel.fromJson(
               json['nutrition'] as Map<String, dynamic>),
+      image: json['image'] as String?,
+      icon: json['icon'] as String?,
     );
 
 Map<String, dynamic> _$EditItemModelToJson(EditItemModel instance) =>
@@ -29,6 +31,8 @@ Map<String, dynamic> _$EditItemModelToJson(EditItemModel instance) =>
       'description_en': instance.descriptionEn,
       'is_panorama': instance.isPanorama,
       'nutrition': instance.nutrition,
+      'image': instance.image,
+      'icon': instance.icon,
       'name_ar': instance.nameAr,
       'name_en': instance.nameEn,
       'price': instance.price,

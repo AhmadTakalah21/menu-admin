@@ -61,6 +61,7 @@ class AdminsServiceImp implements AdminsService {
         'id': updateAdminModel.id,
         'name': updateAdminModel.name,
         'user_name': updateAdminModel.username,
+        'email': updateAdminModel.email,
         'password': updateAdminModel.password,
         'mobile': updateAdminModel.mobile,
         'type_id': updateAdminModel.typeId,

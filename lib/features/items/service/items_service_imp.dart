@@ -41,6 +41,7 @@ class ItemsServiceImp implements ItemsService {
       List<AddComponentItemModel> components,
       XFile? image,
       XFile? icon,
+      List<XFile?> imagesSizes,
       List<XFile?> imagesExtra, {
         required bool isEdit,
       }) async {
@@ -60,7 +61,7 @@ class ItemsServiceImp implements ItemsService {
       _handleExtras(map, extras, imagesExtra);
 
       // 3. معالجة الأحجام (Sizes)
-      _handleSizes(map, sizes);
+      await _handleSizes(map, sizes, imagesSizes);
 
       // 4. معالجة المكونات (Components)
       _handleComponents(map, components);
@@ -130,7 +131,7 @@ class ItemsServiceImp implements ItemsService {
     }
   }
 
-  void _handleSizes(Map<String, dynamic> map, List<AddSizeItemModel> sizes) {
+  Future<void> _handleSizes(Map<String, dynamic> map, List<AddSizeItemModel> sizes, List<XFile?> imagesSizes) async {
     final validSizes = sizes.where((s) =>
     (s.nameAr?.trim().isNotEmpty ?? false) &&
         (s.nameEn?.trim().isNotEmpty ?? false) &&
@@ -142,15 +143,29 @@ class ItemsServiceImp implements ItemsService {
 
       for (int index = 0; index < validSizes.length; index++) {
         final size = validSizes[index];
+        final sizeImage = (imagesSizes.length > index) ? imagesSizes[index] : null;
+
         map["sizes[$index][name_ar]"] = size.nameAr ?? '';
         map["sizes[$index][name_en]"] = size.nameEn ?? '';
         map["sizes[$index][price]"] = size.price ?? '';
+        map["sizes[$index][description_ar]"] = size.descriptionAr ?? '';
+        map["sizes[$index][description_en]"] = size.descriptionEn ?? '';
+
+        if (sizeImage != null) {
+          map["sizes[$index][image]"] = await MultipartFile.fromFile(
+            sizeImage.path,
+            filename: sizeImage.name,
+          );
+        }
       }
     } else {
       map['is_size'] = 0;
       map['sizes'] = [];
     }
   }
+
+
+
 
 
   void _handleComponents(Map<String, dynamic> map, List<AddComponentItemModel> components) {

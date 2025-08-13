@@ -25,7 +25,7 @@ UpdateRestaurantModel _$UpdateRestaurantModelFromJson(
       consumerSpending: json['consumer_spending'] as String?,
       localAdministration: json['local_administration'] as String?,
       reconstruction: json['reconstruction'] as String?,
-      priceKm: json['price_km'] as String?,
+      priceKm: (json['price_km'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$UpdateRestaurantModelToJson(

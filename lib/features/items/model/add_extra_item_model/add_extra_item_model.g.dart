@@ -14,6 +14,7 @@ AddExtraItemModel _$AddExtraItemModelFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String?,
       nameEn: json['name_en'] as String?,
       nameAr: json['name_ar'] as String?,
+      itemId: (json['itemId'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$AddExtraItemModelToJson(AddExtraItemModel instance) =>
@@ -24,4 +25,5 @@ Map<String, dynamic> _$AddExtraItemModelToJson(AddExtraItemModel instance) =>
       'name': instance.name,
       'name_en': instance.nameEn,
       'name_ar': instance.nameAr,
+      'itemId': instance.itemId,
     };

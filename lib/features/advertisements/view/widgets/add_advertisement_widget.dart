@@ -15,6 +15,8 @@ import 'package:user_admin/global/widgets/main_drop_down_widget.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
 import 'package:user_admin/global/widgets/main_text_field.dart';
 
+import '../../../../global/widgets/advertisement_image_section.dart';
+
 abstract class AddAdvertisementWidgetCallBacks {
   void onNameChanged(String name);
 
@@ -172,11 +174,17 @@ class _AddAdvertisementWidgetState extends State<AddAdvertisementWidget>
 
   @override
   void onSaveTap() {
-    advertisementsCubit.addAdvertisement(
-      isEdit: widget.isEdit,
-      advertisementId: widget.advertisement?.id,
-    );
+    try {
+      advertisementsCubit.addAdvertisementModel.validateFields(); // ✅ تحقق من الحقول
+      advertisementsCubit.addAdvertisement(
+        isEdit: widget.isEdit,
+        advertisementId: widget.advertisement?.id,
+      );
+    } catch (e) {
+      MainSnackBar.showErrorMessage(context, e.toString());
+    }
   }
+
 
   @override
   void dispose() {
@@ -217,7 +225,7 @@ class _AddAdvertisementWidgetState extends State<AddAdvertisementWidget>
             Text(
               widget.isEdit
                   ? "edit_advertisement".tr()
-                  : "edit_advertisement".tr(),
+                  : "add_advertisement".tr(),
               style: const TextStyle(
                 color: AppColors.black,
                 fontWeight: FontWeight.w600,
@@ -225,26 +233,21 @@ class _AddAdvertisementWidgetState extends State<AddAdvertisementWidget>
               ),
             ),
             const Divider(height: 30),
-            InkWell(
-              onTap: onImageTap,
-              child: advertisement != null
-                  ? AppImageWidget(
-                      width: 200,
-                      fit: BoxFit.contain,
-                      url: advertisement.image,
-                      errorWidget: SizedBox(
-                        height: 200,
-                        child: Center(
-                          child: Text(
-                            "${"no_image".tr()} \n ${"click_to_edit".tr()}",
-                            style: const TextStyle(fontSize: 20),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Image.asset("assets/images/upload_image.png", scale: 1.5),
+            BlocBuilder<AdvertisementsCubit, GeneralAdvertisementsState>(
+              buildWhen: (previous, current) => current is AdvertisementImageUpdated,
+              builder: (context, state) {
+                final tempImage = state is AdvertisementImageUpdated ? state.image : null;
+
+                return AdvertisementImageSection(
+                  networkImage: widget.advertisement?.image,
+                  tempImage: tempImage,
+                  onImageSelected: (pickedImage) {
+                    advertisementsCubit.setImage();
+                  },
+                );
+              },
             ),
+
             const SizedBox(height: 20),
             MainTextField(
               initialText: widget.advertisement?.title,

@@ -30,30 +30,28 @@ class AddAdvertisementModel {
   final int? hideDate;
 
   final String? _fromDate;
-
   final String? _toDate;
 
-  String get title {
-    if (_title == null || _title.isEmpty) {
-      throw "name_empty".tr();
-    }
-    return _title;
-  }
+  @JsonKey(name: "title")
+  String? get title => _title;
 
   @JsonKey(name: "from_date")
-  String get fromDate {
-    if (_fromDate == null || _fromDate.isEmpty) {
-      throw "from_date_empty".tr();
-    }
-    return _fromDate;
-  }
+  String? get fromDate => _fromDate;
 
   @JsonKey(name: "to_date")
-  String get toDate {
-    if (_toDate == null || _toDate.isEmpty) {
+  String? get toDate => _toDate;
+
+  /// ✅ دالة تحقق آمنة من القيم المطلوبة
+  void validateFields() {
+    if (_title == null || _title!.isEmpty) {
+      throw "name_empty".tr();
+    }
+    if (_fromDate == null || _fromDate!.isEmpty) {
+      throw "from_date_empty".tr();
+    }
+    if (_toDate == null || _toDate!.isEmpty) {
       throw "to_date_empty".tr();
     }
-    return _toDate;
   }
 
   AddAdvertisementModel copyWith({

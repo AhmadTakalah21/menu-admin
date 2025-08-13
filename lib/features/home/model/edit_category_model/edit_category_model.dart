@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -10,50 +9,40 @@ part 'edit_category_model.g.dart';
 @immutable
 class EditCategoryModel {
   const EditCategoryModel({
-    int? id,
-    String? nameAr,
-    String? nameEn,
-    int? categoryId,
-  })  : _id = id,
-        _nameAr = nameAr,
-        _nameEn = nameEn,
-        _categoryId = categoryId;
+    this.id,
+    this.nameAr,
+    this.nameEn,
+    this.categoryId,
+    this.image,
+  });
 
-  final int? _id;
-  final String? _nameAr;
-  final String? _nameEn;
-  final int? _categoryId;
-
-  int? get id {
-    return _id;
-  }
+  final int? id;
 
   @JsonKey(name: "name_ar")
-  String get nameAr {
-    return _nameAr ?? (throw "name_ar_empty".tr());
-  }
+  final String? nameAr;
 
   @JsonKey(name: "name_en")
-  String get nameEn {
-    return _nameEn ?? (throw "name_ar_empty".tr());
-  }
+  final String? nameEn;
 
   @JsonKey(name: "category_id")
-  int? get categoryId {
-    return _categoryId;
-  }
+  final int? categoryId;
+
+  /// 🔵 رابط الصورة الأصلية من السيرفر (غير مستخدم في API، فقط للعرض المؤقت)
+  final String? image;
 
   EditCategoryModel copyWith({
     int? id,
     String? nameAr,
     String? nameEn,
     int? categoryId,
+    String? image,
   }) {
     return EditCategoryModel(
-      id: id ?? _id,
-      nameAr: nameAr ?? _nameAr,
-      nameEn: nameEn ?? _nameEn,
-      categoryId: categoryId ?? _categoryId,
+      id: id ?? this.id,
+      nameAr: nameAr ?? this.nameAr,
+      nameEn: nameEn ?? this.nameEn,
+      categoryId: categoryId ?? this.categoryId,
+      image: image ?? this.image,
     );
   }
 
@@ -63,11 +52,8 @@ class EditCategoryModel {
   Map<String, dynamic> toJson() => _$EditCategoryModelToJson(this);
 
   @override
-  String toString() {
-    return jsonEncode(toJson());
-  }
+  String toString() => jsonEncode(toJson());
 
-  factory EditCategoryModel.fromString(String jsonString) {
-    return EditCategoryModel.fromJson(json.decode(jsonString));
-  }
+  factory EditCategoryModel.fromString(String jsonString) =>
+      EditCategoryModel.fromJson(json.decode(jsonString));
 }

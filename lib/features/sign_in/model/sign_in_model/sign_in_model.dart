@@ -33,7 +33,7 @@ class SignInModel {
 
   final String token;
 
-  final String type;
+  final String? type;
 
   @JsonKey(name: "type_id")
   final int typeId;

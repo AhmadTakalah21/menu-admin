@@ -1,3 +1,4 @@
+
 import 'package:bloc/bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:injectable/injectable.dart';
@@ -9,11 +10,8 @@ import 'package:user_admin/features/items/model/item_model/item_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
 
 part 'states/add_order_state.dart';
-
 part 'states/categories_subs_items_state.dart';
-
 part 'states/general_add_order_state.dart';
-
 part 'states/cart_state.dart';
 
 @injectable
@@ -41,65 +39,152 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
     tableId = table?.id;
   }
 
-  void addToCart(ItemModel item) {
-    int existingIndex = cartItems.indexWhere(
-      (cartItem) => cartItem.item.id == item.id,
+  void addToCart(
+      ItemModel item, {
+        int? selectedSizeId,
+        List<int>? selectedToppingIds,
+        List<int>? selectedComponentIds,
+      }) {
+    if (item.sizesTypes.isNotEmpty && selectedSizeId == null) {
+      emit(AddOrderFail("size_required".tr()));
+      return;
+    }
+
+    final newCartItem = CartItemModel(
+      item: item,
+      count: 1,
+      selectedSizeId: selectedSizeId,
+      selectedToppingIds: selectedToppingIds ?? [],
+      selectedComponentIds: selectedComponentIds ?? [],
     );
 
-    if (existingIndex == -1) {
-      cartItems.add(CartItemModel(item: item, count: 1));
-    } else {
+    final newKey = _generateCartItemKey(newCartItem);
+
+    final existingIndex = cartItems.indexWhere(
+          (element) => _generateCartItemKey(element) == newKey,
+    );
+
+    final fullPrice = calculateCartItemPrice(newCartItem);
+
+    if (existingIndex != -1) {
       cartItems[existingIndex] = cartItems[existingIndex].copyWith(
-        item: item,
         count: cartItems[existingIndex].count + 1,
       );
-    }
-    final price = int.parse(item.price.replaceAll(RegExp(r','), ''));
-    total += price;
-    totalPrice += price;
-
-    emit(AddToCartSuccess());
-  }
-
-  void addItem(ItemModel item) {
-    int index = cartItems.indexWhere(
-      (cartItem) => cartItem.item.id == item.id,
-    );
-    cartItems[index] = cartItems[index].copyWith(
-      item: item,
-      count: cartItems[index].count + 1,
-    );
-    final price = int.parse(item.price.replaceAll(RegExp(r','), ''));
-    total += price;
-    totalPrice += price;
-
-    emit(AddToCartSuccess());
-  }
-
-  void removeItem(ItemModel item) {
-    int index = cartItems.indexWhere(
-      (cartItem) => cartItem.item.id == item.id,
-    );
-    if (cartItems[index].count == 1) {
-      cartItems.remove(cartItems[index]);
-      getCartItems();
     } else {
-      cartItems[index] = cartItems[index].copyWith(
-        item: item,
-        count: cartItems[index].count - 1,
-      );
+      cartItems.add(newCartItem);
     }
-    final price = int.parse(item.price.replaceAll(RegExp(r','), ''));
+
+    total += fullPrice;
+    totalPrice += fullPrice;
+
+    emit(AddToCartSuccess());
+    emit(CartSuccess(cartItems, total));
+  }
+
+
+
+  bool _isSameCartItem(CartItemModel a, CartItemModel b) {
+    return a.item.id == b.item.id &&
+        a.selectedSizeId == b.selectedSizeId &&
+        _listEquals(a.selectedToppingIds, b.selectedToppingIds) &&
+        _listEquals(a.selectedComponentIds, b.selectedComponentIds);
+  }
+
+  String _generateCartItemKey(CartItemModel item) {
+    final toppings = [...item.selectedToppingIds]..sort();
+    final components = [...item.selectedComponentIds]..sort();
+    return "${item.item.id}-${item.selectedSizeId}-${toppings.join(",")}-${components.join(",")}";
+  }
+
+
+  bool _listEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    final aSorted = [...a]..sort();
+    final bSorted = [...b]..sort();
+    for (int i = 0; i < aSorted.length; i++) {
+      if (aSorted[i] != bSorted[i]) return false;
+    }
+    return true;
+  }
+
+  int _getSizePrice(ItemModel item, int? sizeId) {
+    if (sizeId == null || item.sizesTypes.isEmpty) return 0;
+    final selectedSize = item.sizesTypes.firstWhere(
+          (s) => s.id == sizeId,
+      orElse: () => item.sizesTypes.first,
+    );
+    return int.tryParse(selectedSize.price?.replaceAll(',', '') ?? '') ?? 0;
+  }
+
+  int _getToppingsPrice(ItemModel item, List<int>? toppingIds) {
+    if (toppingIds == null || toppingIds.isEmpty) return 0;
+    int sum = 0;
+    for (var id in toppingIds) {
+      try {
+        final topping = item.itemTypes.firstWhere((t) => t.id == id);
+        sum += int.tryParse(topping.price?.replaceAll(',', '') ?? '') ?? 0;
+      } catch (_) {}
+    }
+    return sum;
+  }
+
+  int calculateCartItemPrice(CartItemModel cartItem) {
+    int basePrice = 0;
+
+    if (cartItem.item.sizesTypes.isNotEmpty) {
+      if (cartItem.selectedSizeId != null) {
+        basePrice = _getSizePrice(cartItem.item, cartItem.selectedSizeId);
+      } else {
+        basePrice = int.tryParse(cartItem.item.sizesTypes.first.price?.replaceAll(',', '') ?? '') ?? 0;
+      }
+    } else {
+      basePrice = int.tryParse(cartItem.item.price.replaceAll(',', '')) ?? 0;
+    }
+
+    final toppings = _getToppingsPrice(cartItem.item, cartItem.selectedToppingIds);
+    return basePrice + toppings;
+  }
+
+
+  void addItem(CartItemModel item) {
+    final index = cartItems.indexWhere((e) => _isSameCartItem(e, item));
+    if (index == -1) return;
+    cartItems[index] = item.copyWith(count: item.count + 1);
+    final price = calculateCartItemPrice(item);
+    total += price;
+    totalPrice += price;
+
+    emit(AddToCartSuccess());
+    emit(CartSuccess(cartItems, total));
+  }
+
+
+  void removeItem(CartItemModel item) {
+    final index = cartItems.indexWhere((e) => _isSameCartItem(e, item));
+    if (index == -1) return;
+    final price = calculateCartItemPrice(item);
+    if (cartItems[index].count == 1) {
+      cartItems.removeAt(index);
+    } else {
+      cartItems[index] = item.copyWith(count: item.count - 1);
+    }
     total -= price;
     totalPrice -= price;
 
     emit(AddToCartSuccess());
+    if (cartItems.isEmpty) {
+      emit(CartEmpty("no_items".tr()));
+    } else {
+      emit(CartSuccess(cartItems, total));
+    }
   }
 
-  Future<void> getCategories() async {
+
+
+  Future<void> getCategories(int restaurantId) async {
     emit(CategoriesSubsItemsLoading());
     try {
-      final categories = await addOrderService.getCategoriesSubsItems();
+      final categories = await addOrderService.getCategoriesSubsItems(restaurantId);
       if (categories.isEmpty) {
         emit(CategoriesSubsItemsEmpty("no_categories".tr()));
       } else {
@@ -123,17 +208,30 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
       emit(AddOrderFail("table_required".tr()));
       return;
     }
-    for (int index = 0; index < cartItems.length; index++) {
-      mapOrder.addAll({
-        "data[$index][item_id]": cartItems[index].item.id,
-        "data[$index][count]": cartItems[index].count
+
+    final List<Map<String, dynamic>> orderData = [];
+
+    for (final cartItem in cartItems) {
+      final item = cartItem.item;
+
+      orderData.add({
+        "item_id": item.id,
+        "count": cartItem.count,
+        if (cartItem.selectedSizeId != null) "size_id": cartItem.selectedSizeId,
+        "toppings": cartItem.selectedToppingIds.map((id) => {"topping_id": id}).toList(),
+        "components": cartItem.selectedComponentIds.map((id) => {"component_id": id}).toList(),
       });
     }
-    mapOrder.addAll({"table_id": tableId});
+
+    final requestBody = {
+      "table_id": tableId,
+      "data": orderData,
+    };
 
     emit(AddOrderLoading());
+
     try {
-      await addOrderService.addOrder(mapOrder);
+      await addOrderService.addOrder(requestBody);
       emit(AddOrderSuccess());
       resetParams();
       emit(CartEmpty("no_items".tr()));
@@ -141,4 +239,8 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
       emit(AddOrderFail(e.toString()));
     }
   }
+
+
+
+
 }

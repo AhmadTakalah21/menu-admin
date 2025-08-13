@@ -30,7 +30,6 @@ class ItemModel implements DeleteModel, ItemTileModel, DropDownItemModel {
     List<ItemTypeModel>? itemTypes,
     List<ItemTypeModel>? sizesTypes,
     List<ItemTypeModel>? componentsTypes,
-    this.isBasicComponent = 0,
     required this.price,
     this.description,
     this.descriptionEn,
@@ -98,9 +97,6 @@ class ItemModel implements DeleteModel, ItemTileModel, DropDownItemModel {
   @JsonKey(name: "components")
   final List<ItemTypeModel> componentsTypes;
 
-  @IntConverter()
-  @JsonKey(name: "is_basic_component")
-  final int isBasicComponent;
 
   @JsonKey(name: "nutrition", fromJson: _nutritionFromJson)
   final NutritionModel? nutrition;
@@ -161,7 +157,6 @@ class ItemModel implements DeleteModel, ItemTileModel, DropDownItemModel {
       itemTypes: itemTypes,
       sizesTypes: sizesTypes,
       componentsTypes: componentsTypes,
-      isBasicComponent: isBasicComponent,
       price: price,
       description: description,
       descriptionEn: descriptionEn,

@@ -59,11 +59,18 @@ class TablesServiceImp implements TablesService {
 
   @override
   Future<void> editOrder(AddOrderItem addOrderItem, {int? itemId}) async {
+    print("🟡 itemId inside editOrder: $itemId");
+
     try {
-      final map = addOrderItem.toJson();
-      if (itemId != null) {
-        map.addAll({"item_id": itemId});
-      }
+      final map = {
+        "id": addOrderItem.id,
+        "item_id": itemId,
+        "status": addOrderItem.status,
+        "count": addOrderItem.count,
+      };
+
+      print("📦 Form Map: $map");
+
       await dio.post(
         "/admin_api/update_order",
         data: FormData.fromMap(map),
@@ -72,6 +79,7 @@ class TablesServiceImp implements TablesService {
       rethrow;
     }
   }
+
 
   @override
   Future<void> addService(AddServiceToOrderModel addServiceModel) async {

@@ -6,7 +6,7 @@ import 'package:user_admin/global/dio/dio_client.dart';
 part 'add_order_service_imp.dart';
 
 abstract class AddOrderService {
-  Future<List<CategoryModel>> getCategoriesSubsItems();
+  Future<List<CategoryModel>> getCategoriesSubsItems(int restaurantId);
 
   Future<void> addOrder(Map<String, dynamic> order);
 }

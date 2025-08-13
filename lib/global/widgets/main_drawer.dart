@@ -88,12 +88,12 @@ class _MainDrawerState extends State<MainDrawer> {
     ];
     final listOfData = List.generate(
       ratings.length,
-      (index) {
+          (index) {
         return [
           TextCellValue(ratings[index].rate.toString()),
           TextCellValue(ratings[index].note),
           TextCellValue(ratings[index].name),
-          TextCellValue(widget.signInModel.restaurant.name),
+          TextCellValue(widget.signInModel.restaurant.name ?? ""),
         ];
       },
     );
@@ -148,7 +148,7 @@ class _MainDrawerState extends State<MainDrawer> {
   @override
   Widget build(BuildContext context) {
     int exportExcel = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "excel",
+          (element) => element.name == "excel",
     );
     bool canExportExcel = exportExcel != -1;
     return Drawer(
@@ -173,7 +173,7 @@ class _MainDrawerState extends State<MainDrawer> {
               Column(
                 children: List.generate(
                   DrawerTileEnum.values.length,
-                  (index) {
+                      (index) {
                     final tile = DrawerTileEnum.values[index];
                     Widget? trailing;
                     var onTap = tile.onTap(context, widget.signInModel);
@@ -183,9 +183,9 @@ class _MainDrawerState extends State<MainDrawer> {
                       onTap = () => onRatingTap(canExportExcel);
                       trailing = canExportExcel
                           ? const Icon(
-                              Icons.arrow_drop_down,
-                              color: AppColors.white,
-                            )
+                        Icons.arrow_drop_down,
+                        color: AppColors.white,
+                      )
                           : null;
                     } else if (tile == DrawerTileEnum.userUi) {
                       onTap = () => goToUserInterface();
@@ -215,7 +215,7 @@ class _MainDrawerState extends State<MainDrawer> {
                                 title: Text(
                                   tile.displayName,
                                   style:
-                                      const TextStyle(color: AppColors.white),
+                                  const TextStyle(color: AppColors.white),
                                 ),
                                 trailing: trailing,
                               );
@@ -229,7 +229,7 @@ class _MainDrawerState extends State<MainDrawer> {
                                 ListTile(
                                   onTap: onShowRatingsView,
                                   leading:
-                                      Icon(tile.icon, color: AppColors.white),
+                                  Icon(tile.icon, color: AppColors.white),
                                   title: Text(
                                     tile.displayName,
                                     style: const TextStyle(

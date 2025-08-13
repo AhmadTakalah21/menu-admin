@@ -5,14 +5,20 @@ class AddOrderServiceImp implements AddOrderService {
   final dio = DioClient();
 
   @override
-  Future<List<CategoryModel>> getCategoriesSubsItems() async {
+  Future<List<CategoryModel>> getCategoriesSubsItems(int restaurantId) async {
     try {
-      final response = await dio.get("/admin_api/show_category_subs_items");
+      final response = await dio.get(
+        "/admin_api/show_category_subs_items",
+        queries: {
+          "restaurant_id": restaurantId,
+        },
+      );
+
       final categoriesJson = response.data["data"] as List;
 
       return List.generate(
         categoriesJson.length,
-        (index) => CategoryModel.fromJson(
+            (index) => CategoryModel.fromJson(
           categoriesJson[index] as Map<String, dynamic>,
         ),
       );
