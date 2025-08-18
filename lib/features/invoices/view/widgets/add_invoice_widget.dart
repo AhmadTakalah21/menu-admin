@@ -132,7 +132,7 @@ class _AddInvoiceWidgetState extends State<AddInvoiceWidget>
                     if (state is AddInvoiceToTableSuccess) {
                       invoicesCubit.getInvoices(widget.selectedPage);
                       onIgnoreTap();
-                      MainSnackBar.showSuccessMessage(context, state.message);
+                      MainSnackBar.showSuccessMessage(context, state.invoice.toString());
                     } else if (state is AddInvoiceToTableFail) {
                       MainSnackBar.showErrorMessage(context, state.error);
                     }

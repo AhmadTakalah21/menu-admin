@@ -267,6 +267,15 @@
     "unit" : "Unit",
   "add_nutrition_info": "Add nutrition info",
     "add_item_success" : "Add item success",
-    "edit_item_success" : "Edit item success"
+    "edit_item_success" : "Edit item success",
+    "choose_coupon": "Choose a coupon",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "no_coupons": "No coupons",
+    "coupon_applied": "Coupon applied successfully",
+    "print": "Print",
+    "no_coupons_endpoint": "No coupons endpoint configured",
+    "change_coupon" : "change coupon"
+
 
 }

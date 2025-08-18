@@ -69,7 +69,7 @@ class TablesCubit extends Cubit<GeneralTablesState> {
     _channel?.sink.close();
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.1.34:8080/app/bqfkpognxb0xxeax5bjc'),
+      Uri.parse('ws://192.168.1.35:8080/app/bqfkpognxb0xxeax5bjc'),
     );
 
     _channel?.stream.listen(

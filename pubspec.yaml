@@ -75,6 +75,7 @@ dependencies:
   connectivity_plus: ^6.1.4
   web_socket_channel: ^2.1.0
   toggle_switch: ^2.0.0
+  printing: ^5.13.0
 
 dev_dependencies:
   flutter_test:

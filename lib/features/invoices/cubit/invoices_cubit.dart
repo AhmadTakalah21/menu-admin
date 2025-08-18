@@ -101,22 +101,58 @@ class InvoicesCubit extends Cubit<GeneralInvoicesState> {
   }
 
   Future<void> addInvoiceToTable() async {
-    final addInvoiceTableId = this.addInvoiceTableId;
-    if (addInvoiceTableId == null) {
+    final id = addInvoiceTableId;
+    if (id == null) {
       emit(AddInvoiceToTableFail("table_required".tr()));
       return;
     }
     emit(AddInvoiceToTableLoading());
     try {
-      await invoicesService.addInvoiceToTable(addInvoiceTableId);
-
-      emit(AddInvoiceToTableSuccess("status_updated".tr()));
+      final invoice = await invoicesService.addInvoiceToTable(id);
+      emit(AddInvoiceToTableSuccess(invoice));
+    } on DioException catch (e) {
+      emit(AddInvoiceToTableFail(e.message ?? e.toString()));
     } catch (e) {
-      if (e is DioException) {
-        emit(AddInvoiceToTableFail(e.message ?? e.toString()));
-      } else {
-        emit(AddInvoiceToTableFail(e.toString()));
-      }
+      emit(AddInvoiceToTableFail(e.toString()));
     }
   }
+
+
+  void addInvoiceToTableFor(int tableId) {
+    addInvoiceTableId = tableId;
+    addInvoiceToTable();
+  }
+
+  Future<void> applyCouponToInvoice(int invoiceId, int couponId) async {
+    emit(ApplyCouponLoading());
+    try {
+      final updated = await invoicesService.addCouponToInvoice(
+        invoiceId: invoiceId,
+        couponId: couponId,
+      );
+      emit(ApplyCouponSuccess(updated));
+    } catch (e) {
+      emit(ApplyCouponFail(e.toString()));
+    }
+  }
+
+  Future<DrvierInvoiceModel> applyCouponOnce({
+    required int invoiceId,
+    required int couponId,
+    int? tableId,
+
+  }) {
+    return invoicesService.addCouponToInvoice(
+      invoiceId: invoiceId,
+      couponId: couponId,
+      tableId: tableId,
+
+    );
+  }
+
+
+
+
+
+
 }

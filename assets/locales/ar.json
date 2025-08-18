@@ -267,5 +267,13 @@
     "unit" : "الواحدة",
     "add_nutrition_info": "إضافة معلومات التغذية",
     "add_item_success" : "تم إضافة العنصر بنجاح",
-    "edit_item_success" : "تم تعديل العنصر بنجاح"
+    "edit_item_success" : "تم تعديل العنصر بنجاح",
+    "choose_coupon": "اختر كوبون",
+    "cancel": "إلغاء",
+    "apply": "تطبيق",
+    "no_coupons": "لا توجد كوبونات",
+    "coupon_applied": "تم تطبيق الكوبون بنجاح",
+    "print": "طباعة",
+    "no_coupons_endpoint": "لا يوجد مسار لجلب/تطبيق الكوبونات",
+    "change_coupon" : "تغيير الكوبون"
 }

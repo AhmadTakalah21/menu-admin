@@ -1,3 +1,4 @@
+import 'package:get/get_connect/http/src/multipart/form_data.dart';
 import 'package:injectable/injectable.dart';
 import 'package:user_admin/features/admins/model/admin_model/admin_model.dart';
 import 'package:user_admin/features/drivers/model/drvier_invoice_model/drvier_invoice_model.dart';
@@ -14,9 +15,15 @@ abstract class InvoicesService {
     int? adminId,
   });
 
-  Future<void> addInvoiceToTable(int tableId);
+  Future<DrvierInvoiceModel> addInvoiceToTable(int tableId);
 
   Future<List<AdminModel>> getWaiters();
 
   Future<void> updateStatusToPaid(int invoiceId);
+
+  Future<DrvierInvoiceModel> addCouponToInvoice({
+    required int invoiceId,
+    required int couponId,
+    int? tableId,
+  });
 }
