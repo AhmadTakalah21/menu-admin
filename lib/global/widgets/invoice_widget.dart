@@ -651,7 +651,6 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                                           ],
                                         ),
 
-                                      // إن وُجد كوبون مطبق نعرضه بشكل Chip أنيق (مع إبقاء زر التغيير)
                                       if (_appliedCoupon != null) ...[
                                         const SizedBox(height: 8),
                                         Row(
@@ -693,7 +692,6 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                                           ],
                                         ),
 
-                                      // زر "إضافة/تغيير كوبون" يبقى مرئيًا دائمًا (إن توفرت callbacks)
                                       if (widget.fetchCoupons != null && widget.applyCoupon != null)
                                         Padding(
                                           padding: const EdgeInsets.only(top: 12),
@@ -723,7 +721,6 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
 
                               const SizedBox(height: 8),
 
-                              // أزرار أسفل الويدجت – باستخدام Wrap لتفادي أي Overflow
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                                 child: Center(
