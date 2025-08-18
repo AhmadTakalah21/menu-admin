@@ -2,7 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/profile/cubit/profile_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
@@ -26,20 +27,30 @@ abstract class ProfileViewCallbacks {
 }
 
 class ProfileView extends StatelessWidget {
-  const ProfileView({super.key, required this.signInModel});
+  const ProfileView({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return ProfilePage(signInModel: signInModel);
+    return ProfilePage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key, required this.signInModel});
+  const ProfilePage({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -103,10 +114,13 @@ class _ProfilePageState extends State<ProfilePage>
 
   @override
   Widget build(BuildContext context) {
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -115,7 +129,7 @@ class _ProfilePageState extends State<ProfilePage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor ?? AppColors.black),
+                MainBackButton(color: restColor!),
                 const SizedBox(height: 20),
                 Text(
                   "update_profile".tr(),

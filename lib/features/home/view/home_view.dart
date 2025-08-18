@@ -9,55 +9,59 @@ import 'package:user_admin/features/home/cubit/home_cubit.dart';
 import 'package:user_admin/features/home/model/category_model/category_model.dart';
 import 'package:user_admin/features/home/view/sub_categories_view.dart';
 import 'package:user_admin/features/home/view/widgets/category_tile.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/edit_category_widget.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
-import 'package:user_admin/global/widgets/main_action_button.dart';
-import 'package:user_admin/global/widgets/main_back_button.dart';
-import 'package:user_admin/global/widgets/main_drawer.dart';
+import 'package:user_admin/global/widgets/main_add_button.dart';
+import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
+import 'package:user_admin/global/widgets/switch_view_button.dart';
 
 import '../../items/view/items_view.dart';
 
 abstract class HomeViewCallBacks {
-  void onAddCategoryTap();
-
+  void onAddTap();
   Future<void> onRefresh();
-
   void onEditTap(CategoryModel category);
-
   void onDeleteTap(CategoryModel category);
-
   void onSaveDeleteTap(CategoryModel category);
-
   void onSaveActivateTap(CategoryModel category);
-
-  void onActivateTap(CategoryModel category);
-
+  Future<bool> onActivateTap(CategoryModel category);
   void onCategoryTap(CategoryModel category);
-
+  void onSwichViewTap();
   void onTryAgainTap();
 }
 
 class HomeView extends StatelessWidget {
-  const HomeView({super.key, required this.signInModel});
+  const HomeView({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return HomePage(signInModel: signInModel);
+    return HomePage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.signInModel});
+  const HomePage({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -66,6 +70,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
   late final HomeCubit homeCubit = context.read();
   late final DeleteCubit deleteCubit = context.read();
+
+  bool isCardView = true;
 
   late final StreamSubscription<List<ConnectivityResult>> subscription;
 
@@ -85,13 +91,13 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
   }
 
   bool hasPermission(String permissionName) {
-    return widget.signInModel.permissions
+    return widget.permissions
         .any((permission) => permission.name == permissionName);
   }
 
   @override
-  void onActivateTap(CategoryModel category) {
-    showDialog(
+  Future<bool> onActivateTap(CategoryModel category) async {
+    final success = await showDialog<bool>(
       context: context,
       builder: (context) {
         return InsureDeleteWidget(
@@ -101,16 +107,27 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
         );
       },
     );
+    return success ?? false;
   }
 
   @override
-  void onAddCategoryTap() {
+  void onAddTap() {
     showDialog(
       context: context,
       builder: (context) {
-        return const EditCategoryWidget(isEdit: false);
+        return EditCategoryWidget(
+          btnColor: widget.restaurant.color!,
+          isEdit: false,
+        );
       },
     );
+  }
+
+  @override
+  void onSwichViewTap() {
+    setState(() {
+      isCardView = !isCardView;
+    });
   }
 
   @override
@@ -123,19 +140,20 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
     final hasContent = category.content == 1 || category.content == 2;
 
     if (hasContent) {
-      // الصنف يحتوي على بيانات (subcategories أو items) ← الدخول مباشرة
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => category.content == 1
               ? SubCategoriesView(
-            masterCategory: category,
-            signInModel: widget.signInModel,
-          )
+                  masterCategory: category,
+                  permissions: widget.permissions,
+                  restaurant: widget.restaurant,
+                )
               : ItemsView(
-            category: category,
-            signInModel: widget.signInModel,
-          ),
+                  category: category,
+                  permissions: widget.permissions,
+                  restaurant: widget.restaurant,
+                ),
         ),
       );
     } else {
@@ -147,22 +165,28 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.category, size: 48, color: Theme.of(context).primaryColor),
+                  Icon(Icons.category,
+                      size: 48, color: Theme.of(context).primaryColor),
                   const SizedBox(height: 16),
                   Text(
                     'اختيار الإجراء'.tr(),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'هل ترغب بإضافة عنصر مباشرة أو إدارة التصنيفات الفرعية؟'.tr(),
+                    'هل ترغب بإضافة عنصر مباشرة أو إدارة التصنيفات الفرعية؟'
+                        .tr(),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -179,7 +203,8 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
                               MaterialPageRoute(
                                 builder: (context) => ItemsView(
                                   category: category,
-                                  signInModel: widget.signInModel,
+                                  permissions: widget.permissions,
+                                  restaurant: widget.restaurant,
                                 ),
                               ),
                             );
@@ -206,21 +231,24 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
                               MaterialPageRoute(
                                 builder: (context) => SubCategoriesView(
                                   masterCategory: category,
-                                  signInModel: widget.signInModel,
+                                  permissions: widget.permissions,
+                                  restaurant: widget.restaurant,
                                 ),
                               ),
                             );
                           },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: BorderSide(color: Theme.of(context).primaryColor),
+                            side: BorderSide(
+                                color: Theme.of(context).primaryColor),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           label: Text(
                             'إدارة التصنيفات الفرعية'.tr(),
-                            style: TextStyle(color: Theme.of(context).primaryColor),
+                            style: TextStyle(
+                                color: Theme.of(context).primaryColor),
                           ),
                         ),
                       ),
@@ -234,10 +262,6 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
       );
     }
   }
-
-
-
-
 
   @override
   void onDeleteTap(CategoryModel category) {
@@ -263,13 +287,13 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
       context: context,
       builder: (context) {
         return EditCategoryWidget(
+          btnColor: widget.restaurant.color!,
           category: category,
           isEdit: true,
         );
       },
     );
   }
-
 
   @override
   Future<void> onRefresh() async {
@@ -295,10 +319,6 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
   @override
   Widget build(BuildContext context) {
     bool isAdd = hasPermission("category.add");
-    bool isEdit = hasPermission("category.update");
-    bool isActive = hasPermission("category.active");
-    bool isDelete = hasPermission("category.delete");
-
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
         if (state is DeletedState && state.item is CategoryModel) {
@@ -306,22 +326,24 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
         }
       },
       child: Scaffold(
-        appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        appBar:
+            MainAppBar(restaurant: widget.restaurant, title: "categories".tr()),
+        // drawer: MainDrawer(
+        //   permissions: widget.permissions,
+        //   restaurant: widget.restaurant,
+        // ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
             child: Padding(
               padding: AppConstants.padding16,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  _buildHeader(isAdd),
-                  const SizedBox(height: 20),
                   BlocBuilder<HomeCubit, GeneralHomeState>(
                     buildWhen: (previous, current) =>
-                    current is CategoriesState || current is ImageState,
-                    builder: (context, state) =>
-                        _buildCategoriesList(state, isEdit, isDelete, isActive),
+                        current is CategoriesState || current is ImageState,
+                    builder: (context, state) => _buildCategoriesList(state),
                   ),
                   const SizedBox(height: 50),
                 ],
@@ -329,65 +351,81 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
             ),
           ),
         ),
+        floatingActionButton: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            SwitchViewButton(
+              onTap: onSwichViewTap,
+              isCardView: isCardView,
+              color: widget.restaurant.color!,
+            ),
+            const SizedBox(width: 10),
+            if (isAdd)
+              MainAddButton(onTap: onAddTap, color: widget.restaurant.color!)
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(bool isAdd) {
-    final restColor = widget.signInModel.restaurant.color;
-    return Row(
-      children: [
-        MainBackButton(color: restColor ?? AppColors.black),
-        const SizedBox(width: 10),
-        Text(
-          "categories".tr(),
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        const Spacer(),
-        MainActionButton(
-          padding: AppConstants.padding10,
-          onPressed: onRefresh,
-          text: "",
-          child: const Icon(Icons.refresh, color: AppColors.white),
-        ),
-        if (isAdd) ...[
-          const SizedBox(width: 10),
-          MainActionButton(
-            padding: AppConstants.padding10,
-            onPressed: onAddCategoryTap,
-            text: "Add Category",
-            child: const Icon(Icons.add_circle, color: AppColors.white),
-          ),
-        ],
-      ],
-    );
-  }
+  // Widget _buildHeader() {
+  //   bool isAdd = hasPermission("category.add");
+  //   final restColor = widget.restaurant.color;
+  //   return Column(
+  //     mainAxisSize: MainAxisSize.min,
+  //     children: [
+  //       const SizedBox(height: 25),
+  //       Row(
+  //         children: [
+  //           MainBackButton(color: restColor),
+  //           const Spacer(flex: 4),
+  //           Text(
+  //             "categories".tr(),
+  //             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+  //           ),
+  //           const Spacer(),
+  //           if (isAdd) ...[
+  //             const SizedBox(width: 10),
+  //             MainAddButton(
+  //               onTap: onAddTap,
+  //               title: "add_category".tr(),
+  //             )
+  //           ],
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
-  Widget _buildCategoriesList(
-      GeneralHomeState state, bool isEdit, bool isDelete, bool isActive) {
+  Widget _buildCategoriesList(GeneralHomeState state) {
+    bool isEdit = hasPermission("category.update");
+    bool isActive = hasPermission("category.active");
+    bool isDelete = hasPermission("category.delete");
     if (state is CategoriesLoading) {
       return const LoadingIndicator(color: AppColors.black);
     } else if (state is CategoriesSuccess) {
-      return Padding(
-        padding: AppConstants.paddingH60,
-        child: ListView.separated(
-          itemCount: state.categories.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (context, index) {
-            final category = state.categories[index];
-            return CategoryTile(
-              onTap: onCategoryTap,
-              onEditTap: isEdit ? onEditTap : null,
-              onDeleteTap: isDelete ? onDeleteTap : null,
-              onDeactivateTap: isActive ? onActivateTap : null,
-              item: category,
-              restaurant: widget.signInModel.restaurant,
-              locale: context.locale,
-            );
-          },
-          separatorBuilder: (context, index) => const SizedBox(height: 20),
+      return GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 20,
+          childAspectRatio: 3 / 3.5,
         ),
+        itemCount: state.categories.length,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemBuilder: (context, index) {
+          final category = state.categories[index];
+          return CategoryTile(
+            onTap: onCategoryTap,
+            onEditTap: isEdit ? onEditTap : null,
+            onDeleteTap: isDelete ? onDeleteTap : null,
+            onDeactivateTap: isActive ? onActivateTap : null,
+            item: category,
+            restaurant: widget.restaurant,
+            locale: context.locale,
+          );
+        },
       );
     } else if (state is CategoriesFail) {
       return MainErrorWidget(

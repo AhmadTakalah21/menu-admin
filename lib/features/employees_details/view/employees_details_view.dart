@@ -6,7 +6,8 @@ import 'package:user_admin/features/admins/model/admin_model/admin_model.dart';
 import 'package:user_admin/features/employees_details/cubit/employees_details_cubit.dart';
 import 'package:user_admin/features/employees_details/model/employee_type_enum.dart';
 import 'package:user_admin/features/items/cubit/items_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
@@ -46,24 +47,31 @@ abstract class EmployeesDetailsViewCallBacks {
 class EmployeesDetailsView extends StatelessWidget {
   const EmployeesDetailsView({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return EmployeesDetailsPage(signInModel: signInModel);
+    return EmployeesDetailsPage(
+      permissions: permissions,
+      restaurant: restaurant,
+    );
   }
 }
 
 class EmployeesDetailsPage extends StatefulWidget {
   const EmployeesDetailsPage({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<EmployeesDetailsPage> createState() => _EmployeesDetailsPageState();
@@ -192,11 +200,14 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
       "table_num".tr(),
       "response_time".tr(),
     ];
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -205,7 +216,7 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor ?? AppColors.black),
+                MainBackButton(color: restColor!),
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -341,8 +352,8 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
                         (index) {
                           final details = state.paginatedModel.data[index];
                           final values = [
-                            Text(details!.name),
-                            Text(details!.type),
+                            Text(details.name),
+                            Text(details.type),
                             Text(details.numberTable.toString()),
                             Text(details.responseTime),
                           ];

@@ -13,17 +13,24 @@ import 'package:user_admin/features/ratings/cubit/ratings_cubit.dart';
 import 'package:user_admin/features/ratings/model/rate_model/rate_model.dart';
 import 'package:user_admin/features/ratings/view/ratings_view.dart';
 import 'package:user_admin/features/sign_in/cubit/sign_in_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/global/model/drawer_tile_enum.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
+import 'package:user_admin/global/widgets/app_image_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
 
 class MainDrawer extends StatefulWidget {
-  const MainDrawer({super.key, required this.signInModel});
+  const MainDrawer({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<MainDrawer> createState() => _MainDrawerState();
@@ -57,7 +64,10 @@ class _MainDrawerState extends State<MainDrawer> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RatingsView(signInModel: widget.signInModel),
+        builder: (context) => RatingsView(
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
+        ),
       ),
     );
   }
@@ -93,7 +103,7 @@ class _MainDrawerState extends State<MainDrawer> {
           TextCellValue(ratings[index].rate.toString()),
           TextCellValue(ratings[index].note),
           TextCellValue(ratings[index].name),
-          TextCellValue(widget.signInModel.restaurant.name ?? ""),
+          TextCellValue(widget.restaurant.name ?? ""),
         ];
       },
     );
@@ -147,36 +157,68 @@ class _MainDrawerState extends State<MainDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    int exportExcel = widget.signInModel.permissions.indexWhere(
+    int exportExcel = widget.permissions.indexWhere(
           (element) => element.name == "excel",
     );
     bool canExportExcel = exportExcel != -1;
     return Drawer(
-      backgroundColor: AppColors.mainColor,
-      child: Padding(
-        padding: AppConstants.padding16,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              Text(
-                "admin".tr(),
-                style: const TextStyle(
-                  color: AppColors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
+      backgroundColor: const Color(0xFFD9D9D9),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    height: 109,
+                    padding: AppConstants.padding8,
+                    decoration: BoxDecoration(
+                      color: widget.restaurant.color,
+                      borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(300),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Spacer(),
+                        RotatedBox(
+                          quarterTurns: -45,
+                          child: Text(
+                            widget.restaurant.name ?? "admin".tr(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                          ),
+                        ),
+                        const Spacer(),
+                        AppImageWidget(
+                          url: widget.restaurant.logo,
+                          borderRadius: AppConstants.borderRadiusCircle,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              Image.asset(
-                "assets/images/logo.png",
-              ),
-              Column(
+                const Spacer(),
+              ],
+            ),
+            Padding(
+              padding: AppConstants.padding16,
+              child: Column(
                 children: List.generate(
                   DrawerTileEnum.values.length,
                       (index) {
                     final tile = DrawerTileEnum.values[index];
                     Widget? trailing;
-                    var onTap = tile.onTap(context, widget.signInModel);
+                    var onTap = tile.onTap(
+                        context, widget.restaurant, widget.permissions);
                     if (tile == DrawerTileEnum.logout) {
                       onTap = logout;
                     } else if (tile == DrawerTileEnum.ratings) {
@@ -184,7 +226,7 @@ class _MainDrawerState extends State<MainDrawer> {
                       trailing = canExportExcel
                           ? const Icon(
                         Icons.arrow_drop_down,
-                        color: AppColors.white,
+                        color: AppColors.black,
                       )
                           : null;
                     } else if (tile == DrawerTileEnum.userUi) {
@@ -192,13 +234,12 @@ class _MainDrawerState extends State<MainDrawer> {
                     }
                     return Column(
                       children: [
-                        if (tile
-                            .isHasPermission(widget.signInModel.permissions))
+                        if (tile.isHasPermission(widget.permissions))
                           BlocBuilder<SignInCubit, GeneralSignInState>(
                             builder: (context, state) {
                               Widget leading = Icon(
                                 tile.icon,
-                                color: AppColors.white,
+                                color: widget.restaurant.color,
                               );
                               if (state is SignInLoading &&
                                   tile == DrawerTileEnum.logout) {
@@ -209,15 +250,31 @@ class _MainDrawerState extends State<MainDrawer> {
                                 );
                                 onTap = () {};
                               }
-                              return ListTile(
-                                onTap: onTap,
-                                leading: leading,
-                                title: Text(
-                                  tile.displayName,
-                                  style:
-                                  const TextStyle(color: AppColors.white),
-                                ),
-                                trailing: trailing,
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    onTap: onTap,
+                                    leading: leading,
+                                    title: Text(
+                                      tile.displayName,
+                                      style: const TextStyle(
+                                          color: AppColors.black,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                    trailing: trailing,
+                                    dense: true,
+                                  ),
+                                  if (tile.hasDividerAfter)
+                                    Divider(
+                                      thickness: 0.75,
+                                      height: 30,
+                                      endIndent: 40,
+                                      indent: 40,
+                                      color: widget.restaurant.color,
+                                    ),
+                                ],
                               );
                             },
                           ),
@@ -228,13 +285,14 @@ class _MainDrawerState extends State<MainDrawer> {
                               children: [
                                 ListTile(
                                   onTap: onShowRatingsView,
-                                  leading:
-                                  Icon(tile.icon, color: AppColors.white),
+                                  leading: Icon(tile.icon,
+                                      color: widget.restaurant.color),
                                   title: Text(
                                     tile.displayName,
                                     style: const TextStyle(
-                                      color: AppColors.white,
-                                      fontSize: 14,
+                                      color: AppColors.black,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
@@ -250,15 +308,16 @@ class _MainDrawerState extends State<MainDrawer> {
                                         return ListTile(
                                           onTap: () =>
                                               onExportRatingsData(ratings),
-                                          leading: const Icon(
+                                          leading: Icon(
                                             Icons.logout,
-                                            color: AppColors.white,
+                                            color: widget.restaurant.color,
                                           ),
                                           title: Text(
                                             "export_ratings_data".tr(),
                                             style: const TextStyle(
-                                              color: AppColors.white,
-                                              fontSize: 14,
+                                              color: AppColors.black,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w500,
                                             ),
                                           ),
                                         );
@@ -275,8 +334,8 @@ class _MainDrawerState extends State<MainDrawer> {
                   },
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

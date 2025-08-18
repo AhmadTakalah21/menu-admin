@@ -35,13 +35,13 @@ class AddCouponModel {
 
   /// دالة تحقق من القيم المطلوبة
   void validateFields() {
-    if (_fromDate == null || _fromDate!.isEmpty) {
+    if (_fromDate == null || _fromDate.isEmpty) {
       throw "from_date_empty".tr();
     }
-    if (_toDate == null || _toDate!.isEmpty) {
+    if (_toDate == null || _toDate.isEmpty) {
       throw "to_date_empty".tr();
     }
-    if (_percent == null || _percent!.isEmpty) {
+    if (_percent == null || _percent.isEmpty) {
       throw "percent_empty".tr();
     }
   }

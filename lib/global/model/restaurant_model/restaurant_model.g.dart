@@ -29,7 +29,7 @@ RestaurantModel _$RestaurantModelFromJson(Map<String, dynamic> json) =>
       birthdayMessage: json['birthday_message'] as String?,
       messageInHomePage: json['message_in_home_page'] as String?,
       cover: json['cover'] as String?,
-      logo: json['logo'] as String?,
+      logo: json['logo'] as String,
       logoHomePage: json['logo_home_page'] as String?,
       backgroundImageHomePage: json['background_image_home_page'] as String?,
       backgroundImageCategory: json['background_image_category'] as String?,

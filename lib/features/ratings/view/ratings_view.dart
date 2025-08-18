@@ -6,7 +6,8 @@ import 'package:user_admin/features/ratings/cubit/ratings_cubit.dart';
 import 'package:user_admin/features/ratings/model/gender_enum.dart';
 import 'package:user_admin/features/ratings/model/rate_enum.dart';
 import 'package:user_admin/features/ratings/model/rate_filter_enum.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/utils/utils.dart';
@@ -22,67 +23,52 @@ import 'package:user_admin/global/widgets/select_page_tile.dart';
 
 abstract class RatingsViewCallBacks {
   Future<void> onRefresh();
-
   Future<void> onStartDateSelected();
-
   Future<void> onEndDateSelected();
-
   void onFilterTypeSelected(RateFilterEnum? rateFilter);
-
   void onSetKnown();
-
   void onSetUnknown();
-
   void increaseFromAge();
-
   void decreaseFromAge();
-
   void increaseToAge();
-
   void decreaseToAge();
-
   void onFromAgeSubmitted(String age);
-
   void onToAgeSubmitted(String age);
-
   void onFromAgeChanged(String age);
-
   void onToAgeChanged(String age);
-
   void onSelectPageTap(int page);
-
   void onGenderSelected(GenderEnum? value);
-
   void setRate(RateEnum rateEnum);
-
   bool isRatingSelected(RateEnum current);
-
   bool isRatingShow(RateEnum current, RateEnum rate);
-
   void onTryAgainTap();
 }
 
 class RatingsView extends StatelessWidget {
   const RatingsView({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return RatingsPage(signInModel: signInModel);
+    return RatingsPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class RatingsPage extends StatefulWidget {
   const RatingsPage({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<RatingsPage> createState() => _RatingsPageState();
@@ -351,10 +337,13 @@ class _RatingsPageState extends State<RatingsPage>
       "age".tr(),
       "rating".tr(),
     ];
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -363,7 +352,7 @@ class _RatingsPageState extends State<RatingsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor ?? AppColors.black),
+                MainBackButton(color: restColor!),
                 const SizedBox(height: 20),
                 Row(
                   children: [

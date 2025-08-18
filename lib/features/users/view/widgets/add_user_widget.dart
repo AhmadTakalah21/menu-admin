@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/users/cubit/users_cubit.dart';
 import 'package:user_admin/features/users/model/user_model/user_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
@@ -37,9 +37,9 @@ class EditUserWidget extends StatefulWidget {
   const EditUserWidget({
     super.key,
     required this.user,
-    required this.signInModel,
+    required this.restaurant,
   });
-  final SignInModel signInModel;
+  final RestaurantModel restaurant;
   final UserModel user;
 
   @override
@@ -102,7 +102,7 @@ class _EditUserWidgetState extends State<EditUserWidget>
   @override
   void onSaveTap() {
     usersCubit.editUser(
-      restaurantId: widget.signInModel.restaurantId,
+      restaurantId: widget.restaurant.id,
       driverId: widget.user.id,
     );
   }

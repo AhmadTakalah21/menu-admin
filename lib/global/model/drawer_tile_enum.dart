@@ -12,10 +12,10 @@ import 'package:user_admin/features/invoices/view/invoices_view.dart';
 import 'package:user_admin/features/profile/view/profile_view.dart';
 import 'package:user_admin/features/restaurant/view/restaurant_view.dart';
 import 'package:user_admin/features/sales/view/sales_view.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/tables/view/tables_view.dart';
 import 'package:user_admin/features/takeout_orders/view/takeout_orders_view.dart';
 import 'package:user_admin/features/users/view/users_view.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/model/role_model/role_model.dart';
 
 enum DrawerTileEnum {
@@ -79,84 +79,88 @@ enum DrawerTileEnum {
     }
   }
 
+  bool get hasDividerAfter {
+    return this == advertisements || this == invoices || this == takeOutOrders;
+  }
+
   IconData get icon {
     switch (this) {
-      case DrawerTileEnum.categories:
+      case categories:
         return Icons.home_outlined;
-      case DrawerTileEnum.advertisements:
+      case advertisements:
         return Icons.ads_click;
-      case DrawerTileEnum.admins:
+      case admins:
         return Icons.groups;
-      case DrawerTileEnum.restaurant:
+      case restaurant:
         return Icons.restaurant;
-      case DrawerTileEnum.tables:
+      case tables:
         return Icons.table_restaurant;
-      case DrawerTileEnum.coupons:
+      case coupons:
         return Icons.sell;
-      case DrawerTileEnum.salesInventory:
+      case salesInventory:
         return Icons.inventory_2_outlined;
-      case DrawerTileEnum.invoices:
+      case invoices:
         return Icons.receipt_long;
-      case DrawerTileEnum.addOrder:
+      case addOrder:
         return Icons.add_circle_outline;
-      case DrawerTileEnum.employeesDetails:
+      case employeesDetails:
         return Icons.add_shopping_cart_outlined;
-      case DrawerTileEnum.users:
+      case users:
         return Icons.people;
-      case DrawerTileEnum.drivers:
+      case drivers:
         return Icons.motorcycle;
-      case DrawerTileEnum.takeOutOrders:
+      case takeOutOrders:
         return Icons.fire_truck;
-      case DrawerTileEnum.ratings:
+      case ratings:
         return Icons.star;
-      case DrawerTileEnum.services:
+      case services:
         return Icons.settings;
-      case DrawerTileEnum.profile:
+      case profile:
         return Icons.person;
-      case DrawerTileEnum.userUi:
+      case userUi:
         return Icons.view_quilt_outlined;
-      case DrawerTileEnum.logout:
+      case logout:
         return Icons.logout;
     }
   }
 
   String get getTileShowName {
     switch (this) {
-      case DrawerTileEnum.categories:
+      case categories:
         return "category.index";
-      case DrawerTileEnum.advertisements:
+      case advertisements:
         return "advertisement.index";
-      case DrawerTileEnum.admins:
+      case admins:
         return "user.index";
-      case DrawerTileEnum.restaurant:
+      case restaurant:
         return "update_restaurant_admin";
-      case DrawerTileEnum.tables:
+      case tables:
         return "table.index";
-      case DrawerTileEnum.coupons:
+      case coupons:
         return "coupon.index";
-      case DrawerTileEnum.salesInventory:
+      case salesInventory:
         return "order.index";
-      case DrawerTileEnum.invoices:
+      case invoices:
         return "order.index";
-      case DrawerTileEnum.addOrder:
+      case addOrder:
         return "order.add";
-      case DrawerTileEnum.employeesDetails:
+      case employeesDetails:
         return "user.index";
-      case DrawerTileEnum.users:
+      case users:
         return "user.index";
-      case DrawerTileEnum.drivers:
+      case drivers:
         return "delivery.index";
-      case DrawerTileEnum.takeOutOrders:
+      case takeOutOrders:
         return "order.index";
-      case DrawerTileEnum.ratings:
+      case ratings:
         return "rate.index";
-      case DrawerTileEnum.services:
+      case services:
         return "service.index";
-      case DrawerTileEnum.profile:
+      case profile:
         return "show_always";
-      case DrawerTileEnum.userUi:
+      case userUi:
         return "show_always";
-      case DrawerTileEnum.logout:
+      case logout:
         return "show_always";
     }
   }
@@ -174,33 +178,42 @@ enum DrawerTileEnum {
     return false;
   }
 
-  VoidCallback onTap(BuildContext context, SignInModel signInModel) {
+  VoidCallback onTap(BuildContext context, RestaurantModel restaurant,
+      List<RoleModel> permissions) {
     switch (this) {
-      case DrawerTileEnum.categories:
+      case categories:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => HomeView(signInModel: signInModel),
+              builder: (context) => HomeView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.advertisements:
+      case advertisements:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  AdvertisementsView(signInModel: signInModel),
+              builder: (context) => AdvertisementsView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.admins:
+      case admins:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AdminsView(signInModel: signInModel),
+              builder: (context) => AdminsView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
@@ -209,116 +222,150 @@ enum DrawerTileEnum {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => RestaurantView(signInModel: signInModel),
+              builder: (context) => RestaurantView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.tables:
+      case tables:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => TablesView(signInModel: signInModel),
+              builder: (context) => TablesView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.coupons:
+      case coupons:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CouponsView(signInModel: signInModel),
+              builder: (context) => CouponsView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.salesInventory:
+      case salesInventory:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => SalesView(signInModel: signInModel),
+              builder: (context) => SalesView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.invoices:
+      case invoices:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => InvoicesView(signInModel: signInModel),
+              builder: (context) => InvoicesView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.addOrder:
+      case addOrder:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddOrderView(signInModel: signInModel),
+              builder: (context) => AddOrderView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.employeesDetails:
+      case employeesDetails:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  EmployeesDetailsView(signInModel: signInModel),
+              builder: (context) => EmployeesDetailsView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.users:
+      case users:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => UsersView(signInModel: signInModel),
+              builder: (context) => UsersView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.drivers:
+      case drivers:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => DriversView(signInModel: signInModel),
+              builder: (context) => DriversView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.takeOutOrders:
+      case takeOutOrders:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => TakeoutOrdersView(signInModel: signInModel),
+              builder: (context) => TakeoutOrdersView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.ratings:
+      case ratings:
         return () {};
-      case DrawerTileEnum.services:
+      case services:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  CustomerServiceView(signInModel: signInModel),
+              builder: (context) => CustomerServiceView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.profile:
+      case profile:
         return () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProfileView(signInModel: signInModel),
+              builder: (context) => ProfileView(
+                restaurant: restaurant,
+                permissions: permissions,
+              ),
             ),
           );
         };
-      case DrawerTileEnum.userUi:
+      case userUi:
         return () {};
-      case DrawerTileEnum.logout:
+      case logout:
         return () {};
     }
   }

@@ -2,12 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/app_manager/cubit/app_manager_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/users/cubit/users_cubit.dart';
 import 'package:user_admin/features/users/model/user_model/user_model.dart';
 import 'package:user_admin/features/users/view/user_invoices_view.dart';
 import 'package:user_admin/features/users/view/widgets/add_user_widget.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
@@ -34,24 +35,28 @@ abstract class UsersViewCallBacks {
 class UsersView extends StatelessWidget {
   const UsersView({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return UsersPage(signInModel: signInModel);
+    return UsersPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class UsersPage extends StatefulWidget {
   const UsersPage({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<UsersPage> createState() => _UsersPageState();
@@ -70,7 +75,7 @@ class _UsersPageState extends State<UsersPage> implements UsersViewCallBacks {
 
   @override
   void onEditTap(UserModel user) {
-    _showDialog(EditUserWidget(user: user, signInModel: widget.signInModel));
+    _showDialog(EditUserWidget(user: user, restaurant: widget.restaurant));
   }
 
   @override
@@ -100,8 +105,12 @@ class _UsersPageState extends State<UsersPage> implements UsersViewCallBacks {
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) =>
-              UserInvoicesView(signInModel: widget.signInModel, user: user)),
+        builder: (context) => UserInvoicesView(
+          restaurant: widget.restaurant,
+          permissions: widget.permissions,
+          user: user,
+        ),
+      ),
     );
   }
 
@@ -139,7 +148,7 @@ class _UsersPageState extends State<UsersPage> implements UsersViewCallBacks {
   }
 
   bool hasPermission(String permission) {
-    return widget.signInModel.permissions.any(
+    return widget.permissions.any(
       (element) => element.name == permission,
     );
   }
@@ -157,7 +166,7 @@ class _UsersPageState extends State<UsersPage> implements UsersViewCallBacks {
 
     _addActionColumns(titles);
 
-    final restaurantColor = widget.signInModel.restaurant.color;
+    final restaurantColor = widget.restaurant.color;
 
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
@@ -167,7 +176,10 @@ class _UsersPageState extends State<UsersPage> implements UsersViewCallBacks {
       },
       child: Scaffold(
         appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        drawer: MainDrawer(
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
+        ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -176,7 +188,7 @@ class _UsersPageState extends State<UsersPage> implements UsersViewCallBacks {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  MainBackButton(color: restaurantColor ?? AppColors.black),
+                  MainBackButton(color: restaurantColor!),
                   const SizedBox(height: 20),
                   _buildHeader(),
                   const SizedBox(height: 20),

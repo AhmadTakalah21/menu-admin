@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/add_order/cubit/add_order_cubit.dart'
     as order_cubit;
 import 'package:user_admin/features/items/cubit/items_cubit.dart';
-import 'package:user_admin/features/items/model/item_model/item_model.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
@@ -26,14 +26,15 @@ abstract class CartViewCallBacks {
   void onAddOrder();
 }
 
-
 class CartView extends StatefulWidget {
   const CartView({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<CartView> createState() => _CartViewState();
@@ -59,8 +60,6 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
   void onRemoveTap(CartItemModel item) {
     addOrderCubit.removeItem(item);
   }
-
-
 
   @override
   void onAddOrder() {
@@ -120,11 +119,9 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                         ],
                       ),
                       const Divider(height: 30),
-
-
                       ...List.generate(
                         state.cartItems.length * 2 - 1,
-                            (index) {
+                        (index) {
                           if (index.isOdd) {
                             return const Divider(
                               height: 40,
@@ -139,17 +136,19 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
 
                           final selectedSize = cartItem.selectedSizeId != null
                               ? item.sizesTypes.firstWhere(
-                                (s) => s.id == cartItem.selectedSizeId,
-                            orElse: () => item.sizesTypes.first,
-                          )
+                                  (s) => s.id == cartItem.selectedSizeId,
+                                  orElse: () => item.sizesTypes.first,
+                                )
                               : null;
 
                           final selectedToppings = item.itemTypes
-                              .where((t) => cartItem.selectedToppingIds.contains(t.id))
+                              .where((t) =>
+                                  cartItem.selectedToppingIds.contains(t.id))
                               .toList();
 
                           final selectedComponents = item.componentsTypes
-                              .where((c) => cartItem.selectedComponentIds.contains(c.id))
+                              .where((c) =>
+                                  cartItem.selectedComponentIds.contains(c.id))
                               .toList();
 
                           return Row(
@@ -177,31 +176,33 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                                       ),
                                     ),
                                     const SizedBox(height: 6),
-
                                     if (selectedSize != null)
                                       Text(
                                         "${"size".tr()}: ${selectedSize.name}",
-                                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.black87),
                                       ),
-
                                     if (selectedToppings.isNotEmpty)
                                       Text(
                                         "${"toppings".tr()}: ${selectedToppings.map((t) => t.name).join(", ")}",
-                                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.black87),
                                       ),
-
                                     if (selectedComponents.isNotEmpty)
                                       Text(
                                         "${"components".tr()}: ${selectedComponents.map((c) => c.name).join(", ")}",
-                                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.black87),
                                       ),
-
                                     const SizedBox(height: 8),
                                     Text(
                                       "${"price".tr()}: ${addOrderCubit.calculateCartItemPrice(cartItem)} \$",
                                       style: TextStyle(
                                         fontSize: 16,
-                                        color: widget.signInModel.restaurant.color,
+                                        color: widget.restaurant.color,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -226,18 +227,22 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                                   children: [
                                     InkWell(
                                       onTap: () => onAddTap(cartItem),
-                                      child: Icon(Icons.add, color: widget.signInModel.restaurant.color),
+                                      child: Icon(Icons.add,
+                                          color: widget.restaurant.color),
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
                                       cartItem.count.toString(),
-                                      style: const TextStyle(fontSize: 16, color: AppColors.black),
+                                      style: const TextStyle(
+                                          fontSize: 16, color: AppColors.black),
                                     ),
                                     const SizedBox(width: 5),
                                     InkWell(
                                       onTap: () => onRemoveTap(cartItem),
                                       child: Icon(
-                                        cartItem.count == 1 ? Icons.delete : Icons.remove,
+                                        cartItem.count == 1
+                                            ? Icons.delete
+                                            : Icons.remove,
                                         color: AppColors.greyShade3,
                                       ),
                                     ),
@@ -248,8 +253,6 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                           );
                         },
                       ),
-
-
                       const Divider(
                         indent: 8,
                         endIndent: 8,
@@ -272,7 +275,7 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                             "${(addOrderCubit.total).toInt()} \$",
                             style: TextStyle(
                               fontSize: 18,
-                              color: widget.signInModel.restaurant.color,
+                              color: widget.restaurant.color,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -325,7 +328,7 @@ class _CartViewState extends State<CartView> implements CartViewCallBacks {
                             padding: AppConstants.padding8,
                             onPressed: onTap,
                             text: "add_order".tr(),
-                            buttonColor: widget.signInModel.restaurant.color,
+                            buttonColor: widget.restaurant.color,
                             child: child,
                           );
                         },

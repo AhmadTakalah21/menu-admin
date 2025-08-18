@@ -6,7 +6,7 @@ import 'package:user_admin/global/dio/app_interceptor.dart';
 import 'package:user_admin/global/utils/constants.dart';
 
 // const baseUrl ="https://tmenuback.le.sy";
-const baseUrl ="http://192.168.1.35:8000";
+const baseUrl = "http://192.168.1.35:8000";
 // const baseUrl = "https://tmenuback.addresses.sy";
 
 const apiUrl = '$baseUrl/user_api/';
@@ -45,11 +45,11 @@ class DioClient {
   late final Dio _dio;
 
   Future<Response<dynamic>> get(
-    String endpoint, {
-    Map<String, dynamic>? queries,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? data,
-  }) async {
+      String endpoint, {
+        Map<String, dynamic>? queries,
+        Map<String, dynamic>? headers,
+        Map<String, dynamic>? data,
+      }) async {
     return _dio.get(
       endpoint,
       queryParameters: queries,
@@ -59,11 +59,17 @@ class DioClient {
   }
 
   Future<Response<dynamic>> post(
-    String endpoint, {
-    Map<String, dynamic>? queries,
-    dynamic data,
-    Map<String, dynamic>? headers,
-  }) async {
+      String endpoint, {
+        Map<String, dynamic>? queries,
+        dynamic data,
+        Map<String, dynamic>? headers,
+        Duration? duration,
+      }) async {
+    _dio.options = _dio.options.copyWith(
+      receiveTimeout: duration,
+      connectTimeout: duration,
+      sendTimeout: duration,
+    );
     return _dio.post(
       endpoint,
       queryParameters: queries,
@@ -73,10 +79,10 @@ class DioClient {
   }
 
   Future<Response<dynamic>> put(
-    String endpoint, {
-    dynamic data,
-    Map<String, dynamic>? headers,
-  }) async {
+      String endpoint, {
+        dynamic data,
+        Map<String, dynamic>? headers,
+      }) async {
     return _dio.put(
       endpoint,
       data: data,
@@ -85,10 +91,10 @@ class DioClient {
   }
 
   Future<Response<dynamic>> patch(
-    String endpoint, {
-    dynamic data,
-    Map<String, dynamic>? headers,
-  }) async {
+      String endpoint, {
+        dynamic data,
+        Map<String, dynamic>? headers,
+      }) async {
     return _dio.patch(
       endpoint,
       data: data,
@@ -97,10 +103,10 @@ class DioClient {
   }
 
   Future<Response<dynamic>> delete(
-    String endpoint, {
-    dynamic data,
-    Map<String, dynamic>? headers,
-  }) async {
+      String endpoint, {
+        dynamic data,
+        Map<String, dynamic>? headers,
+      }) async {
     return _dio.delete(
       endpoint,
       data: data,

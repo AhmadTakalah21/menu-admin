@@ -4,7 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/drivers/cubit/drivers_cubit.dart';
 import 'package:user_admin/features/drivers/model/driver_model/driver_model.dart';
 import 'package:user_admin/features/drivers/model/drvier_invoice_model/drvier_invoice_model.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/invoice_widget.dart';
@@ -30,17 +31,20 @@ class DriverInvoicesView extends StatelessWidget {
   const DriverInvoicesView({
     super.key,
     required this.driver,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
   final DriverModel driver;
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
     return DriverInvoicesPage(
       driver: driver,
-      signInModel: signInModel,
+      permissions: permissions,
+      restaurant: restaurant,
     );
   }
 }
@@ -49,10 +53,12 @@ class DriverInvoicesPage extends StatefulWidget {
   const DriverInvoicesPage({
     super.key,
     required this.driver,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final DriverModel driver;
 
   @override
@@ -111,11 +117,14 @@ class _DriverInvoicesPageState extends State<DriverInvoicesPage>
       "status".tr(),
       "event".tr(),
     ];
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -124,7 +133,7 @@ class _DriverInvoicesPageState extends State<DriverInvoicesPage>
             children: [
               Padding(
                 padding: AppConstants.paddingH16,
-                child: MainBackButton(color: restColor ?? AppColors.black),
+                child: MainBackButton(color: restColor!),
               ),
               const SizedBox(height: 20),
               Padding(

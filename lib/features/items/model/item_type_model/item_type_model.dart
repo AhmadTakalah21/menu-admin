@@ -12,14 +12,14 @@ class ItemTypeModel implements DropDownItemModel {
   const ItemTypeModel({
     required this.id,
     this.name,
-    @JsonKey(name: "name_en") this.nameEn,
-    @JsonKey(name: "name_ar") this.nameAr,
-    @StringConverter() this.price,
+    this.nameEn,
+    this.nameAr,
+    this.price,
     this.image,
     this.itemId,
-    @JsonKey(name: "description_ar") this.descriptionAr,
-    @JsonKey(name: "description_en") this.descriptionEn,
-    @JsonKey(name: "status") this.status = 0,
+    this.descriptionAr,
+    this.descriptionEn,
+    this.status = 0,
   });
 
   @override

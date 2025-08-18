@@ -8,7 +8,6 @@ import 'package:user_admin/features/items/model/is_panorama_enum.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/utils/utils.dart';
-import 'package:user_admin/global/widgets/app_image_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_action_button.dart';
 import 'package:user_admin/global/widgets/main_drop_down_widget.dart';

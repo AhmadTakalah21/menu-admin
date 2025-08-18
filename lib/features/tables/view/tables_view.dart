@@ -17,6 +17,8 @@ import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 
 import '../../../global/di/di.dart';
+import '../../../global/model/restaurant_model/restaurant_model.dart';
+import '../../../global/model/role_model/role_model.dart';
 import '../../../global/widgets/invoice_widget.dart';
 import '../../add_order/view/add_order_view.dart';
 import '../../coupons/service/coupon_service.dart';
@@ -42,24 +44,28 @@ abstract class TablesViewCallBacks {
 class TablesView extends StatelessWidget {
   const TablesView({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return TablesPage(signInModel: signInModel);
+    return TablesPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class TablesPage extends StatefulWidget {
   const TablesPage({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<TablesPage> createState() => _TablesPageState();
@@ -113,8 +119,9 @@ class _TablesPageState extends State<TablesPage>
       context,
       MaterialPageRoute(
         builder: (context) => TableOrdersView(
-          signInModel: widget.signInModel,
+          restaurant: widget.restaurant,
           table: table,
+          permissions: widget.permissions,
         ),
       ),
     );
@@ -193,13 +200,13 @@ class _TablesPageState extends State<TablesPage>
       "event".tr(),
     ];
 
-    final addIndex = widget.signInModel.permissions
+    final addIndex = widget.permissions
         .indexWhere((e) => e.name == "table.add");
-    final editIndex = widget.signInModel.permissions
+    final editIndex = widget.permissions
         .indexWhere((e) => e.name == "table.update");
-    final deleteIndex = widget.signInModel.permissions
+    final deleteIndex = widget.permissions
         .indexWhere((e) => e.name == "table.delete");
-    final orderIndex = widget.signInModel.permissions
+    final orderIndex = widget.permissions
         .indexWhere((e) => e.name == "order.index");
     final isAdd = addIndex != -1;
     final isEdit = editIndex != -1;
@@ -207,7 +214,7 @@ class _TablesPageState extends State<TablesPage>
     final isOrder = orderIndex != -1;
 
     final restColor =
-        widget.signInModel.restaurant.color ?? const Color(0xFF2E4D2F);
+        widget.restaurant.color ?? const Color(0xFF2E4D2F);
 
     return MultiBlocListener(
       listeners: [
@@ -282,7 +289,10 @@ class _TablesPageState extends State<TablesPage>
       ],
       child: Scaffold(
         appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        drawer: MainDrawer(
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
+        ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -371,7 +381,8 @@ class _TablesPageState extends State<TablesPage>
                                       ? () => Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (_) => AddOrderView(
-                                        signInModel: widget.signInModel,
+                                        restaurant: widget.restaurant,
+                                        permissions: widget.permissions,
                                       ),
                                     ),
                                   )

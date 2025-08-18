@@ -12,8 +12,9 @@ import 'package:user_admin/features/drivers/model/driver_model/driver_model.dart
 import 'package:user_admin/features/drivers/view/driver_invoices_view.dart';
 import 'package:user_admin/features/drivers/view/widgets/add_driver_widget.dart';
 import 'package:user_admin/features/drivers/view/widgets/map_view.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
@@ -27,43 +28,43 @@ import 'package:user_admin/global/widgets/select_page_tile.dart';
 
 abstract class DriversViewCallBacks {
   void onAddTap();
-
   void onEditTap(DriverModel driver);
-
   void onShowMapTap(DriverModel driver);
-
   void onDeleteTap(DriverModel driver);
-
   void onSaveDeleteTap(DriverModel driver);
-
   void onSaveActivateTap(DriverModel driver);
-
   void onActivateTap(DriverModel driver);
-
   void onShowDriverInvoices(DriverModel driver);
-
   void onSelectPageTap(int page);
-
   Future<void> onRefresh();
-
   void onTryAgainTap();
 }
 
 class DriversView extends StatelessWidget {
-  const DriversView({super.key, required this.signInModel});
+  const DriversView({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return CouponsPage(signInModel: signInModel);
+    return CouponsPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class CouponsPage extends StatefulWidget {
-  const CouponsPage({super.key, required this.signInModel});
+  const CouponsPage({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<CouponsPage> createState() => _CouponsPageState();
@@ -105,7 +106,8 @@ class _CouponsPageState extends State<CouponsPage>
     showDialog(
       context: context,
       builder: (context) => AddDriverWidget(
-        signInModel: widget.signInModel,
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
         isEdit: false,
       ),
     );
@@ -172,7 +174,8 @@ class _CouponsPageState extends State<CouponsPage>
     showDialog(
       context: context,
       builder: (context) => AddDriverWidget(
-        signInModel: widget.signInModel,
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
         isEdit: true,
         driver: driver,
       ),
@@ -186,7 +189,8 @@ class _CouponsPageState extends State<CouponsPage>
       MaterialPageRoute(
         builder: (context) => DriverInvoicesView(
           driver: driver,
-          signInModel: widget.signInModel,
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
         ),
       ),
     );
@@ -240,7 +244,7 @@ class _CouponsPageState extends State<CouponsPage>
       "status".tr(),
     ];
     final permissions =
-        widget.signInModel.permissions.map((e) => e.name).toSet();
+        widget.permissions.map((e) => e.name).toSet();
 
     final isAdd = permissions.contains("delivery.add");
     final isEdit = permissions.contains("delivery.update");
@@ -252,7 +256,7 @@ class _CouponsPageState extends State<CouponsPage>
       titles.add("event".tr());
     }
 
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
@@ -266,7 +270,10 @@ class _CouponsPageState extends State<CouponsPage>
       },
       child: Scaffold(
         appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        drawer: MainDrawer(
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
+        ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -274,7 +281,7 @@ class _CouponsPageState extends State<CouponsPage>
               children: [
                 Padding(
                   padding: AppConstants.paddingH16,
-                  child: MainBackButton(color: restColor ?? AppColors.black),
+                  child: MainBackButton(color: restColor!),
                 ),
                 const SizedBox(height: 20),
                 Padding(

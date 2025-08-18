@@ -4,6 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/sign_in/view/sign_in_view.dart';
 import 'package:user_admin/features/welcome/view/welcome_view.dart';
+import 'package:user_admin/global/di/di.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 
 abstract class Utils {
   static Color? stringToColor(String color) {
@@ -12,23 +15,33 @@ abstract class Utils {
     return Color(hex);
   }
 
-  static Future<Widget> determineInitialRoute() async {
-    final prefs = await SharedPreferences.getInstance();
+  static Widget determineInitialRoute(RestaurantModel restaurant) {
+    final prefs = get<SharedPreferences>();
     final isLogin = prefs.getBool("is_login") ?? false;
-    final signInModelString = prefs.getString("admin_data");
-    if (signInModelString == null) {
-      print("is fals");
-      return const SignInView();
 
-    }
     if (isLogin) {
-      final signInModel = SignInModel.fromString(signInModelString);
+      final adminString = prefs.getString("admin_data")!;
+      final admin = SignInModel.fromString(adminString);
 
-      return WelcomeView(signInModel: signInModel);
+      return WelcomeView(admin: admin,restaurant:restaurant);
     } else {
-      print("is fals after");
-      return const SignInView();
+      return SignInView(restaurant: restaurant);
     }
+
+    // final signInModelString = prefs.getString("admin_data");
+    // SignInModel? signInModel;
+    // if (signInModelString == null) {
+    //   // TODO check this
+    //   //return const SignInView();
+    //   return const SplashView();
+    // } else {
+    //   signInModel = SignInModel.fromString(signInModelString);
+    // }
+    // if (isLogin) {
+    //   return WelcomeView(signInModel: signInModel);
+    // } else {
+    //   return SignInView(restaurant: signInModel.restaurant);
+    // }
   }
 
   static String convertDateFormat(String inputDate) {
@@ -51,5 +64,10 @@ abstract class Utils {
   static String capitalizeFirst(String input) {
     if (input.isEmpty) return input;
     return input[0].toUpperCase() + input.substring(1);
+  }
+
+  static bool hasPermission(
+      List<RoleModel> permissions, String permissionName) {
+    return permissions.any((permission) => permission.name == permissionName);
   }
 }

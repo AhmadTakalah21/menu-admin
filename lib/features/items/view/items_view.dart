@@ -12,54 +12,52 @@ import 'package:user_admin/features/items/model/item_model/item_model.dart';
 import 'package:user_admin/features/items/view/widgets/add_to_cart_widget.dart';
 import 'package:user_admin/features/items/view/widgets/edit_item_widget.dart';
 import 'package:user_admin/features/items/view/widgets/item_details_widget.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
+import 'package:user_admin/global/utils/utils.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
-import 'package:user_admin/global/widgets/main_action_button.dart';
-import 'package:user_admin/global/widgets/main_back_button.dart';
-import 'package:user_admin/global/widgets/main_drawer.dart';
+import 'package:user_admin/global/widgets/main_add_button.dart';
+import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
+import 'package:user_admin/global/widgets/switch_view_button.dart';
 
 abstract class ItemsViewCallBacks {
   void onAddTap();
-
   Future<void> onRefresh();
-
   void onEditTap(ItemModel item);
-
   void onDeleteTap(ItemModel item);
-
   void onSaveDeleteTap(ItemModel item);
-
   void onSaveActivateTap(ItemModel item);
-
   void onActivateTap(ItemModel item);
-
   void onShowDetailsTap(ItemModel item);
-
   void onAddToCart(ItemModel item);
-
+  void onMoreOptionsTap(ItemModel item);
+  void onSwichViewTap();
   void onTryAgainTap();
 }
 
 class ItemsView extends StatelessWidget {
   const ItemsView({
     super.key,
-    required this.signInModel,
     required this.category,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final CategoryModel category;
 
   @override
   Widget build(BuildContext context) {
     return ItemsPage(
-      signInModel: signInModel,
       category: category,
+      permissions: permissions,
+      restaurant: restaurant,
     );
   }
 }
@@ -67,11 +65,13 @@ class ItemsView extends StatelessWidget {
 class ItemsPage extends StatefulWidget {
   const ItemsPage({
     super.key,
-    required this.signInModel,
     required this.category,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final CategoryModel category;
 
   @override
@@ -81,6 +81,8 @@ class ItemsPage extends StatefulWidget {
 class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
   late final ItemsCubit itemsCubit = context.read();
   late final DeleteCubit deleteCubit = context.read();
+
+  bool isCardView = true;
 
   late final StreamSubscription<List<ConnectivityResult>> subscription;
 
@@ -100,8 +102,8 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
   }
 
   @override
-  void onActivateTap(ItemModel item) {
-    showDialog(
+  Future<bool> onActivateTap(ItemModel item) async {
+    final success = await showDialog<bool>(
       context: context,
       builder: (context) {
         return InsureDeleteWidget(
@@ -111,6 +113,7 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
         );
       },
     );
+    return success ?? false;
   }
 
   @override
@@ -190,6 +193,52 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
   }
 
   @override
+  void onMoreOptionsTap(ItemModel item) {
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ActionTile(
+                icon: Icons.remove_red_eye_outlined,
+                label: 'عرض التفاصيل',
+                onTap: () => onShowDetailsTap(item),
+              ),
+              _ActionTile(
+                icon: Icons.edit_outlined,
+                label: 'تعديل',
+                onTap: () => onEditTap(item),
+              ),
+              _ActionTile(
+                icon: Icons.delete_outline,
+                label: 'حذف',
+                isDestructive: true,
+                onTap: () => onDeleteTap(item),
+              ),
+              const SizedBox(height: 6),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void onSwichViewTap() {
+    setState(() {
+      isCardView = !isCardView;
+    });
+  }
+
+  @override
   void onSaveDeleteTap(ItemModel item) {
     deleteCubit.deleteItem<ItemModel>(item);
   }
@@ -202,28 +251,13 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
 
   @override
   Widget build(BuildContext context) {
-    int addIndex = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "item.add",
-    );
-    int editIndex = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "item.update",
-    );
-    int activeIndex = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "item.active",
-    );
-    int deleteIndex = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "item.delete",
-    );
-    int orderIndex = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "order.add",
-    );
-    bool isAdd = addIndex != -1;
-    bool isEdit = editIndex != -1;
-    bool isActive = activeIndex != -1;
-    bool isDelete = deleteIndex != -1;
-    bool isOrder = orderIndex != -1;
+    final permissions = widget.permissions;
 
-    final restColor = widget.signInModel.restaurant.color;
+    bool isAdd = Utils.hasPermission(permissions, "item.add");
+    bool isEdit = Utils.hasPermission(permissions, "item.update");
+    bool isActive = Utils.hasPermission(permissions, "item.active");
+    bool isDelete = Utils.hasPermission(permissions, "item.delete");
+    bool isOrder = Utils.hasPermission(permissions, "item.add");
 
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
@@ -232,8 +266,11 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
         }
       },
       child: Scaffold(
-        appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        appBar: MainAppBar(restaurant: widget.restaurant, title: "items".tr()),
+        // drawer: MainDrawer(
+        //   restaurant: widget.restaurant,
+        //   permissions: widget.permissions,
+        // ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -241,39 +278,17 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
               padding: AppConstants.padding16,
               child: Column(
                 children: [
-                  MainBackButton(color: restColor ?? AppColors.black),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Text(
-                        "items".tr(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const Spacer(),
-                      MainActionButton(
-                        padding: AppConstants.padding10,
-                        onPressed: onRefresh,
-                        text: "",
-                        child:
-                            const Icon(Icons.refresh, color: AppColors.white),
-                      ),
-                      if (isAdd) const SizedBox(width: 10),
-                      if (isAdd)
-                        MainActionButton(
-                          padding: AppConstants.padding10,
-                          onPressed: onAddTap,
-                          text: "Add Category",
-                          child: const Icon(
-                            Icons.add_circle,
-                            color: AppColors.white,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                  // Row(
+                  //   children: [
+                  //     MainBackButton(color: restColor),
+                  //     const Spacer(),
+                  //     if (isAdd) ...[
+                  //       const SizedBox(width: 10),
+                  //       MainAddButton(onTap: onAddTap, title: "add_item".tr()),
+                  //     ],
+                  //   ],
+                  // ),
+                  // const SizedBox(height: 20),
                   BlocBuilder<ItemsCubit, GeneralItemsState>(
                     buildWhen: (previous, current) => current is ItemsState,
                     builder: (context, state) {
@@ -283,30 +298,35 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
                         if (state.items.isEmpty) {
                           return Text("no_items".tr());
                         }
-                        return Padding(
-                          padding: AppConstants.paddingH60,
-                          child: ListView.separated(
-                            itemCount: state.items.length,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemBuilder: (context, index) {
-                              final item = state.items[index];
-                              return CategoryTile(
-                                onEditTap: isEdit ? onEditTap : null,
-                                onDeleteTap: isDelete ? onDeleteTap : null,
-                                onDeactivateTap:
-                                    isActive ? onActivateTap : null,
-                                onAddToCart: isOrder ? onAddToCart : null,
-                                onShowDetailsTap: onShowDetailsTap,
-                                item: item,
-                                restaurant: widget.signInModel.restaurant,
-                                locale: context.locale,
-                              );
-                            },
-                            separatorBuilder: (context, index) {
-                              return const SizedBox(height: 20);
-                            },
+                        return GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 20,
+                            childAspectRatio: 3 / 3.5,
                           ),
+                          itemCount: state.items.length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            final item = state.items[index];
+                            return CategoryTile(
+                              // onEditTap: isEdit ? onEditTap : null,
+                              // onDeleteTap: isDelete ? onDeleteTap : null,
+                              onMoreOptionsTap: (isEdit && isDelete)
+                                  ? onMoreOptionsTap
+                                  : null,
+                              onDeactivateTap: isActive ? onActivateTap : null,
+                              onAddToCart: isOrder ? onAddToCart : null,
+                              onShowDetailsTap: (!isEdit && !isDelete)
+                                  ? onShowDetailsTap
+                                  : null,
+                              item: item,
+                              restaurant: widget.restaurant,
+                              locale: context.locale,
+                            );
+                          },
                         );
                       } else if (state is ItemsFail) {
                         return MainErrorWidget(
@@ -324,7 +344,48 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
             ),
           ),
         ),
+        floatingActionButton: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            SwitchViewButton(
+              onTap: onSwichViewTap,
+              isCardView: isCardView,
+              color: widget.restaurant.color!,
+            ),
+            const SizedBox(width: 10),
+            if (isAdd)
+              MainAddButton(onTap: onAddTap, color: widget.restaurant.color!)
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.isDestructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDestructive ? const Color(0xFFE53935) : Colors.black87;
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(label,
+          style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+      onTap: () {
+        Navigator.of(context).pop();
+        onTap?.call();
+      },
     );
   }
 }

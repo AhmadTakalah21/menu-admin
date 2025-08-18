@@ -13,7 +13,7 @@ abstract class ItemTileModel {
   bool get isActive;
 }
 
-class CategoryTile<T extends ItemTileModel> extends StatelessWidget {
+class CategoryTile<T extends ItemTileModel> extends StatefulWidget {
   const CategoryTile({
     super.key,
     required this.item,
@@ -25,46 +25,49 @@ class CategoryTile<T extends ItemTileModel> extends StatelessWidget {
     this.onEditTap,
     this.onDeleteTap,
     this.onDeactivateTap,
+    this.onMoreOptionsTap,
   });
 
   final T item;
   final RestaurantModel restaurant;
   final Locale locale;
-  final ValueSetter<T>? onTap;
-  final ValueSetter<T>? onAddToCart;
-  final ValueSetter<T>? onShowDetailsTap;
-  final ValueSetter<T>? onEditTap;
-  final ValueSetter<T>? onDeleteTap;
-  final ValueSetter<T>? onDeactivateTap;
+  final void Function(T item)? onTap;
+  final void Function(T item)? onAddToCart;
+  final void Function(T item)? onShowDetailsTap;
+  final void Function(T item)? onEditTap;
+  final void Function(T item)? onDeleteTap;
+  final void Function(T item)? onMoreOptionsTap;
+  final Future<bool> Function(T item)? onDeactivateTap;
 
   @override
-  Widget build(BuildContext context) {
-    final name = locale == SupportedLocales.english ? item.nameEn : item.nameAr;
+  State<CategoryTile<T>> createState() => _CategoryTileState<T>();
+}
 
+class _CategoryTileState<T extends ItemTileModel>
+    extends State<CategoryTile<T>> {
+  // bool isActive = true;
+  late bool isActive = widget.item.isActive;
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => onTap?.call(item),
+      onTap: () => widget.onTap?.call(widget.item),
       child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: AppConstants.borderRadius10,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 4,
-              offset: const Offset(0, 4),
-            ),
-          ],
+        padding: AppConstants.padding4,
+        decoration: const BoxDecoration(
+          color: Color(0xFFD9D9D9),
+          borderRadius: AppConstants.borderRadius20,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            AppImageWidget(
-              fit: BoxFit.contain,
-              borderRadius: AppConstants.borderRadius10,
-              url: item.image,
-              errorWidget: SizedBox(
-                height: 200,
-                child: Center(
+            AspectRatio(
+              aspectRatio: 4 / 2.8,
+              child: AppImageWidget(
+                fit: BoxFit.cover,
+                borderRadius: AppConstants.borderRadius15,
+                backgroundColor: widget.restaurant.color,
+                url: widget.item.image,
+                errorWidget: Center(
                   child: Text(
                     "no_image".tr(),
                     style: const TextStyle(fontSize: 20),
@@ -72,21 +75,8 @@ class CategoryTile<T extends ItemTileModel> extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              name,
-              style: TextStyle(
-                // color: restaurant.fColorCategory,
-                color: Colors.black,
-
-              overflow: TextOverflow.ellipsis,
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
             _buildActions(),
-            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -94,33 +84,61 @@ class CategoryTile<T extends ItemTileModel> extends StatelessWidget {
   }
 
   Widget _buildActions() {
+    final name = widget.locale == SupportedLocales.english
+        ? widget.item.nameEn
+        : widget.item.nameAr;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (onShowDetailsTap != null)
+        if (widget.onShowDetailsTap != null)
           _ActionIcon(
-            icon: Icons.remove_red_eye,
-            onPressed: () => onShowDetailsTap!(item),
+            icon: Icons.remove_red_eye_outlined,
+            onPressed: () => widget.onShowDetailsTap!(widget.item),
           ),
-        if (onEditTap != null)
+        if (widget.onEditTap != null)
           _ActionIcon(
-            icon: Icons.edit,
-            onPressed: () => onEditTap!(item),
+            icon: Icons.edit_outlined,
+            onPressed: () => widget.onEditTap!(widget.item),
           ),
-        if (onDeleteTap != null)
+          if (widget.onAddToCart != null)
           _ActionIcon(
-            icon: Icons.delete,
-            onPressed: () => onDeleteTap!(item),
+            icon: Icons.add_shopping_cart_outlined,
+            onPressed: () => widget.onAddToCart!(widget.item),
           ),
-        if (onDeactivateTap != null)
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 80,
+              child: Text(
+                name,
+                style: TextStyle(
+                  color: widget.restaurant.color,
+                  overflow: TextOverflow.ellipsis,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            if (widget.onDeactivateTap != null)
+              CustomSwitch(
+                value: isActive,
+                onChanged: (val) => widget.onDeactivateTap?.call(widget.item),
+              )
+          ],
+        ),
+        if (widget.onDeleteTap != null)
           _ActionIcon(
-            icon: item.isActive ? Icons.block : Icons.check_circle,
-            onPressed: () => onDeactivateTap!(item),
+            icon: Icons.delete_outline_outlined,
+            onPressed: () => widget.onDeleteTap!(widget.item),
           ),
-        if (onAddToCart != null)
+        if (widget.onMoreOptionsTap != null)
           _ActionIcon(
-            icon: Icons.add_shopping_cart,
-            onPressed: () => onAddToCart!(item),
+            icon: Icons.more_vert_outlined,
+            onPressed: () => widget.onMoreOptionsTap!(widget.item),
           ),
       ],
     );
@@ -140,7 +158,75 @@ class _ActionIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
-      child: Icon(icon, size: 30),
+      child: DecoratedBox(
+          decoration: const BoxDecoration(
+              color: Color(0xFFBDD358),
+              borderRadius: AppConstants.borderRadius5),
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: Icon(icon, size: 25),
+          )),
+    );
+  }
+}
+
+class CustomSwitch extends StatefulWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final double height;
+  final double width;
+  final Color activeColor;
+  final Color inactiveColor;
+  final Color thumbColor;
+
+  const CustomSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.height = 20,
+    this.width = 80,
+    this.activeColor = const Color(0xFF000000),
+    this.inactiveColor = const Color(0xFFBDD358),
+    this.thumbColor = Colors.white,
+  });
+
+  @override
+  State<CustomSwitch> createState() => _CustomSwitchState();
+}
+
+class _CustomSwitchState extends State<CustomSwitch> {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => widget.onChanged(!widget.value),
+      child: Container(
+        height: widget.height,
+        width: widget.width,
+        decoration: BoxDecoration(
+            color: widget.value ? widget.activeColor : widget.inactiveColor,
+            borderRadius: AppConstants.borderRadius10,
+            border: Border.all(width: 1.5, color: AppColors.white)),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          alignment:
+              widget.value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: widget.width / 2,
+            decoration: BoxDecoration(
+              color: widget.thumbColor,
+              borderRadius: AppConstants.borderRadius10,
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

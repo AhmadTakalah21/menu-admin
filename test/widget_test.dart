@@ -13,9 +13,7 @@ import 'package:user_admin/global/utils/utils.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    final initialView = await Utils.determineInitialRoute();
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(AdminApp(initialView: initialView));
+    await tester.pumpWidget(AdminApp());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

@@ -12,11 +12,10 @@ import 'package:user_admin/firebase_options.dart';
 import 'package:user_admin/global/blocs/user_admin_bloc_observer.dart';
 import 'package:user_admin/global/di/di.dart';
 import 'package:user_admin/global/services/notafications_service/notafications_service.dart';
-import 'package:user_admin/global/utils/utils.dart';
 
 Future<void> runAppWithReporting() async {
   await runZonedGuarded(
-    () async {
+        () async {
       WidgetsFlutterBinding.ensureInitialized();
       await EasyLocalization.ensureInitialized();
       await configureDependencies();
@@ -42,8 +41,7 @@ Future<void> runAppWithReporting() async {
 
 
 
-      final initialView = await Utils.determineInitialRoute();
-      final app = AdminApp(initialView: initialView);
+      const app = AdminApp();
 
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
@@ -53,7 +51,7 @@ Future<void> runAppWithReporting() async {
       runApp(app);
       subscription.cancel();
     },
-    (error, stackTrace) {
+        (error, stackTrace) {
       debugPrint('runAppWithReporting error: $error');
       debugPrint('runAppWithReporting stackTrace: $stackTrace');
     },

@@ -2,9 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/drivers/model/drvier_invoice_model/drvier_invoice_model.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/users/cubit/users_cubit.dart';
 import 'package:user_admin/features/users/model/user_model/user_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/invoice_widget.dart';
@@ -26,27 +27,35 @@ abstract class UserInvoicesViewCallBacks {
 class UserInvoicesView extends StatelessWidget {
   const UserInvoicesView({
     super.key,
-    required this.signInModel,
     required this.user,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final UserModel user;
 
   @override
   Widget build(BuildContext context) {
-    return UserInvoicesPage(signInModel: signInModel, user: user);
+    return UserInvoicesPage(
+      user: user,
+      permissions: permissions,
+      restaurant: restaurant,
+    );
   }
 }
 
 class UserInvoicesPage extends StatefulWidget {
   const UserInvoicesPage({
     super.key,
-    required this.signInModel,
     required this.user,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final UserModel user;
 
   @override
@@ -112,11 +121,14 @@ class _UserInvoicesPageState extends State<UserInvoicesPage>
       "status".tr(),
       "event".tr(),
     ];
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -125,7 +137,7 @@ class _UserInvoicesPageState extends State<UserInvoicesPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor ?? AppColors.black),
+                MainBackButton(color: restColor!),
                 const SizedBox(height: 20),
                 _buildHeader(),
                 const SizedBox(height: 20),

@@ -43,13 +43,13 @@ class AddAdvertisementModel {
 
   /// ✅ دالة تحقق آمنة من القيم المطلوبة
   void validateFields() {
-    if (_title == null || _title!.isEmpty) {
+    if (_title == null || _title.isEmpty) {
       throw "name_empty".tr();
     }
-    if (_fromDate == null || _fromDate!.isEmpty) {
+    if (_fromDate == null || _fromDate.isEmpty) {
       throw "from_date_empty".tr();
     }
-    if (_toDate == null || _toDate!.isEmpty) {
+    if (_toDate == null || _toDate.isEmpty) {
       throw "to_date_empty".tr();
     }
   }

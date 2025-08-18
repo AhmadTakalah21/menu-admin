@@ -14,8 +14,9 @@ import 'package:user_admin/features/drivers/model/drvier_invoice_model/drvier_in
 import 'package:user_admin/features/invoices/cubit/invoices_cubit.dart';
 import 'package:user_admin/features/invoices/view/widgets/add_invoice_widget.dart';
 import 'package:user_admin/features/items/cubit/items_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/takeout_orders/cubit/takeout_orders_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
@@ -62,24 +63,28 @@ abstract class InvoicesViewCallBacks {
 class InvoicesView extends StatelessWidget {
   const InvoicesView({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return InvoicesPage(signInModel: signInModel);
+    return InvoicesPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<InvoicesPage> createState() => _InvoicesPageState();
@@ -141,7 +146,7 @@ class _InvoicesPageState extends State<InvoicesPage>
     ];
     final listOfData = List.generate(
       invoices.length,
-      (index) {
+          (index) {
         return [
           TextCellValue(invoices[index].number.toString()),
           TextCellValue(invoices[index].total ?? "_"),
@@ -304,18 +309,21 @@ class _InvoicesPageState extends State<InvoicesPage>
     ];
 
     final permissions =
-        widget.signInModel.permissions.map((e) => e.name).toSet();
+    widget.permissions.map((e) => e.name).toSet();
 
     final isAdd = permissions.contains("order.add");
     final isEdit = permissions.contains("order.update");
     final isAddService = permissions.contains("service.add");
     final isExcel = permissions.contains("excel");
 
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -327,7 +335,7 @@ class _InvoicesPageState extends State<InvoicesPage>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    MainBackButton(color: restColor ?? AppColors.black),
+                    MainBackButton(color: restColor!),
                     Text(
                       "invoices".tr(),
                       style: const TextStyle(
@@ -343,7 +351,7 @@ class _InvoicesPageState extends State<InvoicesPage>
                     if (isExcel)
                       BlocBuilder<InvoicesCubit, GeneralInvoicesState>(
                         buildWhen: (previous, current) =>
-                            current is InvoicesState,
+                        current is InvoicesState,
                         builder: (context, state) {
                           if (state is InvoicesSuccess) {
                             final invoices = state.paginatedModel.data;
@@ -407,7 +415,7 @@ class _InvoicesPageState extends State<InvoicesPage>
                       const SizedBox(height: 20),
                       BlocBuilder<ItemsCubit, GeneralItemsState>(
                         buildWhen: (previous, current) =>
-                            current is TablesState,
+                        current is TablesState,
                         builder: (context, state) {
                           if (state is TablesLoading) {
                             return const LoadingIndicator(
@@ -432,7 +440,7 @@ class _InvoicesPageState extends State<InvoicesPage>
                       const SizedBox(height: 20),
                       BlocBuilder<InvoicesCubit, GeneralInvoicesState>(
                         buildWhen: (previous, current) =>
-                            current is WaitersState,
+                        current is WaitersState,
                         builder: (context, state) {
                           if (state is WaitersLoading) {
                             return const LoadingIndicator(
@@ -467,7 +475,7 @@ class _InvoicesPageState extends State<InvoicesPage>
                       List<DataRow> rows = [];
                       rows = List.generate(
                         state.paginatedModel.data.length,
-                        (index) {
+                            (index) {
                           final invoice = state.paginatedModel.data[index];
                           final values = [
                             Text(invoice.number.toString()),
@@ -498,7 +506,7 @@ class _InvoicesPageState extends State<InvoicesPage>
                                             context, state.message);
                                         invoicesCubit.getInvoices(selectedPage);
                                       } else if (state
-                                              is UpdateStatusToPaidFail &&
+                                      is UpdateStatusToPaidFail &&
                                           state.index == index) {
                                         MainSnackBar.showErrorMessage(
                                             context, state.error);
@@ -529,13 +537,13 @@ class _InvoicesPageState extends State<InvoicesPage>
                                       GeneralTakeoutOrdersState>(
                                     listener: (context, state) {
                                       if (state
-                                              is UpdateStatusToReceivedSuccess &&
+                                      is UpdateStatusToReceivedSuccess &&
                                           state.index == index) {
                                         MainSnackBar.showSuccessMessage(
                                             context, state.message);
                                         invoicesCubit.getInvoices(selectedPage);
                                       } else if (state
-                                              is UpdateStatusToReceivedFail &&
+                                      is UpdateStatusToReceivedFail &&
                                           state.index == index) {
                                         MainSnackBar.showErrorMessage(
                                             context, state.error);
@@ -548,7 +556,7 @@ class _InvoicesPageState extends State<InvoicesPage>
                                         FontAwesomeIcons.handHolding,
                                       );
                                       if (state
-                                              is UpdateStatusToReceivedLoading &&
+                                      is UpdateStatusToReceivedLoading &&
                                           state.index == index) {
                                         onTap = (driver, index) {};
                                         child = const LoadingIndicator(
@@ -575,7 +583,7 @@ class _InvoicesPageState extends State<InvoicesPage>
                           return DataRow(
                             cells: List.generate(
                               values.length,
-                              (index2) {
+                                  (index2) {
                                 return DataCell(
                                   Center(child: values[index2]),
                                 );

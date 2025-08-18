@@ -40,8 +40,8 @@ class _InsureDeleteWidgetState<T extends DeleteModel>
   late final AppManagerCubit appManagerCubit = context.read();
   late final ItemsCubit itemsCubit = context.read();
 
-  void onIgnoreTap(BuildContext context) {
-    Navigator.pop(context);
+  void onIgnoreTap(BuildContext context, bool result) {
+    Navigator.pop(context, result);
   }
 
   @override
@@ -69,7 +69,7 @@ class _InsureDeleteWidgetState<T extends DeleteModel>
                 ),
               ),
               InkWell(
-                onTap: () => onIgnoreTap(context),
+                onTap: () => onIgnoreTap(context, false),
                 child: const Icon(
                   Icons.close,
                   color: AppColors.greyShade,
@@ -97,14 +97,14 @@ class _InsureDeleteWidgetState<T extends DeleteModel>
                   if (state is DeleteSuccess) {
                     appManagerCubit.emitDeleteSuccess(widget.item);
 
-                    onIgnoreTap(context);
+                    onIgnoreTap(context, false);
                     MainSnackBar.showSuccessMessage(context, state.message);
                   } else if (state is DeleteFail) {
                     MainSnackBar.showErrorMessage(context, state.error);
                   } else if (state is ActivateSuccess) {
                     appManagerCubit.emitDeleteSuccess(widget.item);
-                    
-                    onIgnoreTap(context);
+
+                    onIgnoreTap(context, true);
                     MainSnackBar.showSuccessMessage(context, state.message);
                   } else if (state is ActivateFail) {
                     MainSnackBar.showErrorMessage(context, state.error);
@@ -130,7 +130,7 @@ class _InsureDeleteWidgetState<T extends DeleteModel>
               MainActionButton(
                 padding: AppConstants.padding6,
                 buttonColor: AppColors.greyShade,
-                onPressed: () => onIgnoreTap(context),
+                onPressed: () => onIgnoreTap(context, false),
                 text: "ignore".tr(),
               ),
             ],

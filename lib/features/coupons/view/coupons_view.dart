@@ -5,8 +5,9 @@ import 'package:user_admin/features/app_manager/cubit/app_manager_cubit.dart';
 import 'package:user_admin/features/coupons/cubit/coupons_cubit.dart';
 import 'package:user_admin/features/coupons/model/coupon_model/coupon_model.dart';
 import 'package:user_admin/features/coupons/view/widgets/add_coupon_widget.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
@@ -39,20 +40,30 @@ abstract class CouponsViewCallBacks {
 }
 
 class CouponsView extends StatelessWidget {
-  const CouponsView({super.key, required this.signInModel});
+  const CouponsView({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return CouponsPage(signInModel: signInModel);
+    return CouponsPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class CouponsPage extends StatefulWidget {
-  const CouponsPage({super.key, required this.signInModel});
+  const CouponsPage({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<CouponsPage> createState() => _CouponsPageState();
@@ -78,8 +89,7 @@ class _CouponsPageState extends State<CouponsPage>
   }
 
   void _loadPermissions() {
-    final permissions =
-        widget.signInModel.permissions.map((e) => e.name).toSet();
+    final permissions = widget.permissions.map((e) => e.name).toSet();
     canAdd = permissions.contains("coupon.add");
     canEdit = permissions.contains("coupon.update");
     canDelete = permissions.contains("coupon.delete");
@@ -181,7 +191,7 @@ class _CouponsPageState extends State<CouponsPage>
       titles.add("event".tr());
     }
 
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
@@ -191,7 +201,10 @@ class _CouponsPageState extends State<CouponsPage>
       },
       child: Scaffold(
         appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        drawer: MainDrawer(
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
+        ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -199,7 +212,7 @@ class _CouponsPageState extends State<CouponsPage>
               padding: AppConstants.padding16,
               child: Column(
                 children: [
-                  MainBackButton(color: restColor ?? AppColors.black),
+                  MainBackButton(color: restColor!),
                   const SizedBox(height: 20),
                   _buildHeader(),
                   const SizedBox(height: 20),

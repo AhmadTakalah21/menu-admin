@@ -7,8 +7,9 @@ import 'package:user_admin/features/admins/model/role_enum.dart';
 import 'package:user_admin/features/admins/view/widgets/admin_details_widget.dart';
 import 'package:user_admin/features/admins/view/widgets/update_admin_widget.dart';
 import 'package:user_admin/features/app_manager/cubit/app_manager_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/utils/utils.dart';
@@ -54,24 +55,28 @@ abstract class AdminsViewCallBacks {
 class AdminsView extends StatelessWidget {
   const AdminsView({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return AdminsPage(signInModel: signInModel);
+    return AdminsPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class AdminsPage extends StatefulWidget {
   const AdminsPage({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<AdminsPage> createState() => _AdminsPageState();
@@ -267,15 +272,14 @@ class _AdminsPageState extends State<AdminsPage>
       "event".tr(),
     ];
 
-    final permissions =
-        widget.signInModel.permissions.map((e) => e.name).toSet();
+    final permissions = widget.permissions.map((e) => e.name).toSet();
 
     final bool isEdit = permissions.contains("user.update");
     final bool isActive = permissions.contains("user.active");
     final bool isDelete = permissions.contains("user.delete");
     final bool isAdd = permissions.contains("user.add");
 
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
@@ -285,7 +289,10 @@ class _AdminsPageState extends State<AdminsPage>
       },
       child: Scaffold(
         appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        drawer: MainDrawer(
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
+        ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -294,7 +301,7 @@ class _AdminsPageState extends State<AdminsPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  MainBackButton(color: restColor ?? AppColors.black),
+                  MainBackButton(color: restColor),
                   const SizedBox(height: 20),
                   Row(
                     children: [
@@ -370,8 +377,7 @@ class _AdminsPageState extends State<AdminsPage>
                             });
                             adminsCubit.getAdmins(selectedPage);
                           },
-                          showCloseIcon:
-                              endDateController.text != "mm/dd/yyyy",
+                          showCloseIcon: endDateController.text != "mm/dd/yyyy",
                           suffixIcon: IconButton(
                             onPressed: onEndDateSelected,
                             icon: const Icon(Icons.calendar_today),

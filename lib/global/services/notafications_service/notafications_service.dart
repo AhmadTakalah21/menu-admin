@@ -3,14 +3,8 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:get/get.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:user_admin/features/invoices/view/invoices_view.dart';
-import 'package:user_admin/features/ratings/view/ratings_view.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
-import 'package:user_admin/features/sign_in/view/sign_in_view.dart';
-import 'package:user_admin/features/tables/view/tables_view.dart';
 
 @pragma('vm:entry-point')
 Future<void> backgroundHandler(RemoteMessage message) async {}
@@ -24,7 +18,7 @@ class NotaficationsService {
   Future<void> initLocalNotifications() async {
     if (_isInitialized == true) return;
     const initSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/launcher_icon');
+    AndroidInitializationSettings('@mipmap/launcher_icon');
 
     const initSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -130,10 +124,11 @@ Future<void> _handleNavigations(
   final prefs = await SharedPreferences.getInstance();
   final signInModelString = prefs.getString("admin_data");
   if (signInModelString == null) {
-    Get.to(const SignInView());
+    // TODO check this
+    //Get.to(const SignInView());
     return;
   }
-  final signInModel = SignInModel.fromString(signInModelString);
+  //final signInModel = SignInModel.fromString(signInModelString);
 
   String? title;
   try {
@@ -144,12 +139,13 @@ Future<void> _handleNavigations(
   }
 
   if (title != null) {
-    if (title.contains("Rate")) {
-      Get.to(RatingsView(signInModel: signInModel));
-    } else if (title.contains("order")) {
-      Get.to(TablesView(signInModel: signInModel));
-    } else if (title.contains("invoice")) {
-      Get.to(InvoicesView(signInModel: signInModel));
-    }
+    // TODO
+    // if (title.contains("Rate")) {
+    //   Get.to(RatingsView(signInModel: signInModel));
+    // } else if (title.contains("order")) {
+    //   Get.to(TablesView(signInModel: signInModel));
+    // } else if (title.contains("invoice")) {
+    //   Get.to(InvoicesView(signInModel: signInModel));
+    // }
   }
 }

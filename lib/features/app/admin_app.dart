@@ -27,9 +27,7 @@ import 'package:user_admin/global/di/di.dart';
 import 'package:user_admin/global/localization/supported_locales.dart';
 
 class AdminApp extends StatelessWidget {
-  const AdminApp({super.key, required this.initialView});
-
-  final Widget initialView;
+  const AdminApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -102,8 +100,9 @@ class AdminApp extends StatelessWidget {
       child: EasyLocalization(
         supportedLocales: SupportedLocales.locales,
         path: SupportedLocales.path,
+        startLocale: SupportedLocales.arabic,
         fallbackLocale: SupportedLocales.arabic,
-        child: AdminMaterialApp(initialView: initialView),
+        child: const AdminMaterialApp(),
       ),
     );
   }

@@ -5,7 +5,8 @@ import 'package:user_admin/features/add_order/cubit/add_order_cubit.dart';
 import 'package:user_admin/features/add_order/view/cart_view.dart';
 import 'package:user_admin/features/add_order/view/widgets/category_list_tile.dart';
 import 'package:user_admin/features/items/cubit/items_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
@@ -16,27 +17,35 @@ import 'package:user_admin/global/widgets/main_error_widget.dart';
 
 abstract class AddOrderViewCallBacks {
   Future<void> onRefresh();
-
   void onShowCartTap();
-
   void onTryAgainTap();
 }
 
 class AddOrderView extends StatelessWidget {
-  const AddOrderView({super.key, required this.signInModel});
+  const AddOrderView({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return AddOrderPage(signInModel: signInModel);
+    return AddOrderPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class AddOrderPage extends StatefulWidget {
-  const AddOrderPage({super.key, required this.signInModel});
+  const AddOrderPage({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<AddOrderPage> createState() => _AddOrderPageState();
@@ -49,7 +58,7 @@ class _AddOrderPageState extends State<AddOrderPage>
 
   @override
   void initState() {
-    addOrderCubit.getCategories(widget.signInModel.restaurant.id);
+    addOrderCubit.getCategories(widget.restaurant.id);
     itemsCubit.getTables();
     super.initState();
   }
@@ -59,30 +68,36 @@ class _AddOrderPageState extends State<AddOrderPage>
     showDialog(
       context: context,
       builder: (context) {
-        return CartView(signInModel: widget.signInModel);
+        return CartView(
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
+        );
       },
     );
   }
 
   @override
   Future<void> onRefresh() async {
-    addOrderCubit.getCategories(widget.signInModel.restaurant.id);
+    addOrderCubit.getCategories(widget.restaurant.id);
     itemsCubit.getTables();
   }
 
   @override
   void onTryAgainTap() {
-    addOrderCubit.getCategories(widget.signInModel.restaurant.id);
+    addOrderCubit.getCategories(widget.restaurant.id);
     itemsCubit.getTables();
   }
 
   @override
   Widget build(BuildContext context) {
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -92,7 +107,7 @@ class _AddOrderPageState extends State<AddOrderPage>
               children: [
                 Row(
                   children: [
-                    MainBackButton(color: restColor ?? AppColors.black),
+                    MainBackButton(color: restColor!),
                     const Spacer(),
                     BlocBuilder<AddOrderCubit, GeneralAddOrderState>(
                       buildWhen: (previous, current) => current is CartState,
@@ -137,7 +152,8 @@ class _AddOrderPageState extends State<AddOrderPage>
                 ),
                 const SizedBox(height: 20),
                 BlocBuilder<AddOrderCubit, GeneralAddOrderState>(
-                  buildWhen: (previous, current) => current is CategoriesSubsItemsState,
+                  buildWhen: (previous, current) =>
+                      current is CategoriesSubsItemsState,
                   builder: (context, state) {
                     if (state is CategoriesSubsItemsLoading) {
                       return const LoadingIndicator(color: AppColors.black);
@@ -145,7 +161,7 @@ class _AddOrderPageState extends State<AddOrderPage>
                       return Column(
                         children: List.generate(
                           state.categories.length,
-                              (index) {
+                          (index) {
                             final category = state.categories[index];
                             return CategoryListTile(category: category);
                           },

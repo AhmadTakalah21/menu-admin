@@ -9,8 +9,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:user_admin/features/sales/cubit/sales_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/tables/model/order_details_model/order_details_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/utils/utils.dart';
@@ -26,45 +27,41 @@ import 'package:user_admin/global/widgets/select_page_tile.dart';
 
 abstract class SalesViewCallBacks {
   Future<void> onRefresh();
-
   Future<void> onStartDateSelected();
-
   Future<void> onEndDateSelected();
-
   void onShowFilters();
-
   void onSearchSubmitted(String search);
-
   void onSearchChanged(String search);
-
   void onSelectPageTap(int page);
-
   Future<void> onExportToExcelTap(List<OrderDetailsModel> orders);
-
   void onTryAgainTap();
 }
 
 class SalesView extends StatelessWidget {
   const SalesView({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return SalesPage(signInModel: signInModel);
+    return SalesPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class SalesPage extends StatefulWidget {
   const SalesPage({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<SalesPage> createState() => _SalesPageState();
@@ -262,7 +259,7 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
 
   @override
   Widget build(BuildContext context) {
-    int excelIndex = widget.signInModel.permissions.indexWhere(
+    int excelIndex = widget.permissions.indexWhere(
       (element) => element.name == "excel",
     );
     bool isExcel = excelIndex != -1;
@@ -273,11 +270,14 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
       "count".tr(),
       "created_at".tr(),
     ];
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -286,7 +286,7 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor ?? AppColors.black),
+                MainBackButton(color: restColor!),
                 const SizedBox(height: 20),
                 Row(
                   children: [

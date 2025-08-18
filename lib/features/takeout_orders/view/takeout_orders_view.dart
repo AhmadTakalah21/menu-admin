@@ -4,9 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:user_admin/features/drivers/cubit/drivers_cubit.dart';
 import 'package:user_admin/features/drivers/model/drvier_invoice_model/drvier_invoice_model.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/takeout_orders/cubit/takeout_orders_cubit.dart';
 import 'package:user_admin/features/takeout_orders/view/widgets/edit_driver_of_order.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/invoice_widget.dart';
@@ -36,24 +37,28 @@ abstract class TakeoutOrdersViewCallBacks {
 class TakeoutOrdersView extends StatelessWidget {
   const TakeoutOrdersView({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return TakeoutOrdersPage(signInModel: signInModel);
+    return TakeoutOrdersPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class TakeoutOrdersPage extends StatefulWidget {
   const TakeoutOrdersPage({
     super.key,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<TakeoutOrdersPage> createState() => _TakeoutOrdersPageState();
@@ -137,16 +142,19 @@ class _TakeoutOrdersPageState extends State<TakeoutOrdersPage>
       "status".tr(),
       "event".tr(),
     ];
-    int editIndex = widget.signInModel.permissions.indexWhere(
+    int editIndex = widget.permissions.indexWhere(
       (element) => element.name == "delivery.update",
     );
     bool isEdit = editIndex != -1;
 
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -155,7 +163,7 @@ class _TakeoutOrdersPageState extends State<TakeoutOrdersPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor ?? AppColors.black),
+                MainBackButton(color: restColor!),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -226,8 +234,7 @@ class _TakeoutOrdersPageState extends State<TakeoutOrdersPage>
                                         takeoutOrdersCubit.getTakeoutOrders(1);
                                         MainSnackBar.showSuccessMessage(
                                             context, state.message);
-                                      } 
-                                      else if (state
+                                      } else if (state
                                               is UpdateStatusToReceivedFail &&
                                           state.index == index) {
                                         MainSnackBar.showErrorMessage(

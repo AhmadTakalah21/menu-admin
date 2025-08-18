@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:user_admin/features/restaurant/cubit/restaurant_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/tables/view/widgets/table_details_widget.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/app_image_widget.dart';
@@ -55,34 +56,38 @@ abstract class RestaurantViewCallbacks {
   void onPriceKmChanged(String priceKm);
 
   void onColorSelected(Color color);
-
   void onBackgroundColorSelected(Color color);
-
   void onQrOfflineTap(String qrCode);
-
   void onQrTakeoutTap(String qrCode);
-
   void onSetLogo();
-
   void onSetCover();
-
 }
 
 class RestaurantView extends StatelessWidget {
-  const RestaurantView({super.key, required this.signInModel});
+  const RestaurantView({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return RestaurantPage(signInModel: signInModel);
+    return RestaurantPage(permissions: permissions, restaurant: restaurant);
   }
 }
 
 class RestaurantPage extends StatefulWidget {
-  const RestaurantPage({super.key, required this.signInModel});
+  const RestaurantPage({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<RestaurantPage> createState() => _RestaurantPageState();
@@ -111,48 +116,32 @@ class _RestaurantPageState extends State<RestaurantPage>
   TextEditingController reconstructionController = TextEditingController();
   TextEditingController priceKmController = TextEditingController();
 
-
   @override
   void initState() {
     super.initState();
     restaurantCubit.getRestaurant();
-    restaurantCubit.setNameAr(widget.signInModel.restaurant.nameAr ?? "");
-    restaurantCubit.setNameEn(widget.signInModel.restaurant.nameEn ?? "");
-    restaurantCubit.setNoteAr(widget.signInModel.restaurant.noteAr ?? "");
-    restaurantCubit.setNoteEn(widget.signInModel.restaurant.noteAr ?? "");
-    restaurantCubit.setNameUrl(widget.signInModel.restaurant.nameUrl ?? "");
+    restaurantCubit.setNameAr(widget.restaurant.nameAr ?? "");
+    restaurantCubit.setNameEn(widget.restaurant.nameEn ?? "");
+    restaurantCubit.setNoteAr(widget.restaurant.noteAr ?? "");
+    restaurantCubit.setNoteEn(widget.restaurant.noteAr ?? "");
+    restaurantCubit.setNameUrl(widget.restaurant.nameUrl ?? "");
+    restaurantCubit.setFacebookUrl(widget.restaurant.facebookUrl ?? "");
+    restaurantCubit.setWhatsappPhone(widget.restaurant.whatsappPhone ?? "");
+    restaurantCubit.setInstagramUrl(widget.restaurant.instagramUrl ?? "");
+    restaurantCubit.setMessageBad(widget.restaurant.messageBad ?? "");
+    restaurantCubit.setMessageGood(widget.restaurant.messageGood ?? "");
+    restaurantCubit.setMessagePerfect(widget.restaurant.messagePerfect ?? "");
     restaurantCubit
-        .setFacebookUrl(widget.signInModel.restaurant.facebookUrl ?? "");
+        .setConsumerSpending(widget.restaurant.consumerSpending.toString());
     restaurantCubit
-        .setWhatsappPhone(widget.signInModel.restaurant.whatsappPhone ?? "");
+        .setLocalAdministration(widget.restaurant.localAdmin.toString());
     restaurantCubit
-        .setInstagramUrl(widget.signInModel.restaurant.instagramUrl ?? "");
+        .setReconstruction(widget.restaurant.reconstruction.toString());
+    restaurantCubit.setPriceKm(widget.restaurant.priceKm.toString());
+
+    restaurantCubit.setColor(widget.restaurant.color.toString());
     restaurantCubit
-        .setMessageBad(widget.signInModel.restaurant.messageBad ?? "");
-    restaurantCubit
-        .setMessageGood(widget.signInModel.restaurant.messageGood ?? "");
-    restaurantCubit
-        .setMessagePerfect(widget.signInModel.restaurant.messagePerfect ?? "");
-    restaurantCubit.setConsumerSpending(
-        widget.signInModel.restaurant.consumerSpending.toString());
-    restaurantCubit.setLocalAdministration(
-        widget.signInModel.restaurant.localAdmin.toString());
-    restaurantCubit.setReconstruction(
-        widget.signInModel.restaurant.reconstruction.toString());
-    restaurantCubit
-        .setPriceKm(widget.signInModel.restaurant.priceKm.toString());
-
-    restaurantCubit.setColor(widget.signInModel.restaurant.color.toString());
-    restaurantCubit.setBackgroundColor(widget.signInModel.restaurant.backgroundColor.toString());
-
-
-
-
-
-
-
-
-
+        .setBackgroundColor(widget.restaurant.backgroundColor.toString());
   }
 
   @override
@@ -171,7 +160,6 @@ class _RestaurantPageState extends State<RestaurantPage>
       pickerBackgroundColor = color;
     });
   }
-
 
   @override
   void onBackgroundColorSelected(Color color) {
@@ -193,7 +181,8 @@ class _RestaurantPageState extends State<RestaurantPage>
               child: const Text('Got it'),
               onPressed: () {
                 setState(() {
-                  restaurantCubit.setBackgroundColor(pickerBackgroundColor.toString());
+                  restaurantCubit
+                      .setBackgroundColor(pickerBackgroundColor.toString());
                 });
                 Navigator.of(context).pop();
               },
@@ -203,7 +192,6 @@ class _RestaurantPageState extends State<RestaurantPage>
       },
     );
   }
-
 
   @override
   void onColorSelected(Color color) {
@@ -235,7 +223,6 @@ class _RestaurantPageState extends State<RestaurantPage>
       },
     );
   }
-
 
   @override
   void onConsumerSpendingChanged(String consumerSpending) {
@@ -362,10 +349,13 @@ class _RestaurantPageState extends State<RestaurantPage>
 
   @override
   Widget build(BuildContext context) {
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
     return Scaffold(
       appBar: AppBar(),
-      drawer: MainDrawer(signInModel: widget.signInModel),
+      drawer: MainDrawer(
+        permissions: widget.permissions,
+        restaurant: widget.restaurant,
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -374,7 +364,7 @@ class _RestaurantPageState extends State<RestaurantPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor ?? AppColors.black),
+                MainBackButton(color: restColor!),
                 const SizedBox(height: 20),
                 Text(
                   "restaurant".tr(),
@@ -430,8 +420,9 @@ class _RestaurantPageState extends State<RestaurantPage>
                           restaurant.localAdmin.toString();
                       reconstructionController.text =
                           restaurant.reconstruction.toString();
-                      priceKmController.text =
-                      restaurant.priceKm != null ? restaurant.priceKm.toString() : "";
+                      priceKmController.text = restaurant.priceKm != null
+                          ? restaurant.priceKm.toString()
+                          : "";
                       color = restaurant.color;
                       backgroundColor = restaurant.backgroundColor;
                     }
@@ -452,7 +443,7 @@ class _RestaurantPageState extends State<RestaurantPage>
                             if (logoUrl != null)
                               Padding(
                                 padding:
-                                const EdgeInsets.only(top: 220, left: 50),
+                                    const EdgeInsets.only(top: 220, left: 50),
                                 child: InkWell(
                                   onTap: onSetLogo,
                                   child: AppImageWidget(
@@ -467,7 +458,7 @@ class _RestaurantPageState extends State<RestaurantPage>
                                       ),
                                     ],
                                     borderRadius:
-                                    AppConstants.borderRadiusCircle,
+                                        AppConstants.borderRadiusCircle,
                                   ),
                                 ),
                               ),
@@ -620,8 +611,7 @@ class _RestaurantPageState extends State<RestaurantPage>
                                           text: "",
                                           buttonColor: pickerColor ??
                                               color ??
-                                              widget
-                                                  .signInModel.restaurant.color,
+                                              widget.restaurant.color,
                                         ),
                                       ),
                                     ],
@@ -651,15 +641,14 @@ class _RestaurantPageState extends State<RestaurantPage>
                                         child: MainActionButton(
                                           onPressed: () =>
                                               onBackgroundColorSelected(
-                                                pickerBackgroundColor ??
-                                                    backgroundColor ??
-                                                    AppColors.black,
-                                              ),
+                                            pickerBackgroundColor ??
+                                                backgroundColor ??
+                                                AppColors.black,
+                                          ),
                                           text: "",
                                           buttonColor: pickerBackgroundColor ??
                                               backgroundColor ??
-                                              widget.signInModel.restaurant
-                                                  .backgroundColor,
+                                              widget.restaurant.backgroundColor,
                                         ),
                                       ),
                                     ],

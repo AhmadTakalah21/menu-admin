@@ -121,6 +121,10 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     tableId = table?.id;
   }
 
+  void resetModel(){
+    editItemModel = const EditItemModel();
+  }
+
   Future<void> setImage({int? itemId}) async {
     try {
       emit(ItemImageLoading());
@@ -231,7 +235,6 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
 
     if (!isRemove && item != null) {
       final itemId = item.id;
-      if (itemId == null) return;
 
       for (var i in item.itemTypes) {
         AddExtraItemModel addExtraItemModel = AddExtraItemModel(
@@ -462,7 +465,6 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     required bool isRefresh,
   }) async {
     if (_isFetching) {
-      print("Fetch already in progress, skipping.");
       return;
     }
     _isFetching = true;
@@ -480,9 +482,7 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
         localItems = items;
         _isFetching = false;
         return;
-      } catch (e, stackTrace) {
-        print("Error parsing cached items: $e");
-        print(stackTrace);
+      } catch (e) {
         // في حالة خطأ في parsing البيانات المحفوظة، نستدعي API
         await _fetchItemsFromApi(restaurantId, categoryId, prefs);
         _isFetching = false;
@@ -506,9 +506,7 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
       List<String> itemsString = response.map((item) => item.toString()).toList();
       await prefs.setStringList("items$categoryId", itemsString);
       emit(ItemsSuccess(response));
-    } catch (e, stackTrace) {
-      print("Error fetching items from API: $e");
-      print(stackTrace);
+    } catch (e) {
       emit(ItemsFail(e.toString()));
 
       // حاول استخدام البيانات المحفوظة فقط إذا كانت موجودة وصالحة
@@ -518,9 +516,7 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
           List<ItemModel> items = data.map((itemString) => ItemModel.fromString(itemString)).toList();
           localItems = items; // تأكد من تحديث localItems هنا أيضًا
           emit(ItemsSuccess(items));
-        } catch (parseError, parseStack) {
-          print("Failed to load cached data: $parseError");
-          print(parseStack);
+        } catch (parseError) {
           emit(ItemsFail("Failed to load cached data: ${parseError.toString()}"));
         }
       }

@@ -33,10 +33,12 @@ class EditCategoryWidget extends StatefulWidget {
     this.category,
     required this.isEdit,
     this.masterCategory,
+    required this.btnColor,
   });
 
   final CategoryModel? masterCategory;
   final CategoryModel? category;
+  final Color btnColor;
   final bool isEdit;
 
   @override
@@ -110,7 +112,7 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
   Widget build(BuildContext context) {
     return AlertDialog(
       insetPadding: AppConstants.padding16,
-      contentPadding: AppConstants.padding16,
+      contentPadding: AppConstants.padding20,
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -123,30 +125,40 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
                 fontSize: 20,
               ),
             ),
-            const Divider(height: 30),
-
-            /// ✅ عرض الصورة (من الإنترنت أو محلي)
+            const SizedBox(height: 20),
             InkWell(
               onTap: onImageTap,
               child: localImage != null
                   ? Image.file(File(localImage!.path), width: 200)
                   : (widget.category?.image != null &&
-                  widget.category!.image.isNotEmpty)
-                  ? AppImageWidget(
-                url: widget.category!.image,
-                width: 200,
-                fit: BoxFit.contain,
-              )
-                  : Image.asset("assets/images/upload_image.png",
-                  scale: 1.5),
+                          widget.category!.image.isNotEmpty)
+                      ? AppImageWidget(
+                          url: widget.category!.image,
+                          width: 200,
+                          fit: BoxFit.cover,
+                          borderRadius: AppConstants.borderRadius20,
+                        )
+                      : Container(
+                          padding: AppConstants.padding30,
+                          decoration: BoxDecoration(
+                              border:
+                                  Border.all(color: const Color(0xFF1E1E1E)),
+                              borderRadius: AppConstants.borderRadius20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                "assets/images/upload_image.png",
+                                scale: 1.5,
+                              ),
+                            ],
+                          ),
+                        ),
             ),
-
             const SizedBox(height: 10),
-
             if (widget.category != null)
               BlocBuilder<HomeCubit, GeneralHomeState>(
-                buildWhen: (previous, current) =>
-                current is SubCategoriesState,
+                buildWhen: (previous, current) => current is SubCategoriesState,
                 builder: (context, state) {
                   if (state is SubCategoriesLoading) {
                     return const LoadingIndicator(color: AppColors.black);
@@ -162,14 +174,14 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
                   }
                 },
               ),
-
             const SizedBox(height: 10),
             MainTextField(
               initialText: widget.category?.nameAr,
               onChanged: onNameArChanged,
               onSubmitted: onNameArSubmitted,
               focusNode: nameArFocusNode,
-              labelText: "name_ar".tr(),
+              borderColor: widget.btnColor,
+              title: "name_ar".tr(),
             ),
             const SizedBox(height: 10),
             MainTextField(
@@ -177,19 +189,22 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
               onChanged: onNameEnChanged,
               onSubmitted: onNameEnSubmitted,
               focusNode: nameEnFocusNode,
-              labelText: "name_en".tr(),
+              borderColor: widget.btnColor,
+              title: "name_en".tr(),
             ),
-
-            const Divider(height: 40),
+            const SizedBox(height: 40),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                MainActionButton(
-                  padding: AppConstants.padding14,
-                  onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
-                  text: "ignore".tr(),
+                const Spacer(),
+                Expanded(
+                  flex: 4,
+                  child: MainActionButton(
+                    padding: AppConstants.paddingV10,
+                    onPressed: onIgnoreTap,
+                    buttonColor: widget.btnColor,
+                    text: "cancel".tr(),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 BlocConsumer<HomeCubit, GeneralHomeState>(
@@ -206,22 +221,19 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
                     }
                   },
                   builder: (context, state) {
-                    var onTap = onSaveTap;
-                    Widget? child;
-                    if (state is EditCategoryLoading) {
-                      onTap = () {};
-                      child = const LoadingIndicator(size: 20);
-                    }
-                    return MainActionButton(
-                      padding: AppConstants.padding14,
-                      onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
-                      text: "save".tr(),
-                      child: child,
+                    return Expanded(
+                      flex: 4,
+                      child: MainActionButton(
+                        padding: AppConstants.paddingV10,
+                        onPressed: onSaveTap,
+                        buttonColor: widget.btnColor,
+                        text: "save".tr(),
+                        isLoading: state is EditCategoryLoading,
+                      ),
                     );
                   },
                 ),
+                const Spacer(),
               ],
             ),
           ],

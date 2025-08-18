@@ -5,8 +5,9 @@ import 'package:user_admin/features/app_manager/cubit/app_manager_cubit.dart';
 import 'package:user_admin/features/customer_service/cubit/customer_service_cubit.dart';
 import 'package:user_admin/features/customer_service/model/service_model/service_model.dart';
 import 'package:user_admin/features/customer_service/view/widgets/add_service_widget.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
@@ -35,20 +36,33 @@ abstract class CustomerServiceViewCallBacks {
 }
 
 class CustomerServiceView extends StatelessWidget {
-  const CustomerServiceView({super.key, required this.signInModel});
+  const CustomerServiceView({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   Widget build(BuildContext context) {
-    return CustomerServicePage(signInModel: signInModel);
+    return CustomerServicePage(
+      permissions: permissions,
+      restaurant: restaurant,
+    );
   }
 }
 
 class CustomerServicePage extends StatefulWidget {
-  const CustomerServicePage({super.key, required this.signInModel});
+  const CustomerServicePage({
+    super.key,
+    required this.permissions,
+    required this.restaurant,
+  });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
 
   @override
   State<CustomerServicePage> createState() => _CustomerServicePageState();
@@ -135,13 +149,13 @@ class _CustomerServicePageState extends State<CustomerServicePage>
       "service".tr(),
       "price".tr(),
     ];
-    int addIndex = widget.signInModel.permissions.indexWhere(
+    int addIndex = widget.permissions.indexWhere(
       (element) => element.name == "service.add",
     );
-    int editIndex = widget.signInModel.permissions.indexWhere(
+    int editIndex = widget.permissions.indexWhere(
       (element) => element.name == "service.update",
     );
-    int deleteIndex = widget.signInModel.permissions.indexWhere(
+    int deleteIndex = widget.permissions.indexWhere(
       (element) => element.name == "service.delete",
     );
     bool isAdd = addIndex != -1;
@@ -152,7 +166,7 @@ class _CustomerServicePageState extends State<CustomerServicePage>
       titles.add("event".tr());
     }
 
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
@@ -162,7 +176,10 @@ class _CustomerServicePageState extends State<CustomerServicePage>
       },
       child: Scaffold(
         appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        drawer: MainDrawer(
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
+        ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -170,7 +187,7 @@ class _CustomerServicePageState extends State<CustomerServicePage>
               padding: AppConstants.padding16,
               child: Column(
                 children: [
-                  MainBackButton(color: restColor ?? AppColors.black),
+                  MainBackButton(color: restColor!),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

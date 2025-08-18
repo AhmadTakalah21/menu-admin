@@ -9,46 +9,51 @@ import 'package:user_admin/features/home/cubit/home_cubit.dart';
 import 'package:user_admin/features/home/model/category_model/category_model.dart';
 import 'package:user_admin/features/home/view/widgets/category_tile.dart';
 import 'package:user_admin/features/items/view/items_view.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/edit_category_widget.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
-import 'package:user_admin/global/widgets/main_action_button.dart';
-import 'package:user_admin/global/widgets/main_back_button.dart';
-import 'package:user_admin/global/widgets/main_drawer.dart';
+import 'package:user_admin/global/widgets/main_add_button.dart';
+import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
+import 'package:user_admin/global/widgets/switch_view_button.dart';
 
 abstract class SubCategoriesViewCallbacks {
-  void onAddCategoryTap();
+  void onAddTap();
   Future<void> onRefresh();
   void onEditTap(CategoryModel category);
   void onDeleteTap(CategoryModel category);
   void onSaveDeleteTap(CategoryModel category);
   void onSaveActivateTap(CategoryModel category);
-  void onActivateTap(CategoryModel category);
+  Future<bool> onActivateTap(CategoryModel category);
   void onCategoryTap(CategoryModel category);
+  void onSwichViewTap();
   void onTryAgainTap();
 }
 
 class SubCategoriesView extends StatelessWidget {
   const SubCategoriesView({
     super.key,
-    required this.signInModel,
     required this.masterCategory,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final CategoryModel masterCategory;
 
   @override
   Widget build(BuildContext context) {
     return SubCategoriesPage(
-      signInModel: signInModel,
       masterCategory: masterCategory,
+      permissions: permissions,
+      restaurant: restaurant,
     );
   }
 }
@@ -56,11 +61,13 @@ class SubCategoriesView extends StatelessWidget {
 class SubCategoriesPage extends StatefulWidget {
   const SubCategoriesPage({
     super.key,
-    required this.signInModel,
     required this.masterCategory,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final CategoryModel masterCategory;
 
   @override
@@ -71,6 +78,8 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
     implements SubCategoriesViewCallbacks {
   late final HomeCubit homeCubit = context.read();
   late final DeleteCubit deleteCubit = context.read();
+
+  bool isCardView = true;
 
   late final StreamSubscription<List<ConnectivityResult>> subscription;
 
@@ -97,19 +106,27 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
   }
 
   bool hasPermission(String permissionName) {
-    return widget.signInModel.permissions
+    return widget.permissions
         .any((permission) => permission.name == permissionName);
   }
 
   @override
-  void onAddCategoryTap() {
+  void onAddTap() {
     showDialog(
       context: context,
       builder: (_) => EditCategoryWidget(
+        btnColor: widget.restaurant.color!,
         isEdit: false,
         masterCategory: widget.masterCategory,
       ),
     );
+  }
+
+  @override
+  void onSwichViewTap() {
+    setState(() {
+      isCardView = !isCardView;
+    });
   }
 
   @override
@@ -123,6 +140,7 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
     showDialog(
       context: context,
       builder: (_) => EditCategoryWidget(
+        btnColor: widget.restaurant.color!,
         masterCategory: widget.masterCategory,
         category: category,
         isEdit: true,
@@ -143,8 +161,8 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
   }
 
   @override
-  void onActivateTap(CategoryModel category) {
-    showDialog(
+  Future<bool> onActivateTap(CategoryModel category) async {
+    final success = await showDialog(
       context: context,
       builder: (_) => InsureDeleteWidget(
         isDelete: false,
@@ -152,6 +170,7 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
         onSaveTap: onSaveActivateTap,
       ),
     );
+    return success ?? false;
   }
 
   @override
@@ -166,12 +185,13 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
 
   @override
   void onCategoryTap(CategoryModel category) {
-    if (homeCubit.isShowItems(widget.signInModel.permissions)) {
+    if (homeCubit.isShowItems(widget.permissions)) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => ItemsView(
-            signInModel: widget.signInModel,
+            permissions: widget.permissions,
+            restaurant: widget.restaurant,
             category: category,
           ),
         ),
@@ -193,19 +213,19 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
   @override
   Widget build(BuildContext context) {
     bool isAdd = hasPermission("category.add");
-    bool isEdit = hasPermission("category.update");
-    bool isActive = hasPermission("category.active");
-    bool isDelete = hasPermission("category.delete");
-
-    final restColor = widget.signInModel.restaurant.color;
-
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
         _fetchCategories(true);
       },
       child: Scaffold(
-        appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        appBar: MainAppBar(
+          restaurant: widget.restaurant,
+          title: "sub_categories".tr(),
+        ),
+        // drawer: MainDrawer(
+        //   permissions: widget.permissions,
+        //   restaurant: widget.restaurant,
+        // ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -214,15 +234,12 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  MainBackButton(color: restColor ?? AppColors.black),
-                  const SizedBox(height: 20),
-                  _buildHeader(isAdd),
-                  const SizedBox(height: 20),
+                  // _buildHeader(),
+                  // const SizedBox(height: 20),
                   BlocBuilder<HomeCubit, GeneralHomeState>(
                     buildWhen: (previous, current) =>
                         current is SubCategoriesInMasterState,
-                    builder: (context, state) =>
-                        _buildCategoriesList(state, isEdit, isDelete, isActive),
+                    builder: (context, state) => _buildCategoriesList(state),
                   ),
                   const SizedBox(height: 50),
                 ],
@@ -230,62 +247,70 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
             ),
           ),
         ),
+        floatingActionButton: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            SwitchViewButton(
+              onTap: onSwichViewTap,
+              isCardView: isCardView,
+              color: widget.restaurant.color!,
+            ),
+            const SizedBox(width: 10),
+            if (isAdd)
+              MainAddButton(onTap: onAddTap, color: widget.restaurant.color!)
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(bool isAdd) {
-    return Row(
-      children: [
-        Text(
-          "sub_categories".tr(),
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        const Spacer(),
-        MainActionButton(
-          padding: AppConstants.padding10,
-          onPressed: onRefresh,
-          text: "",
-          child: const Icon(Icons.refresh, color: AppColors.white),
-        ),
-        if (isAdd) ...[
-          const SizedBox(width: 10),
-          MainActionButton(
-            padding: AppConstants.padding10,
-            onPressed: onAddCategoryTap,
-            text: "Add Category",
-            child: const Icon(Icons.add_circle, color: AppColors.white),
-          ),
-        ],
-      ],
-    );
-  }
+  // Widget _buildHeader() {
+  //   final restColor = widget.restaurant.color;
+  //   bool isAdd = hasPermission("category.add");
+  //   return Row(
+  //     children: [
+  //       MainBackButton(color: restColor),
+  //       const Spacer(),
+  //       if (isAdd) ...[
+  //         const SizedBox(width: 10),
+  //         MainAddButton(
+  //           onTap: onAddTap,
+  //           title: "add_sub_category".tr(),
+  //         )
+  //       ],
+  //     ],
+  //   );
+  // }
 
-  Widget _buildCategoriesList(
-      GeneralHomeState state, bool isEdit, bool isDelete, bool isActive) {
+  Widget _buildCategoriesList(GeneralHomeState state) {
+    bool isEdit = hasPermission("category.update");
+    bool isActive = hasPermission("category.active");
+    bool isDelete = hasPermission("category.delete");
     if (state is SubCategoriesInMasterLoading) {
       return const LoadingIndicator(color: AppColors.black);
     } else if (state is SubCategoriesInMasterSuccess) {
-      return Padding(
-        padding: AppConstants.paddingH60,
-        child: ListView.separated(
-          itemCount: state.categories.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (_, index) {
-            final item = state.categories[index];
-            return CategoryTile(
-              onTap: onCategoryTap,
-              onEditTap: isEdit ? onEditTap : null,
-              onDeleteTap: isDelete ? onDeleteTap : null,
-              onDeactivateTap: isActive ? onActivateTap : null,
-              item: item,
-              restaurant: widget.signInModel.restaurant,
-              locale: context.locale,
-            );
-          },
-          separatorBuilder: (_, __) => const SizedBox(height: 20),
+      return GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 20,
+          childAspectRatio: 3 / 3.5,
         ),
+        itemCount: state.categories.length,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemBuilder: (context, index) {
+          final category = state.categories[index];
+          return CategoryTile(
+            onTap: onCategoryTap,
+            onEditTap: isEdit ? onEditTap : null,
+            onDeleteTap: isDelete ? onDeleteTap : null,
+            onDeactivateTap: isActive ? onActivateTap : null,
+            item: category,
+            restaurant: widget.restaurant,
+            locale: context.locale,
+          );
+        },
       );
     } else if (state is SubCategoriesInMasterFail) {
       return MainErrorWidget(

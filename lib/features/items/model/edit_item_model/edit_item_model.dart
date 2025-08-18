@@ -58,25 +58,25 @@ class EditItemModel {
   // Getters with validation
   @JsonKey(name: "name_ar")
   String get nameAr {
-    if (_nameAr == null || _nameAr!.isEmpty) {
+    if (_nameAr == null || _nameAr.isEmpty) {
       throw "name_ar_empty".tr();
     }
-    return _nameAr!;
+    return _nameAr;
   }
 
   @JsonKey(name: "name_en")
   String get nameEn {
-    if (_nameEn == null || _nameEn!.isEmpty) {
+    if (_nameEn == null || _nameEn.isEmpty) {
       throw "name_en_empty".tr();
     }
-    return _nameEn!;
+    return _nameEn;
   }
 
   String get price {
-    if (_price == null || _price!.isEmpty) {
+    if (_price == null || _price.isEmpty) {
       throw "price_empty".tr();
     }
-    return _price!;
+    return _price;
   }
 
   @JsonKey(name: "category_id")

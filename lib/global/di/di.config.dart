@@ -10,6 +10,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
+import 'package:shared_preferences/shared_preferences.dart' as _i460;
 import 'package:user_admin/features/add_order/cubit/add_order_cubit.dart'
     as _i505;
 import 'package:user_admin/features/add_order/service/add_order_service.dart'
@@ -23,6 +24,8 @@ import 'package:user_admin/features/advertisements/service/advertisements_servic
     as _i191;
 import 'package:user_admin/features/app_manager/cubit/app_manager_cubit.dart'
     as _i52;
+import 'package:user_admin/features/app_manager/service/app_manager_service.dart'
+    as _i898;
 import 'package:user_admin/features/coupons/cubit/coupons_cubit.dart' as _i797;
 import 'package:user_admin/features/coupons/service/coupon_service.dart'
     as _i356;
@@ -59,6 +62,10 @@ import 'package:user_admin/features/sales/service/sales_service.dart' as _i152;
 import 'package:user_admin/features/sign_in/cubit/sign_in_cubit.dart' as _i380;
 import 'package:user_admin/features/sign_in/service/sign_in_service.dart'
     as _i472;
+import 'package:user_admin/features/splash/cubit/restaurant_cubit.dart'
+    as _i412;
+import 'package:user_admin/features/splash/service/restaurant_service.dart'
+    as _i97;
 import 'package:user_admin/features/tables/cubit/tables_cubit.dart' as _i853;
 import 'package:user_admin/features/tables/service/tables_service.dart'
     as _i818;
@@ -70,8 +77,11 @@ import 'package:user_admin/features/users/cubit/users_cubit.dart' as _i916;
 import 'package:user_admin/features/users/service/users_service.dart' as _i523;
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart'
     as _i729;
+import 'package:user_admin/global/blocs/internet_connection/cubit/internet_connection_cubit.dart'
+    as _i958;
 import 'package:user_admin/global/blocs/show_map_cubit/cubit/show_map_cubit.dart'
     as _i954;
+import 'package:user_admin/global/di/app_module.dart' as _i511;
 import 'package:user_admin/global/dio/dio_client.dart' as _i998;
 import 'package:user_admin/global/services/delete_service/delete_service.dart'
     as _i928;
@@ -80,17 +90,23 @@ import 'package:user_admin/global/services/notafications_service/notafications_s
 
 extension GetItInjectableX on _i174.GetIt {
 // initializes the registration of main-scope dependencies inside of GetIt
-  _i174.GetIt init({
+  Future<_i174.GetIt> init({
     String? environment,
     _i526.EnvironmentFilter? environmentFilter,
-  }) {
+  }) async {
     final gh = _i526.GetItHelper(
       this,
       environment,
       environmentFilter,
     );
+    final appModule = _$AppModule();
+    gh.factory<_i958.InternetConnectionCubit>(
+        () => _i958.InternetConnectionCubit());
     gh.factory<_i954.ShowMapCubit>(() => _i954.ShowMapCubit());
-    gh.singleton<_i52.AppManagerCubit>(() => _i52.AppManagerCubit());
+    await gh.factoryAsync<_i460.SharedPreferences>(
+      () => appModule.prefs,
+      preResolve: true,
+    );
     gh.singleton<_i998.DioClient>(() => _i998.DioClient());
     gh.singleton<_i451.NotaficationsService>(
         () => _i451.NotaficationsService());
@@ -98,6 +114,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i216.RestaurantService>(() => _i216.RestaurantServiceImp());
     gh.factory<_i152.SalesService>(() => _i152.SalesServiceImp());
     gh.factory<_i53.ItemsService>(() => _i53.ItemsServiceImp());
+    gh.factory<_i97.RestaurantService>(() => _i97.RestaurantServiceImp());
     gh.factory<_i818.TablesService>(() => _i818.TablesServiceImp());
     gh.factory<_i898.ItemsCubit>(
         () => _i898.ItemsCubit(gh<_i53.ItemsService>()));
@@ -115,6 +132,7 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i1009.CustomerServiceRepoImp());
     gh.factory<_i1050.CustomerServiceCubit>(
         () => _i1050.CustomerServiceCubit(gh<_i1009.CustomerServiceRepo>()));
+    gh.factory<_i898.AppManagerService>(() => _i898.AppManagerServiceImp());
     gh.factory<_i862.TakeoutOrdersService>(
         () => _i862.TakeoutOrdersServiceImp());
     gh.factory<_i325.ProfileService>(() => _i325.ProfileServiceImp());
@@ -137,6 +155,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i853.TablesCubit(gh<_i818.TablesService>()));
     gh.factory<_i916.UsersCubit>(
         () => _i916.UsersCubit(gh<_i523.UsersService>()));
+    gh.factory<_i412.RestaurantCubit>(
+        () => _i412.RestaurantCubit(gh<_i97.RestaurantService>()));
     gh.factory<_i170.AdvertisementsCubit>(
         () => _i170.AdvertisementsCubit(gh<_i191.AdvertisementsService>()));
     gh.factory<_i52.InvoicesCubit>(
@@ -150,6 +170,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i380.SignInCubit(gh<_i472.SignInService>()));
     gh.factory<_i352.SalesCubit>(
         () => _i352.SalesCubit(gh<_i152.SalesService>()));
+    gh.singleton<_i52.AppManagerCubit>(
+        () => _i52.AppManagerCubit(gh<_i898.AppManagerService>()));
     gh.factory<_i267.EmployeesDetailsCubit>(
         () => _i267.EmployeesDetailsCubit(gh<_i632.EmployeesDetailsService>()));
     gh.factory<_i1004.TakeoutOrdersCubit>(
@@ -157,3 +179,5 @@ extension GetItInjectableX on _i174.GetIt {
     return this;
   }
 }
+
+class _$AppModule extends _i511.AppModule {}

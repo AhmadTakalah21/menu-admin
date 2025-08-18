@@ -4,7 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/drivers/cubit/drivers_cubit.dart';
 import 'package:user_admin/features/drivers/model/add_driver_model/add_driver_model.dart';
 import 'package:user_admin/features/drivers/model/driver_model/driver_model.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/utils/utils.dart';
@@ -16,27 +17,16 @@ import 'package:user_admin/global/widgets/main_text_field.dart';
 
 abstract class AddDriverWidgetCallBacks {
   void onNameChanged(String name);
-
   void onNameSubmitted(String name);
-
   void onUsernameChanged(String username);
-
   void onUsernameSubmitted(String username);
-
   void onPasswordChanged(String password);
-
   void onPasswordSubmitted(String password);
-
   void onPhoneNumberChanged(String phoneNumber);
-
   void onPhoneNumberSubmitted(String phoneNumber);
-
   Future<void> onBirthdaySelected();
-
   void onImageTap();
-
   void onSaveTap();
-
   void onIgnoreTap();
 }
 
@@ -45,9 +35,11 @@ class AddDriverWidget extends StatefulWidget {
     super.key,
     this.driver,
     required this.isEdit,
-    required this.signInModel,
+    required this.permissions,
+    required this.restaurant,
   });
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final DriverModel? driver;
   final bool isEdit;
 
@@ -154,7 +146,7 @@ class _AddDriverWidgetState extends State<AddDriverWidget>
   @override
   void onSaveTap() {
     driversCubit.addDriver(
-      widget.signInModel.restaurantId,
+      widget.restaurant.id,
       isEdit: widget.isEdit,
       driverId: widget.driver?.id,
     );

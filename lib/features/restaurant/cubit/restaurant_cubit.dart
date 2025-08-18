@@ -168,11 +168,11 @@ class RestaurantCubit extends Cubit<GeneralRestaurantState> {
         messageGood: restaurant.messageGood,
         messagePerfect: restaurant.messagePerfect,
         consumerSpending: restaurant.consumerSpending.toString(),
-        localAdministration: restaurant.localAdmin.toString(),
+        localAdministration: restaurant!.localAdmin.toString(),
         reconstruction: restaurant.reconstruction.toString(),
         priceKm: restaurant.priceKm,
-        color: _formatColorForApi(restaurant.color ?? Colors.black),
-        backgroundColor: _formatColorForApi(restaurant.backgroundColor ?? Colors.black),
+        color: _formatColorForApi(restaurant.color!),
+        backgroundColor: _formatColorForApi(restaurant.backgroundColor!),
 
       );
 

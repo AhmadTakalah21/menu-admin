@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/app_manager/cubit/app_manager_cubit.dart';
 import 'package:user_admin/features/customer_service/cubit/customer_service_cubit.dart';
-import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
 import 'package:user_admin/features/tables/cubit/tables_cubit.dart';
 import 'package:user_admin/features/tables/model/change_status_all_enum.dart';
 import 'package:user_admin/features/tables/model/order_details_model/order_details_model.dart';
 import 'package:user_admin/features/tables/view/widgets/edit_order_in_table_widget.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
+import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
@@ -51,18 +52,21 @@ abstract class TableOrdersViewCallBacks {
 class TableOrdersView extends StatelessWidget {
   const TableOrdersView({
     super.key,
-    required this.signInModel,
     required this.table,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final TableModel table;
 
   @override
   Widget build(BuildContext context) {
     return TablesPage(
-      signInModel: signInModel,
       table: table,
+      permissions: permissions,
+      restaurant: restaurant,
     );
   }
 }
@@ -70,11 +74,13 @@ class TableOrdersView extends StatelessWidget {
 class TablesPage extends StatefulWidget {
   const TablesPage({
     super.key,
-    required this.signInModel,
     required this.table,
+    required this.permissions,
+    required this.restaurant,
   });
 
-  final SignInModel signInModel;
+  final List<RoleModel> permissions;
+  final RestaurantModel restaurant;
   final TableModel table;
 
   @override
@@ -124,7 +130,7 @@ class _TablesPageState extends State<TablesPage>
         isEdit: true,
         orderDetailsModel: orderDetailsModel,
         table: widget.table,
-        restaurantId: widget.signInModel.restaurantId,
+        restaurantId: widget.restaurant.id,
       ),
     );
   }
@@ -137,7 +143,7 @@ class _TablesPageState extends State<TablesPage>
         selectedPage: selectedPage,
         isEdit: false,
         table: widget.table,
-        restaurantId: widget.signInModel.restaurantId,
+        restaurantId: widget.restaurant.id,
       ),
     );
   }
@@ -254,17 +260,17 @@ class _TablesPageState extends State<TablesPage>
       "order_date".tr(),
       "order_state".tr(),
     ];
-    int addIndex = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "order.add",
+    int addIndex = widget.permissions.indexWhere(
+          (element) => element.name == "order.add",
     );
-    int editIndex = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "order.update",
+    int editIndex = widget.permissions.indexWhere(
+          (element) => element.name == "order.update",
     );
-    int deleteIndex = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "order.delete",
+    int deleteIndex = widget.permissions.indexWhere(
+          (element) => element.name == "order.delete",
     );
-    int addServiceIndex = widget.signInModel.permissions.indexWhere(
-      (element) => element.name == "service.add",
+    int addServiceIndex = widget.permissions.indexWhere(
+          (element) => element.name == "service.add",
     );
     bool isAdd = addIndex != -1;
     bool isEdit = editIndex != -1;
@@ -274,7 +280,7 @@ class _TablesPageState extends State<TablesPage>
     if (isEdit || isDelete) {
       titles.add("event".tr());
     }
-    final restColor = widget.signInModel.restaurant.color;
+    final restColor = widget.restaurant.color;
 
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
@@ -284,7 +290,10 @@ class _TablesPageState extends State<TablesPage>
       },
       child: Scaffold(
         appBar: AppBar(),
-        drawer: MainDrawer(signInModel: widget.signInModel),
+        drawer: MainDrawer(
+          permissions: widget.permissions,
+          restaurant: widget.restaurant,
+        ),
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -295,7 +304,7 @@ class _TablesPageState extends State<TablesPage>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      MainBackButton(color: restColor ?? AppColors.black),
+                      MainBackButton(color: restColor),
                       Text(
                         "orders".tr(),
                         style: const TextStyle(
@@ -313,7 +322,7 @@ class _TablesPageState extends State<TablesPage>
                         onPressed: onRefresh,
                         text: "",
                         child:
-                            const Icon(Icons.refresh, color: AppColors.white),
+                        const Icon(Icons.refresh, color: AppColors.white),
                       ),
                       const SizedBox(width: 10),
                       if (isAddService)
@@ -360,7 +369,7 @@ class _TablesPageState extends State<TablesPage>
                   if (isEdit) const SizedBox(height: 20),
                   BlocBuilder<TablesCubit, GeneralTablesState>(
                     buildWhen: (previous, current) =>
-                        current is TableOrdersState,
+                    current is TableOrdersState,
                     builder: (context, state) {
                       List<DataRow> rows = [];
                       if (state is TableOrdersLoading) {
@@ -368,7 +377,7 @@ class _TablesPageState extends State<TablesPage>
                       } else if (state is TableOrdersSuccess) {
                         rows = List.generate(
                           state.tableOrders.data.length,
-                          (index) {
+                              (index) {
                             final order = state.tableOrders.data[index];
                             final values = [
                               Text(order.name),
@@ -403,7 +412,7 @@ class _TablesPageState extends State<TablesPage>
                             return DataRow(
                               cells: List.generate(
                                 values.length,
-                                (index2) {
+                                    (index2) {
                                   return DataCell(
                                     Center(child: values[index2]),
                                   );

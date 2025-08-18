@@ -13,6 +13,8 @@ class AppImageWidget extends StatelessWidget {
     this.border,
     this.shadows,
     this.errorWidget,
+    this.scale = 1,
+    this.backgroundColor,
   });
 
   final String url;
@@ -23,6 +25,8 @@ class AppImageWidget extends StatelessWidget {
   final Border? border;
   final List<BoxShadow>? shadows;
   final Widget? errorWidget;
+  final double scale;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +34,7 @@ class AppImageWidget extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
+        color: backgroundColor,
         borderRadius: borderRadius,
         border: border,
         boxShadow: [...?shadows],
@@ -37,6 +42,7 @@ class AppImageWidget extends StatelessWidget {
       child: ClipRRect(
         borderRadius: borderRadius,
         child: CachedNetworkImage(
+          scale: scale,
           imageUrl: url,
           fit: fit,
           errorWidget: (context, url, error) {
