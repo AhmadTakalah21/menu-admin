@@ -26,6 +26,8 @@ import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 import 'package:user_admin/global/widgets/select_page_tile.dart';
 
+import '../../../global/widgets/main_app_bar.dart';
+
 abstract class DriversViewCallBacks {
   void onAddTap();
   void onEditTap(DriverModel driver);
@@ -269,7 +271,7 @@ class _CouponsPageState extends State<CouponsPage>
         }
       },
       child: Scaffold(
-        appBar: AppBar(),
+        appBar: MainAppBar(restaurant: widget.restaurant, title: "drivers".tr()),
         drawer: MainDrawer(
           permissions: widget.permissions,
           restaurant: widget.restaurant,

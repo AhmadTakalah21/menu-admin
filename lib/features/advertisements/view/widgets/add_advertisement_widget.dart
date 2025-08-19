@@ -250,15 +250,17 @@ class _AddAdvertisementWidgetState extends State<AddAdvertisementWidget>
             const SizedBox(height: 20),
             MainTextField(
               initialText: widget.advertisement?.title,
+              // borderColor: ,
               onChanged: onNameChanged,
               onSubmitted: onNameSubmitted,
               focusNode: nameFocusNode,
-              labelText: "name".tr(),
+              title: "name".tr(),
             ),
             const SizedBox(height: 20),
             MainTextField(
               controller: fromDateController,
-              labelText: "from_date".tr(),
+              // borderColor: ,
+              title: "from_date".tr(),
               readOnly: true,
               onTap: onFromDateSelected,
               onClearTap: () {
@@ -276,7 +278,7 @@ class _AddAdvertisementWidgetState extends State<AddAdvertisementWidget>
             const SizedBox(height: 20),
             MainTextField(
               controller: toDateController,
-              labelText: "to_date".tr(),
+              title: "to_date".tr(),
               readOnly: true,
               onTap: onToDateSelected,
               onClearTap: () {
@@ -314,10 +316,10 @@ class _AddAdvertisementWidgetState extends State<AddAdvertisementWidget>
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 MainActionButton(
-                  padding: AppConstants.padding14,
+                 // padding: AppConstants.padding14,
                   onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
+                  // borderRadius: AppConstants.borderRadius5,
+                  // buttonColor: AppColors.blueShade3,
                   text: "ignore".tr(),
                   shadow: [
                     BoxShadow(
@@ -346,10 +348,10 @@ class _AddAdvertisementWidgetState extends State<AddAdvertisementWidget>
                       child = const LoadingIndicator(size: 20);
                     }
                     return MainActionButton(
-                      padding: AppConstants.padding14,
+                      // padding: AppConstants.padding14,
                       onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
+                      // borderRadius: AppConstants.borderRadius5,
+                      // buttonColor: AppColors.blueShade3,
                       text: "save".tr(),
                       shadow: [
                         BoxShadow(

@@ -20,6 +20,7 @@ import '../../../global/di/di.dart';
 import '../../../global/model/restaurant_model/restaurant_model.dart';
 import '../../../global/model/role_model/role_model.dart';
 import '../../../global/widgets/invoice_widget.dart';
+import '../../../global/widgets/main_app_bar.dart';
 import '../../add_order/view/add_order_view.dart';
 import '../../coupons/service/coupon_service.dart';
 import '../../drivers/model/drvier_invoice_model/drvier_invoice_model.dart';
@@ -288,7 +289,7 @@ class _TablesPageState extends State<TablesPage>
         ),
       ],
       child: Scaffold(
-        appBar: AppBar(),
+        appBar: MainAppBar(restaurant: widget.restaurant, title: "tables".tr()),
         drawer: MainDrawer(
           permissions: widget.permissions,
           restaurant: widget.restaurant,

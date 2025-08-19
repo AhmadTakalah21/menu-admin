@@ -273,10 +273,10 @@ class _AddCouponWidgetState extends State<AddCouponWidget>
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 MainActionButton(
-                  padding: AppConstants.padding14,
+                  // padding: AppConstants.paddingV10,
                   onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
+                  // borderRadius: AppConstants.borderRadius5,
+                  // buttonColor: widget.restaurant.color,
                   text: "ignore".tr(),
                   shadow: [
                     BoxShadow(
@@ -305,10 +305,10 @@ class _AddCouponWidgetState extends State<AddCouponWidget>
                       child = const LoadingIndicator(size: 20);
                     }
                     return MainActionButton(
-                      padding: AppConstants.padding14,
+                       // padding: AppConstants.paddingV10,
                       onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
+                      // borderRadius: AppConstants.borderRadius5,
+                      //  buttonColor: widget.restaurant.color,
                       text: "save".tr(),
                       shadow: [
                         BoxShadow(

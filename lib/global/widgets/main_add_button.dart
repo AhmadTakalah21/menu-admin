@@ -6,16 +6,20 @@ class MainAddButton extends StatelessWidget {
     super.key,
     required this.onTap,
     this.color = const Color(0xFFE3170A),
-    //required this.title,
+    this.heroTag,
+    this.tooltip,
   });
+
   final VoidCallback onTap;
   final Color color;
-  //final String title;
-  
+  final Object? heroTag;
+  final String? tooltip;
+
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
-      heroTag: "MainAddButton",
+      heroTag: heroTag,
+      tooltip: tooltip ?? 'Add',
       backgroundColor: AppColors.white,
       onPressed: onTap,
       child: Padding(
@@ -26,42 +30,5 @@ class MainAddButton extends StatelessWidget {
         ),
       ),
     );
-    // InkWell(
-    //   onTap: onTap,
-    //   borderRadius: BorderRadius.circular(22),
-    //   child: Container(
-    //     height: 36,
-    //     padding: const EdgeInsetsDirectional.only(start: 12, end: 10),
-    //     decoration: BoxDecoration(
-    //       color: color,
-    //       borderRadius: BorderRadius.circular(22),
-    //       boxShadow: [
-    //         BoxShadow(
-    //           color: Colors.black.withOpacity(0.15),
-    //           blurRadius: 8,
-    //           offset: const Offset(0, 4),
-    //         ),
-    //       ],
-    //     ),
-    //     child: Row(
-    //       children: [
-    //         Text(
-    //           title,
-    //           style: const TextStyle(
-    //             color: Colors.white,
-    //             fontWeight: FontWeight.w800,
-    //             fontSize: 14.5,
-    //           ),
-    //         ),
-    //         const SizedBox(width: 8),
-    //         CircleAvatar(
-    //           radius: 11,
-    //           backgroundColor: Colors.white,
-    //           child: Icon(Icons.add, size: 16, color: color),
-    //         ),
-    //       ],
-    //     ),
-    //   ),
-    // );
   }
 }

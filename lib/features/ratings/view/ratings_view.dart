@@ -2,24 +2,28 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:ui' as ui;
 import 'package:user_admin/features/ratings/cubit/ratings_cubit.dart';
 import 'package:user_admin/features/ratings/model/gender_enum.dart';
 import 'package:user_admin/features/ratings/model/rate_enum.dart';
 import 'package:user_admin/features/ratings/model/rate_filter_enum.dart';
+
 import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/utils/utils.dart';
+
 import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_action_button.dart';
 import 'package:user_admin/global/widgets/main_back_button.dart';
-import 'package:user_admin/global/widgets/main_data_table.dart';
 import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_drop_down_widget.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 import 'package:user_admin/global/widgets/main_text_field.dart';
 import 'package:user_admin/global/widgets/select_page_tile.dart';
+
+import '../../../global/widgets/main_app_bar.dart';
 
 abstract class RatingsViewCallBacks {
   Future<void> onRefresh();
@@ -107,9 +111,9 @@ class _RatingsPageState extends State<RatingsPage>
     super.initState();
     ratingsCubit.getRatings(selectedPage);
     startDateController.text =
-        "$selectedStartMonth/$selectedStartDay/$selectedStartYear";
+    "$selectedStartMonth/$selectedStartDay/$selectedStartYear";
     endDateController.text =
-        "$selectedEndMonth/$selectedEndDay/$selectedEndYear";
+    "$selectedEndMonth/$selectedEndDay/$selectedEndYear";
   }
 
   @override
@@ -127,7 +131,7 @@ class _RatingsPageState extends State<RatingsPage>
         selectedEndDay = dateTime.day.toString();
         selectedEndYear = dateTime.year.toString();
         endDateController.text =
-            "$selectedEndMonth/$selectedEndDay/$selectedEndYear";
+        "$selectedEndMonth/$selectedEndDay/$selectedEndYear";
       });
       ratingsCubit.setToDate(
         Utils.convertToIsoFormat(endDateController.text),
@@ -151,7 +155,7 @@ class _RatingsPageState extends State<RatingsPage>
         selectedStartDay = dateTime.day.toString();
         selectedStartYear = dateTime.year.toString();
         startDateController.text =
-            "$selectedStartMonth/$selectedStartDay/$selectedStartYear";
+        "$selectedStartMonth/$selectedStartDay/$selectedStartYear";
       });
       ratingsCubit.setFromDate(
         Utils.convertToIsoFormat(startDateController.text),
@@ -327,20 +331,15 @@ class _RatingsPageState extends State<RatingsPage>
     }
   }
 
+  int _columnsForWidth(double w) => w >= 520 ? 2 : 1;
+
   @override
   Widget build(BuildContext context) {
-    final List<String> titles = [
-      "name".tr(),
-      "note".tr(),
-      "num".tr(),
-      "gender".tr(),
-      "age".tr(),
-      "rating".tr(),
-    ];
     final restColor = widget.restaurant.color;
+
     return Scaffold(
-      appBar: AppBar(),
-      drawer: MainDrawer(
+      appBar: MainAppBar(restaurant: widget.restaurant, title: "ratings".tr()),
+    drawer: MainDrawer(
         permissions: widget.permissions,
         restaurant: widget.restaurant,
       ),
@@ -352,27 +351,6 @@ class _RatingsPageState extends State<RatingsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor!),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Text(
-                      "ratings".tr(),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Spacer(),
-                    MainActionButton(
-                      padding: AppConstants.padding10,
-                      onPressed: onRefresh,
-                      text: "",
-                      child: const Icon(Icons.refresh, color: AppColors.white),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
                 MainDropDownWidget<RateFilterEnum>(
                   items: RateFilterEnum.values,
                   text: "select_filter_type".tr(),
@@ -380,6 +358,7 @@ class _RatingsPageState extends State<RatingsPage>
                   focusNode: FocusNode(),
                   selectedValue: rateFilter,
                 ),
+
                 if (rateFilter == RateFilterEnum.date)
                   Column(
                     children: [
@@ -423,6 +402,7 @@ class _RatingsPageState extends State<RatingsPage>
                       ),
                     ],
                   ),
+
                 if (rateFilter == RateFilterEnum.age)
                   Column(
                     children: [
@@ -431,9 +411,7 @@ class _RatingsPageState extends State<RatingsPage>
                         controller: fromAgeController,
                         labelText: "from_age".tr(),
                         textInputType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         onChanged: onFromAgeChanged,
                         onSubmitted: onFromAgeSubmitted,
                         suffixIcon: Column(
@@ -455,9 +433,7 @@ class _RatingsPageState extends State<RatingsPage>
                         controller: toAgeController,
                         labelText: "to_age".tr(),
                         textInputType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         onChanged: onToAgeChanged,
                         onSubmitted: onToAgeSubmitted,
                         suffixIcon: Column(
@@ -476,6 +452,7 @@ class _RatingsPageState extends State<RatingsPage>
                       ),
                     ],
                   ),
+
                 if (rateFilter == RateFilterEnum.rate)
                   Center(
                     child: Column(
@@ -484,49 +461,50 @@ class _RatingsPageState extends State<RatingsPage>
                         const SizedBox(height: 20),
                         Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: RateEnum.values.map(
-                            (ratingEnum) {
-                              return InkWell(
-                                onTap: () => setRate(ratingEnum),
-                                child: Icon(
-                                  Icons.star,
-                                  size: 40,
-                                  color: isRatingSelected(ratingEnum)
-                                      ? Colors.yellow
-                                      : AppColors.greyShade5,
-                                ),
-                              );
-                            },
-                          ).toList(),
+                          children: RateEnum.values
+                              .map(
+                                (ratingEnum) => InkWell(
+                              onTap: () => setRate(ratingEnum),
+                              child: Icon(
+                                Icons.star,
+                                size: 40,
+                                color: isRatingSelected(ratingEnum)
+                                    ? Colors.yellow
+                                    : AppColors.greyShade5,
+                              ),
+                            ),
+                          )
+                              .toList(),
                         ),
                       ],
                     ),
                   ),
+
                 if (rateFilter == RateFilterEnum.gender)
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: GenderEnum.values.map(
-                          (gender) {
-                            return Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(gender.name),
-                                Radio(
-                                  value: gender,
-                                  groupValue: currentGender,
-                                  onChanged: onGenderSelected,
-                                ),
-                              ],
-                            );
-                          },
-                        ).toList(),
-                      )
+                        children: GenderEnum.values.map((gender) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(gender.name),
+                              Radio(
+                                value: gender,
+                                groupValue: currentGender,
+                                onChanged: onGenderSelected,
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
                     ],
                   ),
+
                 const SizedBox(height: 20),
+
                 Row(
                   children: [
                     MainActionButton(
@@ -534,9 +512,9 @@ class _RatingsPageState extends State<RatingsPage>
                       onPressed: onSetKnown,
                       text: "known_rate".tr(),
                       buttonColor:
-                          isKnown ? AppColors.blueShade3 : AppColors.white,
+                      isKnown ? AppColors.blueShade3 : AppColors.white,
                       textColor:
-                          isKnown ? AppColors.white : AppColors.blueShade3,
+                      isKnown ? AppColors.white : AppColors.blueShade3,
                       border: Border.all(color: AppColors.blueShade3),
                     ),
                     const SizedBox(width: 10),
@@ -545,71 +523,69 @@ class _RatingsPageState extends State<RatingsPage>
                       onPressed: onSetUnknown,
                       text: "unknown_rate".tr(),
                       buttonColor:
-                          isKnown ? AppColors.white : AppColors.blueShade3,
+                      isKnown ? AppColors.white : AppColors.blueShade3,
                       textColor:
-                          isKnown ? AppColors.blueShade3 : AppColors.white,
+                      isKnown ? AppColors.blueShade3 : AppColors.white,
                       border: Border.all(color: AppColors.blueShade3),
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 20),
+
                 BlocBuilder<RatingsCubit, GeneralRatingsState>(
                   buildWhen: (previous, current) => current is RatingsState,
                   builder: (context, state) {
                     if (state is RatingsLoading) {
                       return const LoadingIndicator(color: AppColors.black);
                     } else if (state is RatingsSuccess) {
-                      List<DataRow> rows = [];
-                      rows = List.generate(
-                        state.paginatedModel.data.length,
-                        (index) {
-                          final rate = state.paginatedModel.data[index];
-                          final values = [
-                            Text(rate.name),
-                            Text(rate.note),
-                            Text(rate.phone),
-                            Text(rate.gender),
-                            Text(rate.birthday.toString()),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: RateEnum.values.map(
-                                (ratingEnum) {
-                                  final rateEnum = rate.rate == 1
-                                      ? RateEnum.bad
-                                      : rate.rate == 2
-                                          ? RateEnum.good
-                                          : RateEnum.perfect;
-                                  return Icon(
-                                    Icons.star,
-                                    size: 20,
-                                    color: isRatingShow(rateEnum, ratingEnum)
-                                        ? Colors.yellow
-                                        : AppColors.greyShade5,
-                                  );
-                                },
-                              ).toList(),
-                            ),
-                          ];
-                          return DataRow(
-                            cells: List.generate(
-                              values.length,
-                              (index2) {
-                                return DataCell(
-                                  Center(child: values[index2]),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      );
+                      final data = state.paginatedModel.data;
+
                       return Column(
                         children: [
-                          MainDataTable(titles: titles, rows: rows),
-                          SelectPageTile(
-                            length: state.paginatedModel.meta.totalPages,
-                            selectedPage: selectedPage,
-                            onSelectPageTap: onSelectPageTap,
+                          LayoutBuilder(
+                            builder: (context, cons) {
+                              final cols = _columnsForWidth(cons.maxWidth);
+                              return GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.86,
+                                ),
+                                itemCount: data.length,
+                                itemBuilder: (_, i) {
+                                  final r = data[i];
+                                  final rateEnum = r.rate == 1
+                                      ? RateEnum.bad
+                                      : (r.rate == 2
+                                      ? RateEnum.good
+                                      : RateEnum.perfect);
+
+                                  return _RatingCard(
+                                    brand: widget.restaurant.color ??
+                                        const Color(0xFF2E4D2F),
+                                    name: r.name,
+                                    phone: r.phone,
+                                    note: r.note,
+                                    birthday: r.birthday?.toString(),
+                                    rate: rateEnum,
+                                  );
+                                },
+                              );
+                            },
                           ),
+                          if (state.paginatedModel.meta.totalPages > 1) ...[
+                            const SizedBox(height: 12),
+                            SelectPageTile(
+                              length: state.paginatedModel.meta.totalPages,
+                              selectedPage: selectedPage,
+                              onSelectPageTap: onSelectPageTap,
+                            ),
+                          ],
                         ],
                       );
                     } else if (state is RatingsEmpty) {
@@ -626,6 +602,7 @@ class _RatingsPageState extends State<RatingsPage>
                     }
                   },
                 ),
+
                 const SizedBox(height: 30),
               ],
             ),
@@ -633,5 +610,215 @@ class _RatingsPageState extends State<RatingsPage>
         ),
       ),
     );
+  }
+}
+
+// =====================  Widgets المظهر  =====================
+
+class _RatingCard extends StatelessWidget {
+  const _RatingCard({
+    required this.brand,
+    required this.name,
+    required this.phone,
+    required this.note,
+    required this.birthday,
+    required this.rate,
+  });
+
+  final Color brand;
+  final String? name;
+  final String? phone;
+  final String? note;
+  final String? birthday;
+  final RateEnum rate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: Colors.black.withOpacity(.10), width: 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Column(
+          children: [
+            // ترويسة النجوم
+            Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              alignment: Alignment.centerRight,
+              child: Directionality(
+                textDirection: ui.TextDirection.rtl,
+                child: Center(child:  Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _Star(filled: rate.index >= RateEnum.perfect.index),
+                    const SizedBox(width: 8),
+                    _Star(filled: rate.index >= RateEnum.good.index),
+                    const SizedBox(width: 8),
+                    _Star(filled: rate.index >= RateEnum.bad.index),
+                  ].reversed.toList(),
+                ),),
+              ),
+            ),
+
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 2, 10, 10),
+                child: _GreenInfoCard(
+                  name: name,
+                  phone: phone,
+                  note: note,
+                  birthday: birthday,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Star extends StatelessWidget {
+  const _Star({required this.filled});
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      Icons.star,
+      size: 22,
+      color: filled ? Colors.amber : Colors.grey.shade400,
+    );
+  }
+}
+
+class _GreenInfoCard extends StatelessWidget {
+  const _GreenInfoCard({
+    this.name,
+    this.phone,
+    this.note,
+    this.birthday,
+  });
+
+  final String? name;
+  final String? phone;
+  final String? note;
+  final String? birthday;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFC7D86B),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      child: Directionality(
+        textDirection: ui.TextDirection.rtl,
+        child: Column(
+          children: [
+            _FieldLine(label: 'الاسم', value: name),
+            const SizedBox(height: 8),
+            _FieldLine(label: 'الرقم', value: phone),
+            const SizedBox(height: 8),
+            _FieldLine(label: 'العمر', value: _ageFrom(birthday)),
+            const SizedBox(height: 8),
+            _FieldLine(label: 'الملاحظات', value: note, maxLines: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String? _ageFrom(String? bday) {
+    if (bday == null || bday.isEmpty) return null;
+    final dt = DateTime.tryParse(bday);
+    if (dt == null) return bday;
+    final now = DateTime.now();
+    var age = now.year - dt.year;
+    if (now.month < dt.month || (now.month == dt.month && now.day < dt.day)) {
+      age--;
+    }
+    return '$age';
+  }
+}
+
+
+class _FieldLine extends StatelessWidget {
+  const _FieldLine({
+    required this.label,
+    this.value,
+    this.maxLines = 1,
+  });
+
+  final String label;
+  final String? value;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    final v = (value == null || value!.trim().isEmpty) ? '—' : value!.trim();
+    return Row(
+      children: [
+        Text(
+          '$label : ',
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 12.5,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              const _DashedLine(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  v,
+                  maxLines: maxLines,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.black.withOpacity(.8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DashedLine extends StatelessWidget {
+  const _DashedLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (_, c) {
+      const dashWidth = 4.0;
+      const dashSpace = 3.0;
+      final dashes = (c.maxWidth / (dashWidth + dashSpace)).floor();
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: List.generate(
+          dashes,
+              (_) => Container(
+            width: dashWidth,
+            height: 1.2,
+            color: Colors.black54,
+          ),
+        ),
+      );
+    });
   }
 }
