@@ -17,35 +17,25 @@ import 'package:user_admin/global/widgets/add_service_to_order_widget.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_action_button.dart';
-import 'package:user_admin/global/widgets/main_back_button.dart';
 import 'package:user_admin/global/widgets/main_data_table.dart';
 import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_drop_down_widget.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
 import 'package:user_admin/global/widgets/select_page_tile.dart';
+import '../../../global/widgets/main_app_bar.dart';
 
 abstract class TableOrdersViewCallBacks {
   void onAddOrderTap();
-
   void onAddServiceTap();
-
   void onEditTap(OrderDetailsModel orderDetailsModel);
-
   void onDeleteTap(OrderDetailsModel orderDetailsModel);
-
   void onSaveDeleteTap(OrderDetailsModel orderDetailsModel);
-
   void onSelectPageTap(int page);
-
   void onSelectChangeStatusToAll(ChangeStatusAllEnum? status);
-
   void changeStatusToAll(ChangeStatusAllEnum? status);
-
   void onIgnoreTap();
-
   Future<void> onRefresh();
-
   void onTryAgainTap();
 }
 
@@ -155,7 +145,7 @@ class _TablesPageState extends State<TablesPage>
       builder: (context) => AddServiceToOrderWidget(
         isTable: true,
         id: widget.table.id,
-        onSuccess: onTryAgainTap,
+        onSuccess: onTryAgainTap, restaurant: widget.restaurant,
       ),
     );
   }
@@ -242,13 +232,16 @@ class _TablesPageState extends State<TablesPage>
 
   @override
   Future<void> onRefresh() async {
-    tablesCubit.getTableOrders(widget.table.id);
+    await tablesCubit.getTableOrders(widget.table.id, page: selectedPage);
+    await customerServiceCubit.getServices();
   }
 
   @override
   void onTryAgainTap() {
     tablesCubit.getTableOrders(widget.table.id, page: selectedPage);
   }
+
+  Color _on(Color c) => c.computeLuminance() > .55 ? Colors.black87 : Colors.white;
 
   @override
   Widget build(BuildContext context) {
@@ -260,27 +253,23 @@ class _TablesPageState extends State<TablesPage>
       "order_date".tr(),
       "order_state".tr(),
     ];
-    int addIndex = widget.permissions.indexWhere(
-          (element) => element.name == "order.add",
-    );
-    int editIndex = widget.permissions.indexWhere(
-          (element) => element.name == "order.update",
-    );
-    int deleteIndex = widget.permissions.indexWhere(
-          (element) => element.name == "order.delete",
-    );
-    int addServiceIndex = widget.permissions.indexWhere(
-          (element) => element.name == "service.add",
-    );
-    bool isAdd = addIndex != -1;
-    bool isEdit = editIndex != -1;
-    bool isDelete = deleteIndex != -1;
-    bool isAddService = addServiceIndex != -1;
+
+    final addIndex = widget.permissions.indexWhere((e) => e.name == "order.add");
+    final editIndex = widget.permissions.indexWhere((e) => e.name == "order.update");
+    final deleteIndex = widget.permissions.indexWhere((e) => e.name == "order.delete");
+    final addServiceIndex = widget.permissions.indexWhere((e) => e.name == "service.add");
+
+    final isAdd = addIndex != -1;
+    final isEdit = editIndex != -1;
+    final isDelete = deleteIndex != -1;
+    final isAddService = addServiceIndex != -1;
 
     if (isEdit || isDelete) {
       titles.add("event".tr());
     }
-    final restColor = widget.restaurant.color;
+
+    final brand = widget.restaurant.color ?? AppColors.mainColor;
+    final onBrand = _on(brand);
 
     return BlocListener<AppManagerCubit, AppManagerState>(
       listener: (context, state) {
@@ -289,67 +278,24 @@ class _TablesPageState extends State<TablesPage>
         }
       },
       child: Scaffold(
-        appBar: AppBar(),
+        appBar: MainAppBar(
+          restaurant: widget.restaurant,
+          title: "table_orders".tr(),
+        ),
         drawer: MainDrawer(
           permissions: widget.permissions,
           restaurant: widget.restaurant,
         ),
+
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
               padding: AppConstants.padding16,
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      MainBackButton(color: restColor),
-                      Text(
-                        "orders".tr(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      MainActionButton(
-                        padding: AppConstants.padding10,
-                        onPressed: onRefresh,
-                        text: "",
-                        child:
-                        const Icon(Icons.refresh, color: AppColors.white),
-                      ),
-                      const SizedBox(width: 10),
-                      if (isAddService)
-                        MainActionButton(
-                          padding: AppConstants.padding10,
-                          onPressed: onAddServiceTap,
-                          text: "add_service".tr(),
-                          icon: const Icon(
-                            Icons.settings,
-                            color: AppColors.white,
-                          ),
-                        ),
-                      if (isAddService) const SizedBox(width: 5),
-                      if (isAdd)
-                        MainActionButton(
-                          padding: AppConstants.padding10,
-                          onPressed: onAddOrderTap,
-                          text: "add_order".tr(),
-                          child: const Icon(
-                            Icons.add_circle,
-                            color: AppColors.white,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  if (isEdit)
+                  if (isEdit) ...[
                     Row(
                       children: [
                         Expanded(
@@ -360,37 +306,39 @@ class _TablesPageState extends State<TablesPage>
                             onChanged: onSelectChangeStatusToAll,
                             focusNode: FocusNode(),
                             color: AppColors.white,
-                            backgrounColor: AppColors.mainColor,
+                            backgrounColor: brand, // لون المطعم
                           ),
                         ),
                         const Expanded(child: SizedBox()),
                       ],
                     ),
-                  if (isEdit) const SizedBox(height: 20),
+                    const SizedBox(height: 16),
+                  ],
+
                   BlocBuilder<TablesCubit, GeneralTablesState>(
-                    buildWhen: (previous, current) =>
-                    current is TableOrdersState,
+                    buildWhen: (previous, current) => current is TableOrdersState,
                     builder: (context, state) {
-                      List<DataRow> rows = [];
                       if (state is TableOrdersLoading) {
                         return const LoadingIndicator(color: AppColors.black);
                       } else if (state is TableOrdersSuccess) {
-                        rows = List.generate(
+                        final rows = List<DataRow>.generate(
                           state.tableOrders.data.length,
                               (index) {
                             final order = state.tableOrders.data[index];
-                            final values = [
+                            final values = <Widget>[
                               Text(order.name),
                               Text(order.price.toString()),
                               Text(order.count.toString()),
                               Text(order.tableNumber?.toString() ?? "_"),
                               Text(order.createdAt),
-                              MainActionButton(
-                                padding: AppConstants.paddingH16V8,
-                                onPressed: () {},
-                                text: order.status,
-                                buttonColor: AppColors.mainColor,
-                              ),
+                              Text(order.status),
+
+                              // MainActionButton(
+                              //   padding: AppConstants.paddingH16V8,
+                              //   onPressed: () {},
+                              //   text: order.status,
+                              //   buttonColor: brand,
+                              // ),
                               if (isEdit || isDelete)
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -398,32 +346,40 @@ class _TablesPageState extends State<TablesPage>
                                     if (isDelete)
                                       InkWell(
                                         onTap: () => onDeleteTap(order),
-                                        child: const Icon(Icons.delete),
+                                        child: const Icon(Icons.delete_outline),
                                       ),
                                     if (isDelete) const SizedBox(width: 10),
                                     if (isEdit)
                                       InkWell(
                                         onTap: () => onEditTap(order),
                                         child: const Icon(Icons.edit_outlined),
-                                      )
+                                      ),
                                   ],
-                                )
+                                ),
                             ];
+
                             return DataRow(
-                              cells: List.generate(
-                                values.length,
-                                    (index2) {
-                                  return DataCell(
-                                    Center(child: values[index2]),
-                                  );
-                                },
-                              ),
+                              cells: values.map((w) => DataCell(Center(child: w))).toList(),
                             );
                           },
                         );
+
+                        // نلوّن رؤوس الجدول عبر DataTableTheme حول MainDataTable
                         return Column(
                           children: [
-                            MainDataTable(titles: titles, rows: rows),
+                            DataTableTheme(
+                              data: DataTableThemeData(
+                                headingRowColor: MaterialStatePropertyAll(
+                                  brand.withOpacity(.10),
+                                ),
+                                headingTextStyle: TextStyle(
+                                  color: onBrand,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                              child: MainDataTable(titles: titles, rows: rows,color: widget.restaurant.color),
+                            ),
                             SelectPageTile(
                               length: state.tableOrders.meta.totalPages,
                               selectedPage: selectedPage,
@@ -443,12 +399,45 @@ class _TablesPageState extends State<TablesPage>
                       }
                     },
                   ),
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
           ),
         ),
+
+        // === زرّان عائمـان (FABs) لإضافة طلب/خدمة ===
+        floatingActionButton: (isAdd || isAddService)
+            ? Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (isAdd)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: FloatingActionButton.extended(
+                  heroTag: 'fab-add-order',
+                  backgroundColor: brand,
+                  foregroundColor: onBrand,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: Text("add_order".tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  onPressed: onAddOrderTap,
+                ),
+              ),
+            if (isAddService)
+              FloatingActionButton.extended(
+                heroTag: 'fab-add-service',
+                backgroundColor: brand,
+                foregroundColor: onBrand,
+                icon: const Icon(Icons.miscellaneous_services_rounded),
+                label: Text("add_service".tr(),
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                onPressed: onAddServiceTap,
+              ),
+          ],
+        )
+            : null,
       ),
     );
   }

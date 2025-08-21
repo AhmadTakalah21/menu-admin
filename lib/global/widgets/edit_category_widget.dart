@@ -201,8 +201,8 @@ class _EditCategoryWidgetState extends State<EditCategoryWidget>
                   flex: 4,
                   child: MainActionButton(
                     padding: AppConstants.paddingV10,
-                    onPressed: onIgnoreTap,
                     buttonColor: widget.btnColor,
+                    onPressed: onIgnoreTap,
                     text: "cancel".tr(),
                   ),
                 ),

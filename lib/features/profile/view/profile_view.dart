@@ -6,12 +6,13 @@ import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
+import 'package:user_admin/global/widgets/app_image_widget.dart';
+import 'package:user_admin/global/widgets/auth_text_field.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_action_button.dart';
-import 'package:user_admin/global/widgets/main_back_button.dart';
+import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
-import 'package:user_admin/global/widgets/main_text_field.dart';
 
 abstract class ProfileViewCallbacks {
   Future<void> onRefresh();
@@ -114,38 +115,40 @@ class _ProfilePageState extends State<ProfilePage>
 
   @override
   Widget build(BuildContext context) {
-    final restColor = widget.restaurant.color;
     return Scaffold(
-      appBar: AppBar(),
+      backgroundColor: widget.restaurant.backgroundColor,
+      appBar: MainAppBar(restaurant: widget.restaurant, title: "profile".tr()),
       drawer: MainDrawer(
         permissions: widget.permissions,
         restaurant: widget.restaurant,
       ),
-      body: RefreshIndicator(
-        onRefresh: onRefresh,
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: AppConstants.padding16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                MainBackButton(color: restColor!),
-                const SizedBox(height: 20),
-                Text(
-                  "update_profile".tr(),
-                  style: const TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
-                  ),
+      body: Stack(
+        children: [
+          if (widget.restaurant.backgroundImageHomePage != null)
+            Positioned.fill(
+              child: AppImageWidget(
+                url: widget.restaurant.backgroundImageHomePage!,
+                errorWidget: const SizedBox.shrink(),
+              ),
+            ),
+          RefreshIndicator(
+            onRefresh: onRefresh,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: AppConstants.padding16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
+                    _buildProfileForm(),
+                    const SizedBox(height: 30),
+                    _buildActionButtons(),
+                  ],
                 ),
-                const SizedBox(height: 40),
-                _buildProfileForm(),
-                const SizedBox(height: 30),
-                _buildActionButtons(),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -166,32 +169,53 @@ class _ProfilePageState extends State<ProfilePage>
           usernameController.text = state.profile.username;
         }
 
-        return Column(
-          children: [
-            MainTextField(
-              controller: nameController,
-              onChanged: onNameChanged,
-              onSubmitted: onNameSubmitted,
-              focusNode: nameFocusNode,
-              labelText: "name".tr(),
-            ),
-            const SizedBox(height: 20),
-            MainTextField(
-              controller: usernameController,
-              onChanged: onUsernameChanged,
-              onSubmitted: onUsernameSubmitted,
-              focusNode: usernameFocusNode,
-              labelText: "username".tr(),
-            ),
-            const SizedBox(height: 20),
-            MainTextField(
-              controller: passwordController,
-              onChanged: onPasswordChanged,
-              onSubmitted: onPasswordSubmitted,
-              focusNode: passwordFocusNode,
-              labelText: "password".tr(),
-            ),
-          ],
+        return Container(
+          padding: AppConstants.padding30,
+          decoration: BoxDecoration(
+              color: const Color(0xFFD9D9D9).withValues(alpha: 0.6),
+              borderRadius: AppConstants.borderRadius50,
+              border: Border.all(color: AppColors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.black.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(8, 8),
+                ),
+              ]),
+          child: Column(
+            children: [
+              AuthTextField(
+                controller: nameController,
+                onChanged: onNameChanged,
+                onSubmitted: onNameSubmitted,
+                focusNode: nameFocusNode,
+                borderColor: widget.restaurant.color,
+                title: "name".tr(),
+                prefixIcon: Icons.person_outline,
+              ),
+              const SizedBox(height: 10),
+              AuthTextField(
+                controller: usernameController,
+                onChanged: onUsernameChanged,
+                onSubmitted: onUsernameSubmitted,
+                focusNode: usernameFocusNode,
+                borderColor: widget.restaurant.color,
+                title: "username".tr(),
+                prefixIcon: Icons.person_outline,
+              ),
+              const SizedBox(height: 10),
+              AuthTextField(
+                obscureText: true,
+                controller: passwordController,
+                onChanged: onPasswordChanged,
+                onSubmitted: onPasswordSubmitted,
+                focusNode: passwordFocusNode,
+                borderColor: widget.restaurant.color,
+                title: "password".tr(),
+                prefixIcon: Icons.lock_outline,
+              ),
+            ],
+          ),
         );
       },
     );
@@ -199,26 +223,26 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildActionButtons() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        MainActionButton(
-          padding: AppConstants.padding14,
-          onPressed: onIgnoreTap,
-          borderRadius: AppConstants.borderRadius5,
-          buttonColor: AppColors.blueShade3,
-          text: "ignore".tr(),
-          shadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 4,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        const SizedBox(width: 8),
-        _buildSaveButton(),
-        const SizedBox(width: 10),
+        const Spacer(),
+        Expanded(flex: 4, child: _buildCancelButton()),
+        const SizedBox(width: 16),
+        Expanded(flex: 4, child: _buildSaveButton()),
+        const Spacer(),
       ],
+    );
+  }
+
+  Widget _buildCancelButton() {
+    return MainActionButton(
+      padding: AppConstants.paddingV10,
+      onPressed: onIgnoreTap,
+      borderRadius: AppConstants.borderRadius20,
+      buttonColor: AppColors.white,
+      textColor: widget.restaurant.color,
+      border: Border.all(color: widget.restaurant.color, width: 2),
+      text: "cancel".tr(),
     );
   }
 
@@ -233,27 +257,13 @@ class _ProfilePageState extends State<ProfilePage>
         }
       },
       builder: (context, state) {
-        var onTap = onSaveTap;
-        Widget? child;
-        if (state is UpdateProfileLoading) {
-          onTap = () {};
-          child = const LoadingIndicator(size: 20);
-        }
-
         return MainActionButton(
-          padding: AppConstants.padding14,
-          onPressed: onTap,
-          borderRadius: AppConstants.borderRadius5,
-          buttonColor: AppColors.blueShade3,
+          padding: AppConstants.paddingV10,
+          onPressed: onSaveTap,
+          borderRadius: AppConstants.borderRadius20,
+          buttonColor: widget.restaurant.color,
           text: "save".tr(),
-          shadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 4,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          child: child,
+          isLoading: state is UpdateProfileLoading,
         );
       },
     );

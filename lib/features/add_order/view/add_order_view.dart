@@ -14,7 +14,6 @@ import 'package:user_admin/global/widgets/main_action_button.dart';
 import 'package:user_admin/global/widgets/main_back_button.dart';
 import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
-
 import '../../../global/widgets/main_app_bar.dart';
 
 abstract class AddOrderViewCallBacks {
@@ -92,100 +91,151 @@ class _AddOrderPageState extends State<AddOrderPage>
 
   @override
   Widget build(BuildContext context) {
-    final restColor = widget.restaurant.color;
+    final brand = widget.restaurant.color ?? AppColors.mainColor;
 
     return Scaffold(
-      appBar: MainAppBar(restaurant: widget.restaurant, title: "add_order".tr()),
+      appBar: MainAppBar(
+        restaurant: widget.restaurant,
+        title: "add_order".tr(),
+        onSearchChanged: (q) => addOrderCubit.searchByName(q),
+        onSearchSubmitted: (q) => addOrderCubit.searchByName(q),
+        onSearchClosed: () => addOrderCubit.searchByName(''),
+        onLanguageToggle: (loc) {
+        },
+      ),
       drawer: MainDrawer(
         permissions: widget.permissions,
         restaurant: widget.restaurant,
       ),
-      body: RefreshIndicator(
-        onRefresh: onRefresh,
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: AppConstants.padding16,
-            child: Column(
-              children: [
-                Row(
+
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: onRefresh,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: AppConstants.padding16,
+                child: Column(
                   children: [
-                    MainBackButton(color: restColor!),
-                    const Spacer(),
                     BlocBuilder<AddOrderCubit, GeneralAddOrderState>(
-                      buildWhen: (previous, current) => current is CartState,
+                      buildWhen: (p, c) => c is CategoriesSubsItemsState,
                       builder: (context, state) {
-                        final cartLength = addOrderCubit.cartItems.length;
-                        return InkWell(
-                          onTap: onShowCartTap,
-                          child: Badge(
-                            backgroundColor: AppColors.red,
-                            textColor: AppColors.black,
-                            padding: AppConstants.padding2,
-                            label: Padding(
-                              padding: const EdgeInsets.only(bottom: 0),
-                              child: Text(cartLength.toString()),
+                        if (state is CategoriesSubsItemsLoading) {
+                          return const Padding(
+                            padding: EdgeInsets.only(top: 40),
+                            child: LoadingIndicator(color: AppColors.black),
+                          );
+                        } else if (state is CategoriesSubsItemsSuccess) {
+                          return Column(
+                            children: List.generate(
+                              state.categories.length,
+                                  (index) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: CategoryListTile(category: state.categories[index], restaurant:widget.restaurant,),
+                              ),
                             ),
-                            child: const Icon(Icons.shopping_cart, size: 30),
-                          ),
-                        );
+                          );
+                        } else if (state is CategoriesSubsItemsEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 30),
+                            child: Text(state.message),
+                          );
+                        } else if (state is CategoriesSubsItemsFail) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 30),
+                            child: MainErrorWidget(
+                              error: state.error,
+                              onTryAgainTap: onTryAgainTap,
+                            ),
+                          );
+                        } else {
+                          return const SizedBox.shrink();
+                        }
                       },
                     ),
-                    const SizedBox(width: 10),
+
+                    const SizedBox(height: 90),
                   ],
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Text(
-                      "categories".tr(),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Spacer(),
-                    MainActionButton(
-                      padding: AppConstants.padding10,
-                      onPressed: onRefresh,
-                      text: "",
-                      child: const Icon(Icons.refresh, color: AppColors.white),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                BlocBuilder<AddOrderCubit, GeneralAddOrderState>(
-                  buildWhen: (previous, current) =>
-                      current is CategoriesSubsItemsState,
-                  builder: (context, state) {
-                    if (state is CategoriesSubsItemsLoading) {
-                      return const LoadingIndicator(color: AppColors.black);
-                    } else if (state is CategoriesSubsItemsSuccess) {
-                      return Column(
-                        children: List.generate(
-                          state.categories.length,
-                          (index) {
-                            final category = state.categories[index];
-                            return CategoryListTile(category: category);
-                          },
-                        ),
-                      );
-                    } else if (state is CategoriesSubsItemsEmpty) {
-                      return Text(state.message);
-                    } else if (state is CategoriesSubsItemsFail) {
-                      return MainErrorWidget(
-                        error: state.error,
-                        onTryAgainTap: onTryAgainTap,
-                      );
-                    } else {
-                      return const SizedBox.shrink();
-                    }
-                  },
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
+      ),
+
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: BlocBuilder<AddOrderCubit, GeneralAddOrderState>(
+        buildWhen: (p, c) => c is CartState,
+        builder: (context, state) {
+          final count = addOrderCubit.cartItems.length;
+          return _FloatingCartButton(
+            brand: brand,
+            count: count,
+            onTap: onShowCartTap,
+          );
+        },
       ),
     );
   }
 }
+
+class _FloatingCartButton extends StatelessWidget {
+  const _FloatingCartButton({
+    required this.brand,
+    required this.count,
+    required this.onTap,
+  });
+
+  final Color brand;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      elevation: 0,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          FloatingActionButton(
+            heroTag: 'fab-cart',
+            backgroundColor: brand,
+            elevation: 8,
+            onPressed: onTap,
+            child: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+          ),
+          if (count > 0)
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.18),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+

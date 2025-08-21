@@ -17,33 +17,22 @@ class UpdateAdminModel {
     String? password,
     String? mobile,
     int? typeId,
-    String? role,
     List<int> categories = const [],
   })  : _name = name,
         _username = username,
         _email = email,
-      _password = password,
+        _password = password,
         _mobile = mobile,
         _typeId = typeId,
-        _role = role,
         _categories = categories;
 
   final int? id;
-
   final String? _name;
-
   final String? _username;
-
   final String? _email;
-
   final String? _password;
-
   final String? _mobile;
-
   final int? _typeId;
-
-  final String? _role;
-
   final List<int> _categories;
 
   String get name {
@@ -85,18 +74,8 @@ class UpdateAdminModel {
   }
 
   @JsonKey(name: "type_id")
-  int? get typeId {
-    if (_role == "employee" || _role == "موظف") {
-      return _typeId ?? (throw "type_empty".tr());
-    }
-    return null;
-  }
-
-  String get role {
-    if (_role == null || _role.isEmpty) {
-      throw "role_empty".tr();
-    }
-    return _role;
+  int get typeId {
+    return _typeId ?? (throw "type_empty".tr());
   }
 
   @JsonKey(name: "category")
@@ -106,7 +85,6 @@ class UpdateAdminModel {
     }
     return null;
   }
-
 
   Map<String, dynamic> toJson() => _$UpdateAdminModelToJson(this);
 
@@ -130,7 +108,6 @@ class UpdateAdminModel {
     String? password,
     String? mobile,
     int? typeId,
-    String? role,
     List<int> categories = const [],
   }) {
     return UpdateAdminModel(
@@ -141,7 +118,6 @@ class UpdateAdminModel {
       password: password ?? _password,
       mobile: mobile ?? _mobile,
       typeId: typeId ?? _typeId,
-      role: role ?? _role,
       categories: categories,
     );
   }

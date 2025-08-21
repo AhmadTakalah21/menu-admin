@@ -15,7 +15,6 @@ UpdateAdminModel _$UpdateAdminModelFromJson(Map<String, dynamic> json) =>
       password: json['password'] as String?,
       mobile: json['mobile'] as String?,
       typeId: (json['type_id'] as num?)?.toInt(),
-      role: json['role'] as String?,
       categories: (json['category'] as List<dynamic>?)
               ?.map((e) => (e as num).toInt())
               .toList() ??
@@ -31,6 +30,5 @@ Map<String, dynamic> _$UpdateAdminModelToJson(UpdateAdminModel instance) =>
       'password': instance.password,
       'mobile': instance.mobile,
       'type_id': instance.typeId,
-      'role': instance.role,
       'category': instance.categories,
     };

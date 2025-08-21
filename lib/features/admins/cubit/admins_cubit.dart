@@ -1,12 +1,10 @@
 import 'package:bloc/bloc.dart';
-import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:user_admin/features/admins/model/admin_model/admin_model.dart';
 import 'package:user_admin/features/admins/model/permission_model/permission_model.dart';
-import 'package:user_admin/features/admins/model/role_enum.dart';
 import 'package:user_admin/features/admins/model/update_admin_model/update_admin_model.dart';
 import 'package:user_admin/features/admins/model/user_type_model/user_type_model.dart';
 import 'package:user_admin/features/admins/service/admins_service.dart';
@@ -15,17 +13,11 @@ import 'package:user_admin/global/model/paginated_model/paginated_model.dart';
 import 'package:user_admin/global/utils/constants.dart';
 
 part 'states/admins_state.dart';
-
 part 'states/permissions_state.dart';
-
 part 'states/update_admin_state.dart';
-
 part 'states/general_admins_state.dart';
-
 part 'states/user_types_state.dart';
-
-part 'states/user_roles_state.dart';
-
+//part 'states/user_roles_state.dart';
 part 'states/categories_sub_in_item_state.dart';
 
 @injectable
@@ -35,7 +27,9 @@ class AdminsCubit extends Cubit<GeneralAdminsState> {
   final AdminsService adminsService;
   UpdateAdminModel updateAdminModel = const UpdateAdminModel();
 
-  RoleEnum? role = RoleEnum.all;
+  PaginatedModel<AdminModel>? _adminsCache;
+
+  UserTypeModel? type;
   String? startDate;
   String? endDate;
 
@@ -65,18 +59,14 @@ class AdminsCubit extends Cubit<GeneralAdminsState> {
     updateAdminModel = updateAdminModel.copyWith(mobile: mobile);
   }
 
-  void setUserType(UserTypeModel? userTypeModel) {
-    updateAdminModel = updateAdminModel.copyWith(typeId: userTypeModel?.id);
-  }
-
-  void setRoleUpdate(UserTypeModel? userTypeModel) {
-    updateAdminModel = updateAdminModel.copyWith(role: userTypeModel?.name);
+  void setUserType(int? typeId) {
+    updateAdminModel = updateAdminModel.copyWith(typeId: typeId);
   }
 
   void setCategories(CategoryModel? category) {
     if (category != null) {
       int index = categoryIds.indexWhere(
-        (categoryId) => categoryId == category.id,
+            (categoryId) => categoryId == category.id,
       );
       if (index == -1) {
         categoryIds.add(category.id);
@@ -89,8 +79,12 @@ class AdminsCubit extends Cubit<GeneralAdminsState> {
     updateAdminModel = updateAdminModel.copyWith(categories: categoryIds);
   }
 
-  void setRole(RoleEnum? role) {
-    this.role = role;
+  // void setRole(RoleEnum? role) {
+  //   this.role = role;
+  // }
+
+  void setUserTypeFilter(UserTypeModel? type) {
+    this.type = type;
   }
 
   void setStartDate(String? startDate) {
@@ -102,32 +96,66 @@ class AdminsCubit extends Cubit<GeneralAdminsState> {
   }
 
   Future<void> getAdmins(int page) async {
-    String? roleStrig;
-    if (role == RoleEnum.all) {
-      roleStrig = null;
-    } else {
-      roleStrig = role?.name;
-    }
+    // String? roleStrig;
+    // if (role == RoleEnum.all) {
+    //   roleStrig = null;
+    // } else {
+    //   roleStrig = role?.name;
+    // }
 
     emit(AdminsLoading());
     try {
       final response = await adminsService.getAdmins(
         page,
-        role: roleStrig,
+        //role: roleStrig,
+        type: type?.id,
         startDate: startDate,
         endDate: endDate,
       );
+
+      _adminsCache = response;
+
       if (response.data.isEmpty) {
         emit(AdminsEmpty("no_admins".tr()));
       } else {
         emit(AdminsSuccess(response));
       }
     } catch (e) {
-      if (e is DioException) {
-        emit(AdminsFail(e.message ?? e.toString()));
-      } else {
-        emit(AdminsFail(e.toString()));
-      }
+      emit(AdminsFail(e.toString()));
+    }
+  }
+
+  void searchByName(String query) {
+    final q = query.trim().toLowerCase();
+    if (_adminsCache == null) return;
+
+    if (q.isEmpty) {
+      emit(AdminsSuccess(_adminsCache!));
+      return;
+    }
+
+    final filtered = _adminsCache!.data.where((a) {
+      final name = a.name.toLowerCase();
+      // لو أردت تضمين اسم المستخدم أيضاً:
+      // final username = a.username.toLowerCase();
+      // return name.contains(q) || username.contains(q);
+      return name.contains(q);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      emit(AdminsEmpty("no_admins".tr()));
+    } else {
+      final paged = PaginatedModel<AdminModel>(
+        data: filtered,
+        meta: _adminsCache!.meta,
+      );
+      emit(AdminsSuccess(paged));
+    }
+  }
+
+  void clearSearch() {
+    if (_adminsCache != null) {
+      emit(AdminsSuccess(_adminsCache!));
     }
   }
 
@@ -141,11 +169,7 @@ class AdminsCubit extends Cubit<GeneralAdminsState> {
         emit(PermissionsSuccess(response));
       }
     } catch (e) {
-      if (e is DioException) {
-        emit(PermissionsFail(e.message ?? e.toString()));
-      } else {
-        emit(PermissionsFail(e.toString()));
-      }
+      emit(PermissionsFail(e.toString()));
     }
   }
 
@@ -160,87 +184,68 @@ class AdminsCubit extends Cubit<GeneralAdminsState> {
       emit(UpdateAdminSuccess("admin_updated".tr()));
       categoryIds.clear();
     } catch (e) {
-      if (e is DioException) {
-        emit(UpdateAdminFail(e.message ?? e.toString()));
-      } else {
-        emit(UpdateAdminFail(e.toString()));
-      }
+      emit(UpdateAdminFail(e.toString()));
     }
   }
 
   Future<void> getUserTypes({required bool isRefresh}) async {
     final prefs = await SharedPreferences.getInstance();
+    const resId = AppConstants.restaurantId;
 
-    final userTypesString = prefs.getStringList(
-      "${AppConstants.restaurantId}user_types",
-    );
-    if (userTypesString != null && !isRefresh) {
-      List<UserTypeModel> userTypes = List.generate(
-        userTypesString.length,
-        (index) => UserTypeModel.fromString(
-          userTypesString[index],
-        ),
-      );
-      emit(UserTypesSuccess(userTypes));
+    final tString = prefs.getStringList("${resId}user_types");
+    if (tString != null && !isRefresh) {
+      final types = tString.map((e) => UserTypeModel.fromString(e)).toList();
+      if (isClosed) return;
+      emit(UserTypesSuccess(types));
       return;
     }
+    if (isClosed) return;
     emit(UserTypesLoading());
     try {
-      final userTypes = await adminsService.getUserTypes();
-      emit(UserTypesSuccess(userTypes));
-      final userTypesString = List.generate(
-        userTypes.length,
-        (index) => userTypes[index].toString(),
-      );
-      prefs.setStringList(
-        "${AppConstants.restaurantId}user_types",
-        userTypesString,
-      );
+      if (isClosed) return;
+      final types = await adminsService.getUserTypes();
+      emit(UserTypesSuccess(types));
+      final typesString = types.map((e) => e.toString()).toList();
+
+      prefs.setStringList("${resId}user_types", typesString);
     } catch (e) {
-      if (e is DioException) {
-        emit(UserTypesFail(e.message ?? e.toString()));
-      } else {
-        emit(UserTypesFail(e.toString()));
-      }
+      if (isClosed) return;
+      emit(UserTypesFail(e.toString()));
     }
   }
 
-  Future<void> getUserRoles({required bool isRefresh}) async {
-    final prefs = await SharedPreferences.getInstance();
+  // Future<void> getUserRoles({required bool isRefresh}) async {
+  //   final prefs = await SharedPreferences.getInstance();
 
-    final userRolesString = prefs.getStringList(
-      "${AppConstants.restaurantId}user_roles",
-    );
-    if (userRolesString != null && !isRefresh) {
-      List<UserTypeModel> userRoles = List.generate(
-        userRolesString.length,
-        (index) => UserTypeModel.fromString(
-          userRolesString[index],
-        ),
-      );
-      emit(UserRolesSuccess(userRoles));
-      return;
-    }
-    emit(UserRolesLoading());
-    try {
-      final userRoles = await adminsService.getUserRoles();
-      emit(UserRolesSuccess(userRoles));
-      final userRolesString = List.generate(
-        userRoles.length,
-        (index) => userRoles[index].toString(),
-      );
-      prefs.setStringList(
-        "${AppConstants.restaurantId}user_roles",
-        userRolesString,
-      );
-    } catch (e) {
-      if (e is DioException) {
-        emit(UserRolesFail(e.message ?? e.toString()));
-      } else {
-        emit(UserRolesFail(e.toString()));
-      }
-    }
-  }
+  //   final userRolesString = prefs.getStringList(
+  //     "${AppConstants.restaurantId}user_roles",
+  //   );
+  //   if (userRolesString != null && !isRefresh) {
+  //     List<UserTypeModel> userRoles = List.generate(
+  //       userRolesString.length,
+  //       (index) => UserTypeModel.fromString(
+  //         userRolesString[index],
+  //       ),
+  //     );
+  //     emit(UserRolesSuccess(userRoles));
+  //     return;
+  //   }
+  //   emit(UserRolesLoading());
+  //   try {
+  //     final userRoles = await adminsService.getUserRoles();
+  //     emit(UserRolesSuccess(userRoles));
+  //     final userRolesString = List.generate(
+  //       userRoles.length,
+  //       (index) => userRoles[index].toString(),
+  //     );
+  //     prefs.setStringList(
+  //       "${AppConstants.restaurantId}user_roles",
+  //       userRolesString,
+  //     );
+  //   } catch (e) {
+  //     emit(UserRolesFail(e.toString()));
+  //   }
+  // }
 
   Future<void> getCategoriesSubInItem({required bool isRefresh}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -251,7 +256,7 @@ class AdminsCubit extends Cubit<GeneralAdminsState> {
     if (categoriesString != null && !isRefresh) {
       List<CategoryModel> categories = List.generate(
         categoriesString.length,
-        (index) => CategoryModel.fromString(
+            (index) => CategoryModel.fromString(
           categoriesString[index],
         ),
       );
@@ -273,18 +278,14 @@ class AdminsCubit extends Cubit<GeneralAdminsState> {
 
       final categoriesString = List.generate(
         categories.length,
-        (index) => categories[index].toString(),
+            (index) => categories[index].toString(),
       );
       prefs.setStringList(
         "${AppConstants.restaurantId}categories_sub_in_item",
         categoriesString,
       );
     } catch (e) {
-      if (e is DioException) {
-        emit(CategoriesSubInItemFail(e.message ?? e.toString()));
-      } else {
-        emit(CategoriesSubInItemFail(e.toString()));
-      }
+      emit(CategoriesSubInItemFail(e.toString()));
     }
   }
 }

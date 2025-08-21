@@ -21,7 +21,6 @@ import 'package:user_admin/global/widgets/main_add_button.dart';
 import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
-import 'package:user_admin/global/widgets/switch_view_button.dart';
 
 abstract class SubCategoriesViewCallbacks {
   void onAddTap();
@@ -32,7 +31,7 @@ abstract class SubCategoriesViewCallbacks {
   void onSaveActivateTap(CategoryModel category);
   Future<bool> onActivateTap(CategoryModel category);
   void onCategoryTap(CategoryModel category);
-  void onSwichViewTap();
+  //void onSwichViewTap();
   void onTryAgainTap();
 }
 
@@ -115,19 +114,19 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
     showDialog(
       context: context,
       builder: (_) => EditCategoryWidget(
-        btnColor: widget.restaurant.color!,
+        btnColor: widget.restaurant.color,
         isEdit: false,
         masterCategory: widget.masterCategory,
       ),
     );
   }
 
-  @override
-  void onSwichViewTap() {
-    setState(() {
-      isCardView = !isCardView;
-    });
-  }
+  // @override
+  // void onSwichViewTap() {
+  //   setState(() {
+  //     isCardView = !isCardView;
+  //   });
+  // }
 
   @override
   Future<void> onRefresh() async {
@@ -140,7 +139,7 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
     showDialog(
       context: context,
       builder: (_) => EditCategoryWidget(
-        btnColor: widget.restaurant.color!,
+        btnColor: widget.restaurant.color,
         masterCategory: widget.masterCategory,
         category: category,
         isEdit: true,
@@ -221,6 +220,11 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
         appBar: MainAppBar(
           restaurant: widget.restaurant,
           title: "sub_categories".tr(),
+          onSearchChanged: (q) => homeCubit.searchSubListByName(q),
+          onSearchSubmitted: (q) => homeCubit.searchSubListByName(q),
+          onSearchClosed: () => homeCubit.searchSubListByName(''),
+          onLanguageToggle: (loc) {
+          },
         ),
         // drawer: MainDrawer(
         //   permissions: widget.permissions,
@@ -234,53 +238,22 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // _buildHeader(),
-                  // const SizedBox(height: 20),
                   BlocBuilder<HomeCubit, GeneralHomeState>(
                     buildWhen: (previous, current) =>
                         current is SubCategoriesInMasterState,
                     builder: (context, state) => _buildCategoriesList(state),
                   ),
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 600),
                 ],
               ),
             ),
           ),
         ),
-        floatingActionButton: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            SwitchViewButton(
-              onTap: onSwichViewTap,
-              isCardView: isCardView,
-              color: widget.restaurant.color!,
-            ),
-            const SizedBox(width: 10),
-            if (isAdd)
-              MainAddButton(onTap: onAddTap, color: widget.restaurant.color!)
-          ],
-        ),
+        floatingActionButton: isAdd ? 
+        MainAddButton(onTap: onAddTap, color: widget.restaurant.color) : null,
       ),
     );
   }
-
-  // Widget _buildHeader() {
-  //   final restColor = widget.restaurant.color;
-  //   bool isAdd = hasPermission("category.add");
-  //   return Row(
-  //     children: [
-  //       MainBackButton(color: restColor),
-  //       const Spacer(),
-  //       if (isAdd) ...[
-  //         const SizedBox(width: 10),
-  //         MainAddButton(
-  //           onTap: onAddTap,
-  //           title: "add_sub_category".tr(),
-  //         )
-  //       ],
-  //     ],
-  //   );
-  // }
 
   Widget _buildCategoriesList(GeneralHomeState state) {
     bool isEdit = hasPermission("category.update");
@@ -312,7 +285,14 @@ class _SubCategoriesPageState extends State<SubCategoriesPage>
           );
         },
       );
-    } else if (state is SubCategoriesInMasterFail) {
+    } else if (state is SubCategoriesInMasterEmpty) {
+      return MainErrorWidget(
+        error: state.message,
+        isRefresh: true,
+        onTryAgainTap: onTryAgainTap,
+      );
+    } 
+    else if (state is SubCategoriesInMasterFail) {
       return MainErrorWidget(
         error: state.error,
         onTryAgainTap: onTryAgainTap,

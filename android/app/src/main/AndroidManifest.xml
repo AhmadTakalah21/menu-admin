@@ -20,6 +20,12 @@
         android:label="Menu Admin"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+      <!-- ✅ مفتاح Google Maps API -->
+      <meta-data
+          android:name="com.google.android.geo.API_KEY"
+          android:value="AIzaSyBhtWIKwjA8gN0NRSPakROXE_zpMHo_AJQ"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

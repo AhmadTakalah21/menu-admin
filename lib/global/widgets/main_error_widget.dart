@@ -20,10 +20,8 @@ class MainErrorWidget extends StatelessWidget {
   final String? tryAgainTitle;
   final double? fontSize;
 
-  /// إن كانت true نعرض زر “تحديث” بأيقونة ↻ (شكل كبسولة)
   final bool isRefresh;
 
-  /// تخصيص لون الزر/النص (اختياري)
   final Color? buttonColor;
   final Color? textColor;
 
@@ -35,6 +33,7 @@ class MainErrorWidget extends StatelessWidget {
 
     return Center(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (height != null) SizedBox(height: height),
@@ -57,7 +56,7 @@ class MainErrorWidget extends StatelessWidget {
                 ? ElevatedButton.icon(
               onPressed: onTryAgainTap,
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: Text(tryAgainTitle ?? 'try_again'.tr()),
+              label: Text(tryAgainTitle ?? 'refresh'.tr()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: primary,
                 foregroundColor: onPrimary,

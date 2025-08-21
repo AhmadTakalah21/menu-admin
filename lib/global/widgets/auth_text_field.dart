@@ -36,6 +36,7 @@ class AuthTextField extends StatefulWidget {
     this.maxLines = 1,
     this.minLines,
     this.titlePadding,
+    this.prefixIcon,
   });
 
   final String? hintText;
@@ -67,6 +68,7 @@ class AuthTextField extends StatefulWidget {
   final Color? hintColor;
   final int? maxLines;
   final int? minLines;
+  final IconData? prefixIcon;
 
   @override
   State<AuthTextField> createState() => _AuthTextFieldState();
@@ -184,13 +186,14 @@ class _AuthTextFieldState extends State<AuthTextField> {
             padding: widget.titlePadding ?? AppConstants.paddingH20,
             child: Text(
               widget.title!,
-              style: const TextStyle(
-                color: Color(0xFF2F4B26),
+              style: TextStyle(
+                color: widget.borderColor ?? const Color(0xFF2F4B26),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
+          const SizedBox(height: 4),
         ],
         TextFormField(
           initialValue: widget.controller == null ? widget.initialText : null,
@@ -256,6 +259,13 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 _buildBorder(AppColors.red, width: 2),
             filled: widget.filled ?? true,
             fillColor: fillColor,
+            prefixIcon: widget.prefixIcon != null
+                ? Icon(
+                    widget.prefixIcon,
+                    color: widget.borderColor,
+                    size: 25,
+                  )
+                : null,
             suffixIcon: suffixWidgets.isNotEmpty
                 ? Row(
                     mainAxisSize: MainAxisSize.min,

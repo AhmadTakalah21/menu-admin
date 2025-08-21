@@ -32,7 +32,6 @@ class ItemsServiceImp implements ItemsService {
     }
   }
 
-
   @override
   Future<ItemModel> editItem(
       EditItemModel editItemModel,
@@ -47,46 +46,25 @@ class ItemsServiceImp implements ItemsService {
       }) async {
     try {
       final url = isEdit ? "update" : "add";
-
-      // تحويل النموذج إلى Map (نسخة لتعديلها بدون التأثير على الأصل)
-      final Map<String, dynamic> map = Map<String, dynamic>.from(editItemModel.toJson());
-
-      // إزالة المفتاح nutrition لو موجود لأننا نعالجه بشكل منفصل
+      final map = editItemModel.toJson();
       map.remove('nutrition');
-
-      // 1. معالجة معلومات التغذية
       _handleNutrition(map, editItemModel.nutrition);
-
-      // 2. معالجة الإضافات (Toppings)
       _handleExtras(map, extras, imagesExtra);
-
-      // 3. معالجة الأحجام (Sizes)
       await _handleSizes(map, sizes, imagesSizes);
-
-      // 4. معالجة المكونات (Components)
       _handleComponents(map, components);
-
-      // 5. معالجة الصور الرئيسية والثانوية
       await _handleImages(map, image, icon);
-
-      // طباعة بيانات النموذج للتحقق (يمكن إزالة هذه الطباعة لاحقاً)
-      print("Form data before sending: $map");
-
       final formData = FormData.fromMap(map);
 
-      final response = await dio.post(
-        "/admin_api/${url}_item",
-        data: formData,
-      );
+      final response = await dio.post("/admin_api/${url}_item", data: formData);
 
       return ItemModel.fromJson(response.data["data"] as Map<String, dynamic>);
     } catch (e) {
-      print("editItem error: $e");
       rethrow;
     }
   }
 
-  void _handleNutrition(Map<String, dynamic> map, AddNutritionItemModel? nutrition) {
+  void _handleNutrition(
+      Map<String, dynamic> map, AddNutritionItemModel? nutrition) {
     if (nutrition != null) {
       map['is_nutrition'] = 1;
       map['nutrition[unit]'] = nutrition.unit ?? 'g';
@@ -101,10 +79,13 @@ class ItemsServiceImp implements ItemsService {
     }
   }
 
-  void _handleExtras(Map<String, dynamic> map, List<AddExtraItemModel> extras, List<XFile?> imagesExtra) {
-    final validExtras = extras.where((e) =>
+  void _handleExtras(Map<String, dynamic> map, List<AddExtraItemModel> extras,
+      List<XFile?> imagesExtra) {
+    final validExtras = extras
+        .where((e) =>
     (e.nameAr?.trim().isNotEmpty ?? false) &&
-        (e.nameEn?.trim().isNotEmpty ?? false)).toList();
+        (e.nameEn?.trim().isNotEmpty ?? false))
+        .toList();
 
     map['is_topping'] = validExtras.isNotEmpty ? 1 : 0;
 
@@ -113,7 +94,8 @@ class ItemsServiceImp implements ItemsService {
     } else {
       for (int index = 0; index < validExtras.length; index++) {
         final extra = validExtras[index];
-        final extraImage = (imagesExtra.length > index) ? imagesExtra[index] : null;
+        final extraImage =
+        (imagesExtra.length > index) ? imagesExtra[index] : null;
 
         map["toppings[$index][name_ar]"] = extra.nameAr ?? '';
         map["toppings[$index][name_en]"] = extra.nameEn ?? '';
@@ -131,19 +113,22 @@ class ItemsServiceImp implements ItemsService {
     }
   }
 
-  Future<void> _handleSizes(Map<String, dynamic> map, List<AddSizeItemModel> sizes, List<XFile?> imagesSizes) async {
-    final validSizes = sizes.where((s) =>
+  Future<void> _handleSizes(Map<String, dynamic> map,
+      List<AddSizeItemModel> sizes, List<XFile?> imagesSizes) async {
+    final validSizes = sizes
+        .where((s) =>
     (s.nameAr?.trim().isNotEmpty ?? false) &&
         (s.nameEn?.trim().isNotEmpty ?? false) &&
-        (s.price?.toString().isNotEmpty ?? false)
-    ).toList();
+        (s.price?.toString().isNotEmpty ?? false))
+        .toList();
 
     if (validSizes.isNotEmpty) {
       map['is_size'] = 1;
 
       for (int index = 0; index < validSizes.length; index++) {
         final size = validSizes[index];
-        final sizeImage = (imagesSizes.length > index) ? imagesSizes[index] : null;
+        final sizeImage =
+        (imagesSizes.length > index) ? imagesSizes[index] : null;
 
         map["sizes[$index][name_ar]"] = size.nameAr ?? '';
         map["sizes[$index][name_en]"] = size.nameEn ?? '';
@@ -164,14 +149,13 @@ class ItemsServiceImp implements ItemsService {
     }
   }
 
-
-
-
-
-  void _handleComponents(Map<String, dynamic> map, List<AddComponentItemModel> components) {
-    final validComponents = components.where((c) =>
+  void _handleComponents(
+      Map<String, dynamic> map, List<AddComponentItemModel> components) {
+    final validComponents = components
+        .where((c) =>
     (c.nameAr?.trim().isNotEmpty ?? false) &&
-        (c.nameEn?.trim().isNotEmpty ?? false)).toList();
+        (c.nameEn?.trim().isNotEmpty ?? false))
+        .toList();
 
     map['is_component'] = validComponents.isNotEmpty ? 1 : 0;
 
@@ -182,12 +166,14 @@ class ItemsServiceImp implements ItemsService {
         final component = validComponents[index];
         map["components[$index][name_ar]"] = component.nameAr ?? '';
         map["components[$index][name_en]"] = component.nameEn ?? '';
-        map["components[$index][status]"] = component.isBasicComponent == IsBasicComponent.yes ? 1 : 0;
+        map["components[$index][status]"] =
+        component.isBasicComponent == IsBasicComponent.yes ? 1 : 0;
       }
     }
   }
 
-  Future<void> _handleImages(Map<String, dynamic> map, XFile? image, XFile? icon) async {
+  Future<void> _handleImages(
+      Map<String, dynamic> map, XFile? image, XFile? icon) async {
     if (image != null) {
       map['image'] = await MultipartFile.fromFile(
         image.path,
@@ -207,10 +193,6 @@ class ItemsServiceImp implements ItemsService {
     }
   }
 
-
-
-
-
   @override
   Future<PaginatedModel<TableModel>> getTables({int? page}) async {
     const perPageParam = "per_page=10";
@@ -222,7 +204,7 @@ class ItemsServiceImp implements ItemsService {
       final data = response.data as Map<String, dynamic>;
       return PaginatedModel.fromJson(
         data,
-        (json) => TableModel.fromJson(
+            (json) => TableModel.fromJson(
           json as Map<String, dynamic>,
         ),
       );
@@ -253,7 +235,7 @@ class ItemsServiceImp implements ItemsService {
       final data = response.data["data"] as List;
       return List.generate(
         data.length,
-        (index) => ItemModel.fromJson(
+            (index) => ItemModel.fromJson(
           data[index] as Map<String, dynamic>,
         ),
       );

@@ -10,7 +10,6 @@ import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/utils/utils.dart';
 import 'package:user_admin/global/widgets/app_image_widget.dart';
-import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_action_button.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
 import 'package:user_admin/global/widgets/main_text_field.dart';
@@ -196,56 +195,65 @@ class _AddDriverWidgetState extends State<AddDriverWidget>
                 fontSize: 20,
               ),
             ),
-            const Divider(height: 30),
+            const SizedBox(height: 20),
             InkWell(
               onTap: onImageTap,
               child: driver != null
                   ? AppImageWidget(
-                      width: 200,
-                      fit: BoxFit.contain,
-                      url: driver.image,
-                      errorWidget: Image.asset(
-                        "assets/images/upload_image.png",
-                        scale: 1.5,
-                      ),
-                    )
-                  : Image.asset("assets/images/upload_image.png", scale: 1.5),
+                width: 200,
+                fit: BoxFit.contain,
+                url: driver.image,
+                errorWidget: Image.asset(
+                  "assets/images/upload_image.png",
+                  scale: 1.5,
+                ),
+              )
+                  : Container(
+                padding: AppConstants.padding30,
+                decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFF1E1E1E)),
+                    borderRadius: AppConstants.borderRadius20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      "assets/images/upload_image.png",
+                      scale: 1.5,
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
             MainTextField(
               initialText: driver?.name,
               onChanged: onNameChanged,
               onSubmitted: onNameSubmitted,
               focusNode: nameFocusNode,
-              labelText: "name".tr(),
+              title: "name".tr(),
             ),
-            const SizedBox(height: 10),
             MainTextField(
               initialText: driver?.username,
               onChanged: onUsernameChanged,
               onSubmitted: onUsernameSubmitted,
               focusNode: usernameFocusNode,
-              labelText: "username".tr(),
+              title: "username".tr(),
             ),
-            const SizedBox(height: 10),
             MainTextField(
               onChanged: onPasswordChanged,
               onSubmitted: onPasswordSubmitted,
               focusNode: passwordFocusNode,
-              labelText: "password".tr(),
+              title: "password".tr(),
             ),
-            const SizedBox(height: 10),
             MainTextField(
               initialText: driver?.phone,
               onChanged: onPhoneNumberChanged,
               onSubmitted: onPhoneNumberSubmitted,
               focusNode: phoneNumberFocusNode,
-              labelText: "phone_number".tr(),
+              title: "phone_number".tr(),
             ),
-            const SizedBox(height: 10),
             MainTextField(
               controller: birthdayController,
-              labelText: "birthday".tr(),
+              title: "birthday".tr(),
               readOnly: true,
               onTap: onBirthdaySelected,
               onClearTap: () {
@@ -260,23 +268,19 @@ class _AddDriverWidgetState extends State<AddDriverWidget>
                 icon: const Icon(Icons.calendar_today),
               ),
             ),
-            const Divider(height: 40),
+            const SizedBox(height: 20),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                MainActionButton(
-                  padding: AppConstants.padding14,
-                  onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
-                  text: "ignore".tr(),
-                  shadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                const Spacer(),
+                Expanded(
+                  flex: 4,
+                  child: MainActionButton(
+                    padding: AppConstants.paddingV10,
+                    buttonColor: widget.restaurant.color,
+                    onPressed: onIgnoreTap,
+                    text: "ignore".tr(),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 BlocConsumer<DriversCubit, GeneralDriversState>(
@@ -290,30 +294,19 @@ class _AddDriverWidgetState extends State<AddDriverWidget>
                     }
                   },
                   builder: (context, state) {
-                    var onTap = onSaveTap;
-                    Widget? child;
-                    if (state is AddDriverLoading) {
-                      onTap = () {};
-                      child = const LoadingIndicator(size: 20);
-                    }
-                    return MainActionButton(
-                      padding: AppConstants.padding14,
-                      onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
-                      text: "save".tr(),
-                      shadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      child: child,
+                    return Expanded(
+                      flex: 4,
+                      child: MainActionButton(
+                        onPressed: onSaveTap,
+                        padding: AppConstants.paddingV10,
+                        buttonColor: widget.restaurant.color,
+                        text: "save".tr(),
+                        isLoading: state is AddDriverLoading,
+                      ),
                     );
                   },
                 ),
-                const SizedBox(width: 10),
+                const Spacer(),
               ],
             ),
           ],

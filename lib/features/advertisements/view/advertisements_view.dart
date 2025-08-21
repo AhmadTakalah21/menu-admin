@@ -161,8 +161,8 @@ class _AdvertisemntsPageState extends State<AdvertisemntsPage>
             ? MainAddButton(
           onTap: onAddTap,
           color: widget.restaurant.color ?? const Color(0xFFE3170A),
-          heroTag: 'fab-add-advertisement',
-          tooltip: 'add_advertisement',
+          // heroTag: 'fab-add-advertisement',
+          // tooltip: 'add_advertisement',
         )
             : null,
         body: RefreshIndicator(

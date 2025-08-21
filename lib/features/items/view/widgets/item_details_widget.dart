@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import 'package:user_admin/features/items/model/item_model/item_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/app_image_widget.dart';
@@ -17,9 +18,14 @@ class ItemDetailModel {
 }
 
 class ItemDetailsWidget extends StatelessWidget {
-  const ItemDetailsWidget({super.key, required this.item});
+  const ItemDetailsWidget({
+    super.key,
+    required this.item,
+    required this.restaurant,
+  });
 
   final ItemModel item;
+  final RestaurantModel restaurant;
 
   void onIgnoreTap(BuildContext context) {
     Navigator.pop(context);
@@ -28,11 +34,11 @@ class ItemDetailsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<ItemDetailModel> itemDetails = [
-      ItemDetailModel(label:  "name_ar".tr(), value: item.nameAr),
-      ItemDetailModel(label: "name_en".tr() , value: item.nameEn),
-      ItemDetailModel(label: "description_ar".tr() , value: item.descriptionAr),
-      ItemDetailModel(label: "description_en".tr() , value: item.descriptionEn),
-      ItemDetailModel(label: "price".tr() , value:item.price ),
+      ItemDetailModel(label: "name_ar".tr(), value: item.nameAr),
+      ItemDetailModel(label: "name_en".tr(), value: item.nameEn),
+      ItemDetailModel(label: "description_ar".tr(), value: item.descriptionAr),
+      ItemDetailModel(label: "description_en".tr(), value: item.descriptionEn),
+      ItemDetailModel(label: "price".tr(), value: item.price),
     ];
     return AlertDialog(
       insetPadding: AppConstants.padding16,
@@ -40,6 +46,7 @@ class ItemDetailsWidget extends StatelessWidget {
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          spacing: 5,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -64,28 +71,27 @@ class ItemDetailsWidget extends StatelessWidget {
                 ),
               ],
             ),
-            const Divider(height: 30),
+            const SizedBox(height: 20),
             AppImageWidget(
               width: 200,
               fit: BoxFit.contain,
               url: item.image,
+              borderRadius: AppConstants.borderRadius20,
               errorWidget: const SizedBox(height: 200),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             ...itemDetails.map(
-              (itemDetail) {
-                return Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    MainTextField(
-                      labelText: itemDetail.label,
-                      initialText: itemDetail.value,
-                      readOnly: true,
-                    ),
-                  ],
+                  (itemDetail) {
+                return MainTextField(
+                  titlePadding: AppConstants.paddingH8V4,
+                  title: itemDetail.label,
+                  initialText: itemDetail.value,
+                  readOnly: true,
+                  borderColor: restaurant.color,
                 );
               },
             ),
+            const SizedBox(height: 15),
           ],
         ),
       ),

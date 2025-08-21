@@ -15,6 +15,8 @@ import 'package:user_admin/features/invoices/cubit/invoices_cubit.dart';
 import 'package:user_admin/features/invoices/view/widgets/add_invoice_widget.dart';
 import 'package:user_admin/features/items/cubit/items_cubit.dart';
 import 'package:user_admin/features/takeout_orders/cubit/takeout_orders_cubit.dart';
+import 'package:user_admin/global/di/di.dart';
+import 'package:user_admin/global/model/paginated_model/paginated_model.dart';
 import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
@@ -25,7 +27,8 @@ import 'package:user_admin/global/widgets/add_service_to_order_widget.dart';
 import 'package:user_admin/global/widgets/invoice_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_action_button.dart';
-import 'package:user_admin/global/widgets/main_back_button.dart';
+import 'package:user_admin/global/widgets/main_add_button.dart';
+import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_data_table.dart';
 import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_drop_down_widget.dart';
@@ -36,27 +39,17 @@ import 'package:user_admin/global/widgets/select_page_tile.dart';
 
 abstract class InvoicesViewCallBacks {
   Future<void> onRefresh();
-
   void onAddTap();
-
   Future<void> onExportToExcelTap(List<DrvierInvoiceModel> invoices);
-
   void onAddSeriveTap(DrvierInvoiceModel invoice);
-
   void onUpdateStatusInvoicePaidTap(DrvierInvoiceModel invoice, int index);
-
   void onUpdateStatusInvoiceReceivedTap(DrvierInvoiceModel invoice, int index);
-
   void onShowDetails(DrvierInvoiceModel invoice);
-
   void onTableSelected(TableModel? table);
-
   void onWaiterSelected(AdminModel? waiter);
-
   Future<void> onDateSelected();
-
+  void onShowFilters();
   void onSelectPageTap(int page);
-
   void onTryAgainTap();
 }
 
@@ -72,7 +65,10 @@ class InvoicesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InvoicesPage(permissions: permissions, restaurant: restaurant);
+    return BlocProvider(
+      create: (context) => get<InvoicesCubit>(),
+      child: InvoicesPage(permissions: permissions, restaurant: restaurant),
+    );
   }
 }
 
@@ -98,6 +94,7 @@ class _InvoicesPageState extends State<InvoicesPage>
   late final CustomerServiceCubit customerServiceCubit = context.read();
 
   int selectedPage = 1;
+  bool isShowFilters = false;
 
   final dateController = TextEditingController();
 
@@ -123,6 +120,13 @@ class _InvoicesPageState extends State<InvoicesPage>
       context: context,
       builder: (context) => InvoiceWidget(invoice: invoice),
     );
+  }
+
+  @override
+  void onShowFilters() {
+    setState(() {
+      isShowFilters = !isShowFilters;
+    });
   }
 
   @override
@@ -210,7 +214,7 @@ class _InvoicesPageState extends State<InvoicesPage>
         id: invoice.id,
         onSuccess: () {
           invoicesCubit.getInvoices(selectedPage);
-        },
+        }, restaurant: widget.restaurant,
       ),
     );
   }
@@ -219,7 +223,11 @@ class _InvoicesPageState extends State<InvoicesPage>
   void onAddTap() {
     showDialog(
       context: context,
-      builder: (context) => AddInvoiceWidget(selectedPage: selectedPage),
+      builder: (context) => AddInvoiceView(
+        selectedPage: selectedPage,
+        invoicesCubit: invoicesCubit,
+        restaurant: widget.restaurant,
+      ),
     );
   }
 
@@ -298,28 +306,8 @@ class _InvoicesPageState extends State<InvoicesPage>
 
   @override
   Widget build(BuildContext context) {
-    final List<String> titles = [
-      "invoice_num".tr(),
-      "total_price".tr(),
-      "table_num".tr(),
-      "waiter_name".tr(),
-      "invoice_created_at".tr(),
-      "status".tr(),
-      "event".tr(),
-    ];
-
-    final permissions =
-    widget.permissions.map((e) => e.name).toSet();
-
-    final isAdd = permissions.contains("order.add");
-    final isEdit = permissions.contains("order.update");
-    final isAddService = permissions.contains("service.add");
-    final isExcel = permissions.contains("excel");
-
-    final restColor = widget.restaurant.color;
-
     return Scaffold(
-      appBar: AppBar(),
+      appBar: MainAppBar(restaurant: widget.restaurant, title: "invoices".tr()),
       drawer: MainDrawer(
         permissions: widget.permissions,
         restaurant: widget.restaurant,
@@ -332,276 +320,14 @@ class _InvoicesPageState extends State<InvoicesPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    MainBackButton(color: restColor!),
-                    Text(
-                      "invoices".tr(),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    if (isExcel)
-                      BlocBuilder<InvoicesCubit, GeneralInvoicesState>(
-                        buildWhen: (previous, current) =>
-                        current is InvoicesState,
-                        builder: (context, state) {
-                          if (state is InvoicesSuccess) {
-                            final invoices = state.paginatedModel.data;
-                            return MainActionButton(
-                              padding: AppConstants.padding10,
-                              onPressed: () => onExportToExcelTap(invoices),
-                              text: "export_excel".tr(),
-                              icon: const Icon(
-                                FontAwesomeIcons.fileExcel,
-                                color: AppColors.white,
-                              ),
-                            );
-                          } else {
-                            return const SizedBox.shrink();
-                          }
-                        },
-                      ),
-                    const SizedBox(width: 10),
-                    if (isAdd)
-                      MainActionButton(
-                        padding: AppConstants.padding10,
-                        onPressed: onAddTap,
-                        text: "Add Category",
-                        child: const Icon(
-                          Icons.add_circle,
-                          color: AppColors.white,
-                        ),
-                      ),
-                    const SizedBox(width: 10),
-                    MainActionButton(
-                      padding: AppConstants.padding10,
-                      onPressed: onRefresh,
-                      text: "",
-                      child: const Icon(Icons.refresh, color: AppColors.white),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: AppConstants.paddingH20,
-                  child: Column(
-                    children: [
-                      MainTextField(
-                        controller: dateController,
-                        labelText: "date".tr(),
-                        readOnly: true,
-                        onTap: onDateSelected,
-                        onClearTap: () {
-                          invoicesCubit.setDate(null);
-                          setState(() {
-                            dateController.text = "mm/dd/yyyy";
-                          });
-                          invoicesCubit.getInvoices(selectedPage);
-                        },
-                        showCloseIcon: dateController.text != "mm/dd/yyyy",
-                        suffixIcon: IconButton(
-                          onPressed: onDateSelected,
-                          icon: const Icon(Icons.calendar_today),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      BlocBuilder<ItemsCubit, GeneralItemsState>(
-                        buildWhen: (previous, current) =>
-                        current is TablesState,
-                        builder: (context, state) {
-                          if (state is TablesLoading) {
-                            return const LoadingIndicator(
-                                color: AppColors.black);
-                          } else if (state is TablesSuccess) {
-                            return MainDropDownWidget(
-                              items: state.tables.data,
-                              text: "table".tr(),
-                              onChanged: onTableSelected,
-                              focusNode: FocusNode(),
-                            );
-                          } else if (state is TablesFail) {
-                            return MainErrorWidget(
-                              error: state.error,
-                              onTryAgainTap: onTryAgainTap,
-                            );
-                          } else {
-                            return const SizedBox.shrink();
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      BlocBuilder<InvoicesCubit, GeneralInvoicesState>(
-                        buildWhen: (previous, current) =>
-                        current is WaitersState,
-                        builder: (context, state) {
-                          if (state is WaitersLoading) {
-                            return const LoadingIndicator(
-                                color: AppColors.black);
-                          } else if (state is WaitersSuccess) {
-                            return MainDropDownWidget(
-                              items: state.waiters,
-                              text: "waiter".tr(),
-                              onChanged: onWaiterSelected,
-                              focusNode: FocusNode(),
-                            );
-                          } else if (state is WaitersFail) {
-                            return MainErrorWidget(
-                              error: state.error,
-                              onTryAgainTap: onTryAgainTap,
-                            );
-                          } else {
-                            return const SizedBox.shrink();
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
+                if (isShowFilters) _buildFilters(),
                 BlocBuilder<InvoicesCubit, GeneralInvoicesState>(
                   buildWhen: (previous, current) => current is InvoicesState,
                   builder: (context, state) {
                     if (state is InvoicesLoading) {
                       return const LoadingIndicator(color: AppColors.black);
                     } else if (state is InvoicesSuccess) {
-                      List<DataRow> rows = [];
-                      rows = List.generate(
-                        state.paginatedModel.data.length,
-                            (index) {
-                          final invoice = state.paginatedModel.data[index];
-                          final values = [
-                            Text(invoice.number.toString()),
-                            Text(invoice.total ?? "_"),
-                            Text(invoice.tableNumber?.toString() ?? "_"),
-                            Text(invoice.waiter ?? "_"),
-                            Text(invoice.createdAt),
-                            MainActionButton(
-                                padding: AppConstants.padding6,
-                                onPressed: () {},
-                                text: invoice.status ?? "_",
-                                buttonColor: AppColors.mainColor),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                InkWell(
-                                  onTap: () => onShowDetails(invoice),
-                                  child: const Icon(Icons.remove_red_eye),
-                                ),
-                                const SizedBox(width: 10),
-                                if (isEdit)
-                                  BlocConsumer<InvoicesCubit,
-                                      GeneralInvoicesState>(
-                                    listener: (context, state) {
-                                      if (state is UpdateStatusToPaidSuccess &&
-                                          state.index == index) {
-                                        MainSnackBar.showSuccessMessage(
-                                            context, state.message);
-                                        invoicesCubit.getInvoices(selectedPage);
-                                      } else if (state
-                                      is UpdateStatusToPaidFail &&
-                                          state.index == index) {
-                                        MainSnackBar.showErrorMessage(
-                                            context, state.error);
-                                      }
-                                    },
-                                    builder: (context, state) {
-                                      var onTap = onUpdateStatusInvoicePaidTap;
-                                      Widget child = const Icon(
-                                        Icons.edit_outlined,
-                                      );
-                                      if (state is UpdateStatusToPaidLoading &&
-                                          state.index == index) {
-                                        onTap = (driver, index) {};
-                                        child = const LoadingIndicator(
-                                          size: 20,
-                                          color: AppColors.black,
-                                        );
-                                      }
-                                      return InkWell(
-                                        onTap: () => onTap(invoice, index),
-                                        child: child,
-                                      );
-                                    },
-                                  ),
-                                if (isEdit) const SizedBox(width: 10),
-                                if (isEdit)
-                                  BlocConsumer<TakeoutOrdersCubit,
-                                      GeneralTakeoutOrdersState>(
-                                    listener: (context, state) {
-                                      if (state
-                                      is UpdateStatusToReceivedSuccess &&
-                                          state.index == index) {
-                                        MainSnackBar.showSuccessMessage(
-                                            context, state.message);
-                                        invoicesCubit.getInvoices(selectedPage);
-                                      } else if (state
-                                      is UpdateStatusToReceivedFail &&
-                                          state.index == index) {
-                                        MainSnackBar.showErrorMessage(
-                                            context, state.error);
-                                      }
-                                    },
-                                    builder: (context, state) {
-                                      var onTap =
-                                          onUpdateStatusInvoiceReceivedTap;
-                                      Widget child = const Icon(
-                                        FontAwesomeIcons.handHolding,
-                                      );
-                                      if (state
-                                      is UpdateStatusToReceivedLoading &&
-                                          state.index == index) {
-                                        onTap = (driver, index) {};
-                                        child = const LoadingIndicator(
-                                          size: 20,
-                                          color: AppColors.black,
-                                        );
-                                      }
-                                      return InkWell(
-                                        onTap: () => onTap(invoice, index),
-                                        child: child,
-                                      );
-                                    },
-                                  ),
-                                if (isEdit) const SizedBox(width: 10),
-                                if (isAddService)
-                                  InkWell(
-                                    onTap: () => onAddSeriveTap(invoice),
-                                    child: const Icon(Icons.settings),
-                                  ),
-                                if (isAddService) const SizedBox(width: 10),
-                              ],
-                            )
-                          ];
-                          return DataRow(
-                            cells: List.generate(
-                              values.length,
-                                  (index2) {
-                                return DataCell(
-                                  Center(child: values[index2]),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      );
-                      return Column(
-                        children: [
-                          MainDataTable(titles: titles, rows: rows),
-                          SelectPageTile(
-                            length: state.paginatedModel.meta.totalPages,
-                            selectedPage: selectedPage,
-                            onSelectPageTap: onSelectPageTap,
-                          ),
-                        ],
-                      );
+                      return _buildTablesView(state.paginatedModel);
                     } else if (state is InvoicesEmpty) {
                       return Center(child: Text(state.message));
                     } else if (state is InvoicesFail) {
@@ -622,6 +348,258 @@ class _InvoicesPageState extends State<InvoicesPage>
           ),
         ),
       ),
+      floatingActionButton: _buildFloatingButtons(),
+    );
+  }
+
+  Widget _buildFilters() {
+    return Column(
+      children: [
+        MainTextField(
+          controller: dateController,
+          labelText: "date".tr(),
+          readOnly: true,
+          onTap: onDateSelected,
+          onClearTap: () {
+            invoicesCubit.setDate(null);
+            setState(() {
+              dateController.text = "mm/dd/yyyy";
+            });
+            invoicesCubit.getInvoices(selectedPage);
+          },
+          showCloseIcon: dateController.text != "mm/dd/yyyy",
+          suffixIcon: IconButton(
+            onPressed: onDateSelected,
+            icon: const Icon(Icons.calendar_today),
+          ),
+        ),
+        const SizedBox(height: 10),
+        BlocBuilder<ItemsCubit, GeneralItemsState>(
+          buildWhen: (previous, current) => current is TablesState,
+          builder: (context, state) {
+            if (state is TablesLoading) {
+              return const LoadingIndicator(color: AppColors.black);
+            } else if (state is TablesSuccess) {
+              return MainDropDownWidget(
+                items: state.tables.data,
+                text: "table".tr(),
+                onChanged: onTableSelected,
+                focusNode: FocusNode(),
+              );
+            } else if (state is TablesFail) {
+              return MainErrorWidget(
+                  error: state.error, onTryAgainTap: onTryAgainTap);
+            } else {
+              return const SizedBox.shrink();
+            }
+          },
+        ),
+        const SizedBox(height: 10),
+        BlocBuilder<InvoicesCubit, GeneralInvoicesState>(
+          buildWhen: (previous, current) => current is WaitersState,
+          builder: (context, state) {
+            if (state is WaitersLoading) {
+              return const LoadingIndicator(color: AppColors.black);
+            } else if (state is WaitersSuccess) {
+              return MainDropDownWidget(
+                items: state.waiters,
+                text: "waiter".tr(),
+                onChanged: onWaiterSelected,
+                focusNode: FocusNode(),
+              );
+            } else if (state is WaitersFail) {
+              return MainErrorWidget(
+                error: state.error,
+                onTryAgainTap: onTryAgainTap,
+              );
+            } else {
+              return const SizedBox.shrink();
+            }
+          },
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildTablesView(PaginatedModel<DrvierInvoiceModel> invoices) {
+    final List<String> titles = [
+      "invoice_num".tr(),
+      "total_price".tr(),
+      "table_num".tr(),
+      "waiter_name".tr(),
+      "invoice_created_at".tr(),
+      "status".tr(),
+      "event".tr(),
+    ];
+
+    final permissions = widget.permissions.map((e) => e.name).toSet();
+    final isEdit = permissions.contains("order.update");
+    final isAddService = permissions.contains("service.add");
+
+    List<DataRow> rows = [];
+    rows = List.generate(
+      invoices.data.length,
+          (index) {
+        final invoice = invoices.data[index];
+        final values = [
+          Text(invoice.number.toString()),
+          Text(invoice.total ?? "_"),
+          Text(invoice.tableNumber?.toString() ?? "_"),
+          Text(invoice.waiter ?? "_"),
+          Text(invoice.createdAt),
+          Text(invoice.status ?? "_"),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InkWell(
+                onTap: () => onShowDetails(invoice),
+                child: const Icon(Icons.remove_red_eye),
+              ),
+              const SizedBox(width: 10),
+              if (isEdit)
+                BlocConsumer<InvoicesCubit, GeneralInvoicesState>(
+                  listener: (context, state) {
+                    if (state is UpdateStatusToPaidSuccess &&
+                        state.index == index) {
+                      MainSnackBar.showSuccessMessage(context, state.message);
+                      invoicesCubit.getInvoices(selectedPage);
+                    } else if (state is UpdateStatusToPaidFail &&
+                        state.index == index) {
+                      MainSnackBar.showErrorMessage(context, state.error);
+                    }
+                  },
+                  builder: (context, state) {
+                    var onTap = onUpdateStatusInvoicePaidTap;
+                    Widget child = const Icon(Icons.edit_outlined);
+                    if (state is UpdateStatusToPaidLoading &&
+                        state.index == index) {
+                      onTap = (driver, index) {};
+                      child = const LoadingIndicator(
+                        size: 20,
+                        color: AppColors.black,
+                      );
+                    }
+                    return InkWell(
+                      onTap: () => onTap(invoice, index),
+                      child: child,
+                    );
+                  },
+                ),
+              if (isEdit) const SizedBox(width: 10),
+              if (isEdit)
+                BlocConsumer<TakeoutOrdersCubit, GeneralTakeoutOrdersState>(
+                  listener: (context, state) {
+                    if (state is UpdateStatusToReceivedSuccess &&
+                        state.index == index) {
+                      MainSnackBar.showSuccessMessage(context, state.message);
+                      invoicesCubit.getInvoices(selectedPage);
+                    } else if (state is UpdateStatusToReceivedFail &&
+                        state.index == index) {
+                      MainSnackBar.showErrorMessage(context, state.error);
+                    }
+                  },
+                  builder: (context, state) {
+                    var onTap = onUpdateStatusInvoiceReceivedTap;
+                    Widget child = const Icon(FontAwesomeIcons.handHolding);
+                    if (state is UpdateStatusToReceivedLoading &&
+                        state.index == index) {
+                      onTap = (driver, index) {};
+                      child = const LoadingIndicator(
+                        size: 20,
+                        color: AppColors.black,
+                      );
+                    }
+                    return InkWell(
+                      onTap: () => onTap(invoice, index),
+                      child: child,
+                    );
+                  },
+                ),
+              if (isEdit) const SizedBox(width: 10),
+              if (isAddService)
+                InkWell(
+                  onTap: () => onAddSeriveTap(invoice),
+                  child: const Icon(Icons.settings),
+                ),
+              if (isAddService) const SizedBox(width: 10),
+            ],
+          )
+        ];
+        return DataRow(
+          cells: List.generate(
+            values.length,
+                (index2) => DataCell(Center(child: values[index2])),
+          ),
+        );
+      },
+    );
+    return Column(
+      children: [
+        MainDataTable(
+          titles: titles,
+          rows: rows,
+          color: widget.restaurant.color,
+        ),
+        SelectPageTile(
+          length: invoices.meta.totalPages,
+          selectedPage: selectedPage,
+          onSelectPageTap: onSelectPageTap,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFloatingButtons() {
+    final permissions = widget.permissions.map((e) => e.name).toSet();
+    final isAdd = permissions.contains("order.add");
+    final isExcel = permissions.contains("excel");
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            if (isExcel) ...[
+              const SizedBox(width: 30),
+              BlocBuilder<InvoicesCubit, GeneralInvoicesState>(
+                buildWhen: (previous, current) => current is InvoicesState,
+                builder: (context, state) {
+                  if (state is InvoicesSuccess) {
+                    final invoices = state.paginatedModel.data;
+                    return MainActionButton(
+                      padding: AppConstants.padding14,
+                      buttonColor: widget.restaurant.color,
+                      onPressed: () => onExportToExcelTap(invoices),
+                      text: "export_excel".tr(),
+                      icon: const Icon(
+                        FontAwesomeIcons.fileExcel,
+                        color: AppColors.white,
+                      ),
+                    );
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                },
+              ),
+            ],
+            const Spacer(),
+            if (isAdd)
+              MainAddButton(onTap: onAddTap, color: widget.restaurant.color),
+            const SizedBox(width: 10),
+            MainActionButton(
+              padding: AppConstants.padding10,
+              onPressed: onShowFilters,
+              text: "text",
+              buttonColor: widget.restaurant.color,
+              child: const Icon(
+                Icons.filter_alt,
+                color: AppColors.white,
+                size: 30,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

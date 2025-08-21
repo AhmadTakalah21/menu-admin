@@ -19,7 +19,6 @@ class AdminDetailsWidget extends StatelessWidget {
     List<TitleValueModel> details = [
       TitleValueModel("username".tr(), admin.userName),
       TitleValueModel("name".tr(), admin.name),
-      TitleValueModel("role".tr(), admin.roles ?? "_"),
       TitleValueModel("active".tr(), admin.isActive ? "yes".tr() : "no".tr()),
       TitleValueModel("type".tr(), admin.type ?? "_"),
     ];

@@ -36,6 +36,8 @@ import 'package:user_admin/features/customer_service/service/customer_service_re
 import 'package:user_admin/features/drivers/cubit/drivers_cubit.dart' as _i703;
 import 'package:user_admin/features/drivers/service/drivers_service.dart'
     as _i677;
+import 'package:user_admin/features/drivers/service/socket_service.dart'
+    as _i270;
 import 'package:user_admin/features/employees_details/cubit/employees_details_cubit.dart'
     as _i267;
 import 'package:user_admin/features/employees_details/service/employees_details_service.dart'
@@ -100,6 +102,7 @@ extension GetItInjectableX on _i174.GetIt {
       environmentFilter,
     );
     final appModule = _$AppModule();
+    gh.factory<_i270.SocketService>(() => _i270.SocketService());
     gh.factory<_i958.InternetConnectionCubit>(
         () => _i958.InternetConnectionCubit());
     gh.factory<_i954.ShowMapCubit>(() => _i954.ShowMapCubit());

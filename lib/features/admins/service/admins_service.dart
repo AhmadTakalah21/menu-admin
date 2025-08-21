@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:user_admin/features/admins/model/admin_model/admin_model.dart';
 import 'package:user_admin/features/admins/model/permission_model/permission_model.dart';
@@ -15,7 +16,8 @@ abstract class AdminsService {
     int page, {
     String? startDate,
     String? endDate,
-    String? role,
+    int? type,
+    //String? role,
   });
 
   Future<List<PermissionModel>> getPermissions();

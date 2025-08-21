@@ -186,7 +186,6 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     }
   }
 
-
   void applyTempImages() {
     selectedImage = tempSelectedImage;
     selectedImage2 = tempSelectedImage2;
@@ -204,7 +203,6 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
   List<XFile?>? getItemExtraImages(int itemId) {
     return _itemExtraImages[itemId];
   }
-
 
   XFile? getExtraImage(int index) => _itemExtraImagesMap[index];
 
@@ -297,8 +295,6 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     getSizes(item, isRemove: false);
   }
 
-
-
   XFile? getSizeImage(int index) => _itemSizeImages[index];
 
   void removeSize(ItemModel? item, int index) {
@@ -343,7 +339,6 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     emit(SizesSuccess(List.from(sizes)));
   }
 
-
   void setNameEnComponent(String? nameEn, int index) {
     components[index] = components[index].copyWith(nameEn: nameEn);
   }
@@ -365,7 +360,7 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
 
   void addComponent(ItemModel? item) {
     AddComponentItemModel addComponentItemModel = const AddComponentItemModel(
-      isBasicComponent: IsBasicComponent.no, // قيمة افتراضية
+      isBasicComponent: IsBasicComponent.no,
     );
     components.add(addComponentItemModel);
     getComponents(item, isRemove: false);
@@ -388,13 +383,13 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
           nameAr: component.nameAr,
           nameEn: component.nameEn,
           itemId: item.id,
-          isBasicComponent: component.isSelectable
-              ? IsBasicComponent.yes
-              : IsBasicComponent.no,
+          isBasicComponent:
+          component.isSelectable ? IsBasicComponent.yes : IsBasicComponent.no,
         );
         int index = components.indexWhere(
-              (element) => element.nameAr == addComponentItemModel.nameAr &&
-                  element.itemId == item.id,
+              (element) =>
+          element.nameAr == addComponentItemModel.nameAr &&
+              element.itemId == item.id,
         );
         if (index == -1) {
           components.add(addComponentItemModel);
@@ -403,7 +398,6 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     }
     emit(ComponentsSuccess(List.from(components)));
   }
-
 
   void addNutrition() {
     editItemModel = editItemModel.copyWith(nutrition: AddNutritionItemModel.empty());
@@ -414,8 +408,6 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     editItemModel = editItemModel.copyWith(nutrition: null);
     emit(NutritionRemoved());
   }
-
-
 
   void setNutrition({
     double? amount,
@@ -439,7 +431,6 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     );
   }
 
-
   void setWeight(double? weight) {
     setNutrition(amount: weight);
   }
@@ -459,6 +450,7 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
   void setCarbs(double? carbs) {
     setNutrition(carbs: carbs);
   }
+
   Future<void> getItems({
     int? restaurantId,
     int? categoryId,
@@ -501,20 +493,23 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
         categoryId: categoryId,
         restaurantId: restaurantId,
       );
-      localItems = response; // تأكد من تحديث localItems هنا
+      localItems = response;
 
-      List<String> itemsString = response.map((item) => item.toString()).toList();
+      List<String> itemsString =
+      response.map((item) => item.toString()).toList();
       await prefs.setStringList("items$categoryId", itemsString);
       emit(ItemsSuccess(response));
     } catch (e) {
       emit(ItemsFail(e.toString()));
 
-      // حاول استخدام البيانات المحفوظة فقط إذا كانت موجودة وصالحة
+      // fallback للـ cache إن أمكن
       final data = prefs.getStringList("items$categoryId");
       if (data != null && data.isNotEmpty) {
         try {
-          List<ItemModel> items = data.map((itemString) => ItemModel.fromString(itemString)).toList();
-          localItems = items; // تأكد من تحديث localItems هنا أيضًا
+          List<ItemModel> items = data
+              .map((itemString) => ItemModel.fromString(itemString))
+              .toList();
+          localItems = items;
           emit(ItemsSuccess(items));
         } catch (parseError) {
           emit(ItemsFail("Failed to load cached data: ${parseError.toString()}"));
@@ -523,17 +518,51 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
     }
   }
 
-  void searchForItem(String input) {
-    final searchedItems = localItems
-        .where(
-          (item) =>
-              item.nameEn.toLowerCase().contains(input.toLowerCase()) ||
-              item.nameAr.toLowerCase().contains(input.toLowerCase()),
-        )
-        .toList();
-    emit(ItemsSuccess(searchedItems));
+  // ---------------------------
+  // 🔎 البحث الموحّد بالاسم
+  // ---------------------------
+
+  /// بحث محلي بالاسم (AR/EN) داخل آخر قائمة تم تحميلها في localItems
+  void searchByName(String q) {
+    final source = localItems;
+    if (source.isEmpty) {
+      emit(ItemsEmpty("no_items".tr()));
+      return;
+    }
+
+    final query = q.trim().toLowerCase();
+    if (query.isEmpty) {
+      emit(ItemsSuccess(source));
+      return;
+    }
+
+    bool _contains(String? s) =>
+        (s ?? '').toLowerCase().contains(query);
+
+    final filtered = source.where((item) {
+      return _contains(item.name) ||
+          _contains(item.nameAr) ||
+          _contains(item.nameEn) ||
+          _contains(item.descriptionAr) ||
+          _contains(item.descriptionEn);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      emit(ItemsEmpty("no_items".tr()));
+    } else {
+      emit(ItemsSuccess(filtered));
+    }
   }
 
+  /// لإرجاع القائمة الأصلية بعد إلغاء البحث
+  void clearSearch() {
+    emit(ItemsSuccess(localItems));
+  }
+
+  /// (للتوافق الرجعي) كانت لديك دالة بهذا الاسم — الآن تستدعي الموحّدة
+  void searchForItem(String input) {
+    searchByName(input);
+  }
 
   Future<void> editItem({required bool isEdit, int? itemId}) async {
     if (isEdit && itemId != null) {
@@ -591,11 +620,7 @@ class ItemsCubit extends Cubit<GeneralItemsState> {
       return;
     }
     final Map<String, dynamic> map = {};
-    map.addAll({
-      "data[0][item_id]": itemId,
-      "data[0][count]": count,
-      "table_id": tableId
-    });
+    map.addAll({"data[0][item_id]": itemId, "data[0][count]": count, "table_id": tableId});
     emit(AddOrderLoading());
     try {
       await itemsService.addOrder(map);

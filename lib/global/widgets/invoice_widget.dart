@@ -482,52 +482,108 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                               ),
                               const SizedBox(height: 8),
                               Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: AppColors.grey),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: SingleChildScrollView(
-                                      child: Table(
-                                        border: TableBorder.all(width: 0.5, color: AppColors.grey),
-                                        children: [
-                                          TableRow(
-                                            decoration: BoxDecoration(color: AppColors.grey.withOpacity(0.15)),
-                                            children: orderDetailsTitles
-                                                .map(
-                                                  (e) => Padding(
-                                                padding: AppConstants.padding6,
-                                                child: Text(e, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                              ),
-                                            )
-                                                .toList(),
-                                          ),
-                                          ..._invoice.orders.map((e) {
-                                            final orderDetailsInfo = [
-                                              locale == SupportedLocales.arabic ? e.nameAr : e.nameEn,
-                                              e.price.toString(),
-                                              e.count.toString(),
-                                              e.total?.toString() ?? (e.price * e.count).toString(),
-                                            ];
-                                            return TableRow(
-                                              children: orderDetailsInfo
-                                                  .map(
-                                                    (v) => Padding(
-                                                  padding: AppConstants.padding6,
-                                                  child: Text(v ?? "_", style: const TextStyle(fontSize: 13)),
-                                                ),
-                                              )
-                                                  .toList(),
-                                            );
-                                          }),
-                                        ],
+                                child: LayoutBuilder(
+                                  builder: (context, cons) {
+                                    const headerStyle = TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.2,
+                                    );
+                                    const cellStyle = TextStyle(
+                                      fontSize: 11.5,
+                                      height: 1.2,
+                                    );
+
+                                    Widget _cell(
+                                        String? text, {
+                                          TextStyle style = cellStyle,
+                                          TextAlign align = TextAlign.center,
+                                          EdgeInsets padding = AppConstants.padding6,
+                                        }) {
+                                      final v = (text == null || text.trim().isEmpty) ? '_' : text.trim();
+                                      return Padding(
+                                        padding: padding,
+                                        child: Text(
+                                          v,
+                                          style: style,
+                                          textAlign: align,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.visible,
+                                          softWrap: false,
+                                        ),
+                                      );
+                                    }
+
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: AppColors.grey),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    ),
-                                  ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Scrollbar(
+                                          thumbVisibility: false,
+                                          child: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: ConstrainedBox(
+                                              constraints: BoxConstraints(minWidth: cons.maxWidth),
+                                              child: SingleChildScrollView(
+                                                child: Table(
+                                                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                                  columnWidths: const <int, TableColumnWidth>{
+                                                    0: FlexColumnWidth(2.2),
+                                                    1: FlexColumnWidth(1.6),
+                                                    2: FlexColumnWidth(1.2),
+                                                    3: FlexColumnWidth(1.8),
+                                                  },
+                                                  border: const TableBorder.symmetric(
+                                                    inside: BorderSide(width: 0.5, color: AppColors.grey),
+                                                    outside: BorderSide(width: 0.5, color: AppColors.grey),
+                                                  ),
+                                                  children: [
+                                                    // العناوين
+                                                    TableRow(
+                                                      decoration: BoxDecoration(
+                                                        color: AppColors.grey.withOpacity(0.12),
+                                                      ),
+                                                      children: List.generate(
+                                                        orderDetailsTitles.length,
+                                                            (i) => _cell(
+                                                          orderDetailsTitles[i],
+                                                          style: headerStyle,
+                                                          align: TextAlign.center,
+                                                          padding: const EdgeInsets.symmetric(
+                                                              horizontal: 8, vertical: 8),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ..._invoice.orders.map((e) {
+                                                      final name = (locale == SupportedLocales.arabic)
+                                                          ? e.nameAr
+                                                          : e.nameEn;
+                                                      final total = e.total ?? (e.price * e.count);
+
+                                                      return TableRow(
+                                                        children: [
+                                                          _cell(name, align: TextAlign.start),
+                                                          _cell(e.price.toString(), align: TextAlign.center),
+                                                          _cell(e.count.toString(), align: TextAlign.center),
+                                                          _cell(total.toString(), align: TextAlign.center),
+                                                        ],
+                                                      );
+                                                    }),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
+
                             ],
                           ),
                         ),

@@ -9,19 +9,19 @@ import 'package:user_admin/features/users/service/users_service.dart';
 import 'package:user_admin/global/model/paginated_model/paginated_model.dart';
 
 part 'states/users_state.dart';
-
 part 'states/user_invoices_state.dart';
-
 part 'states/edit_user_state.dart';
-
 part 'states/general_users_state.dart';
 
 @injectable
 class UsersCubit extends Cubit<GeneralUsersState> {
   UsersCubit(this.usersService) : super(GeneralUsersInitial());
   final UsersService usersService;
+
   EditUserModel editUserModel = const EditUserModel();
   String? password;
+
+  PaginatedModel<UserModel>? _usersCache;
 
   setName(String name) {
     editUserModel = editUserModel.copyWith(name: name);
@@ -51,6 +51,8 @@ class UsersCubit extends Cubit<GeneralUsersState> {
     emit(UsersLoading());
     try {
       final response = await usersService.getUsers(page);
+      _usersCache = response;
+
       if (response.data.isEmpty) {
         emit(UsersEmpty("no_users".tr()));
       } else {
@@ -86,10 +88,10 @@ class UsersCubit extends Cubit<GeneralUsersState> {
     }
   }
 
-  Future<void> getUserInvoices(int id,int page) async {
+  Future<void> getUserInvoices(int id, int page) async {
     emit(UserInvoicesLoading());
     try {
-      final response = await usersService.getUserInvoices(id ,page);
+      final response = await usersService.getUserInvoices(id, page);
       if (response.data.isEmpty) {
         emit(UserInvoicesEmpty("no_invoices".tr()));
       } else {
@@ -97,6 +99,38 @@ class UsersCubit extends Cubit<GeneralUsersState> {
       }
     } catch (e) {
       emit(UserInvoicesFail(e.toString()));
+    }
+  }
+
+  void searchByName(String query) {
+    final q = query.trim().toLowerCase();
+    if (_usersCache == null) return;
+
+    if (q.isEmpty) {
+      emit(UsersSuccess(_usersCache!));
+      return;
+    }
+
+    final filtered = _usersCache!.data.where((u) {
+      final name = (u.name).toLowerCase();
+      final username = (u.username).toLowerCase();
+      return name.contains(q) || username.contains(q);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      emit(UsersEmpty("no_users".tr()));
+    } else {
+      final paged = PaginatedModel<UserModel>(
+        data: filtered,
+        meta: _usersCache!.meta,
+      );
+      emit(UsersSuccess(paged));
+    }
+  }
+
+  void clearSearch() {
+    if (_usersCache != null) {
+      emit(UsersSuccess(_usersCache!));
     }
   }
 }

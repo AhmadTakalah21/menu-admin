@@ -9,16 +9,18 @@ class AdminsServiceImp implements AdminsService {
     int page, {
     String? startDate,
     String? endDate,
-    String? role,
+    int? type,
+    //String? role,
   }) async {
     try {
       const perPageParam = "per_page=10";
       final pageParam = "page=$page";
-      final roleParam = role != null ? "role=$role" : "";
+      // final roleParam = role != null ? "role=$role" : "";
+      final typeParam = type != null ? "type_id=$type" : "";
       final startDateParam = startDate != null ? "startDate=$startDate" : "";
       final endDateParam = endDate != null ? "endDate=$endDate" : "";
       final response = await dio.get(
-        "/admin_api/show_users?$roleParam&$pageParam&$perPageParam&$startDateParam&$endDateParam",
+        "/admin_api/show_users?$typeParam&$pageParam&$perPageParam&$startDateParam&$endDateParam",
       );
       final data = response.data as Map<String, dynamic>;
       return PaginatedModel.fromJson(
@@ -27,7 +29,8 @@ class AdminsServiceImp implements AdminsService {
           json as Map<String, dynamic>,
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      if (kDebugMode) print("stackTrace for get employees : $stackTrace");
       rethrow;
     }
   }
@@ -56,30 +59,15 @@ class AdminsServiceImp implements AdminsService {
   }) async {
     final url = isEdit ? "update" : "add";
     try {
-      final categories = updateAdminModel.categories;
-      final map = {
-        'id': updateAdminModel.id,
-        'name': updateAdminModel.name,
-        'user_name': updateAdminModel.username,
-        'email': updateAdminModel.email,
-        'password': updateAdminModel.password,
-        'mobile': updateAdminModel.mobile,
-        'type_id': updateAdminModel.typeId,
-        'role': updateAdminModel.role,
-      };
-      if (categories != null) {
-        for (var i = 0; i < categories.length; i++) {
-          map.addAll({
-            'category[$i]': categories[i],
-          });
-        }
+      final categories = updateAdminModel.categories ?? [];
+      final map = updateAdminModel.toJson();
+      map.remove("category");
+      for (var i = 0; i < categories.length; i++) {
+        map.addAll({'category[$i]': categories[i]});
       }
       final formData = FormData.fromMap(map);
 
-      await dio.post(
-        "/admin_api/${url}_user",
-        data: formData,
-      );
+      await dio.post("/admin_api/${url}_user", data: formData);
     } catch (e) {
       rethrow;
     }

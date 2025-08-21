@@ -10,17 +10,11 @@ import 'package:user_admin/features/home/service/home_service.dart';
 import 'package:user_admin/global/model/role_model/role_model.dart';
 
 part 'states/home_state.dart';
-
 part 'states/categories_state.dart';
-
 part 'states/edit_category_state.dart';
-
 part 'states/sub_categories_state.dart';
-
 part 'states/sub_categories_in_master_state.dart';
-
 part 'states/image_state.dart';
-
 
 @injectable
 class HomeCubit extends Cubit<GeneralHomeState> {
@@ -30,6 +24,11 @@ class HomeCubit extends Cubit<GeneralHomeState> {
 
   EditCategoryModel editCategoryModel = const EditCategoryModel();
   List<CategoryModel>? localSubCategories;
+
+  /// كاش للبحث المحلي
+  List<CategoryModel>? _rootCategoriesCache; // الفئات الرئيسية (categoryId == null)
+  final Map<int, List<CategoryModel>> _subInMasterCache = {}; // فروع لكل parent
+  List<CategoryModel>? _subListCache; // نتيجة getCategoriesSub()
 
   /// ❌ لم نعد نستخدم image هنا مباشرة
   // XFile? image;
@@ -74,7 +73,6 @@ class HomeCubit extends Cubit<GeneralHomeState> {
     return null;
   }
 
-  /// ✅ التعديل ليأخذ الصورة بشكل وسيط من الشاشة فقط
   Future<void> editCategory({
     required bool isEdit,
     int? categoryId,
@@ -108,7 +106,11 @@ class HomeCubit extends Cubit<GeneralHomeState> {
       emit(EditCategorySuccess(editedCategory, successMessage));
 
       if (localSubCategories != null && isEdit) {
-        emit(SubCategoriesSuccess(localSubCategories));
+        if (localSubCategories.isEmpty) {
+          emit(SubCategoriesEmpty("no_subcategories".tr()));
+        } else {
+          emit(SubCategoriesSuccess(localSubCategories));
+        }
       }
     } catch (e) {
       emit(EditCategoryFail(e.toString()));
@@ -128,9 +130,23 @@ class HomeCubit extends Cubit<GeneralHomeState> {
 
     if (data != null && !isRefresh) {
       final categories = data.map(CategoryModel.fromString).toList();
-      emit(categoryId == null
-          ? CategoriesSuccess(categories)
-          : SubCategoriesInMasterSuccess(categories));
+
+      // حدّث الكاش للبحث المحلي
+      if (categoryId == null) {
+        _rootCategoriesCache = categories;
+      } else {
+        _subInMasterCache[categoryId] = categories;
+      }
+
+      if (categories.isEmpty) {
+        emit(categoryId == null
+            ? CategoriesEmpty("no_categories".tr())
+            : SubCategoriesInMasterEmpty("no_subcategories".tr()));
+      } else {
+        emit(categoryId == null
+            ? CategoriesSuccess(categories)
+            : SubCategoriesInMasterSuccess(categories));
+      }
       return;
     }
 
@@ -139,12 +155,29 @@ class HomeCubit extends Cubit<GeneralHomeState> {
         : SubCategoriesInMasterLoading());
 
     try {
-      final response = await homeService.getCategories(categoryId: categoryId);
-      final encoded = response.map((e) => e.toString()).toList();
+      final categories =
+      await homeService.getCategories(categoryId: categoryId);
+
+      // خزّن في SharedPreferences
+      final encoded = categories.map((e) => e.toString()).toList();
       prefs.setStringList("cafe_categories_$categoryId", encoded);
-      emit(categoryId == null
-          ? CategoriesSuccess(response)
-          : SubCategoriesInMasterSuccess(response));
+
+      // حدّث الكاش للبحث المحلي
+      if (categoryId == null) {
+        _rootCategoriesCache = categories;
+      } else {
+        _subInMasterCache[categoryId] = categories;
+      }
+
+      if (categories.isEmpty) {
+        emit(categoryId == null
+            ? CategoriesEmpty("no_categories".tr())
+            : SubCategoriesInMasterEmpty("no_subcategories".tr()));
+      } else {
+        emit(categoryId == null
+            ? CategoriesSuccess(categories)
+            : SubCategoriesInMasterSuccess(categories));
+      }
     } catch (e) {
       emit(categoryId == null
           ? CategoriesFail(e.toString())
@@ -154,18 +187,124 @@ class HomeCubit extends Cubit<GeneralHomeState> {
 
   Future<void> getCategoriesSub({required bool isRefresh}) async {
     if (localSubCategories != null && !isRefresh) {
-      emit(SubCategoriesSuccess(localSubCategories!));
+
+      _subListCache = localSubCategories;
+
+      if (localSubCategories!.isEmpty) {
+        emit(SubCategoriesEmpty("no_subcategories".tr()));
+      } else {
+        emit(SubCategoriesSuccess(localSubCategories!));
+      }
       return;
     }
 
     emit(SubCategoriesLoading());
 
     try {
-      final response = await homeService.getCategoriesSub();
-      localSubCategories = response;
-      emit(SubCategoriesSuccess(response));
+      final categories = await homeService.getCategoriesSub();
+      localSubCategories = categories;
+
+      // حدّث كاش البحث
+      _subListCache = categories;
+
+      if (categories.isEmpty) {
+        emit(SubCategoriesEmpty("no_"));
+      } else {
+        emit(SubCategoriesSuccess(categories));
+      }
     } catch (e) {
       emit(SubCategoriesFail(e.toString()));
     }
+  }
+
+  // =========================
+  // البحث المحلي بالاسم (بدون API)
+  // =========================
+
+  /// بحث في الفئات الرئيسية (categoryId == null) أو فروع master (بتمرير parentId)
+  void searchCategoriesByName(String query, {int? parentId}) {
+    final q = query.trim().toLowerCase();
+
+    // اختيار مصدر البيانات بحسب السياق
+    final List<CategoryModel>? source =
+    parentId == null ? _rootCategoriesCache : _subInMasterCache[parentId];
+
+    if (source == null) return;
+
+    if (q.isEmpty) {
+      // رجّع الأصل
+      if (parentId == null) {
+        emit(CategoriesSuccess(source));
+      } else {
+        emit(SubCategoriesInMasterSuccess(source));
+      }
+      return;
+    }
+
+    final filtered = source.where((c) {
+      final name = (c.name).toLowerCase();
+      final nameAr = (c.nameAr ?? '').toLowerCase();
+      final nameEn = (c.nameEn ?? '').toLowerCase();
+      return name.contains(q) || nameAr.contains(q) || nameEn.contains(q);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      if (parentId == null) {
+        emit(CategoriesEmpty("no_categories".tr()));
+      } else {
+        emit(SubCategoriesInMasterEmpty("no_subcategories".tr()));
+      }
+    } else {
+      if (parentId == null) {
+        emit(CategoriesSuccess(filtered));
+      } else {
+        emit(SubCategoriesInMasterSuccess(filtered));
+      }
+    }
+  }
+
+  /// إلغاء بحث الفئات (رئيسية/داخل master)
+  void clearCategoriesSearch({int? parentId}) {
+    final List<CategoryModel>? source =
+    parentId == null ? _rootCategoriesCache : _subInMasterCache[parentId];
+    if (source == null) return;
+
+    if (parentId == null) {
+      emit(CategoriesSuccess(source));
+    } else {
+      emit(SubCategoriesInMasterSuccess(source));
+    }
+  }
+
+  /// بحث لقائمة getCategoriesSub() (قائمة فرعية عامة)
+  void searchSubListByName(String query) {
+    final q = query.trim().toLowerCase();
+    final source = _subListCache ?? localSubCategories;
+    if (source == null) return;
+
+    if (q.isEmpty) {
+      emit(SubCategoriesSuccess(source));
+      return;
+    }
+
+    final filtered = source.where((c) {
+      final name = (c.name).toLowerCase();
+      final nameAr = (c.nameAr ?? '').toLowerCase();
+      final nameEn = (c.nameEn ?? '').toLowerCase();
+      return name.contains(q) || nameAr.contains(q) || nameEn.contains(q);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      emit(SubCategoriesEmpty("no_subcategories".tr()));
+    } else {
+      emit(SubCategoriesSuccess(filtered));
+    }
+  }
+
+  /// إلغاء بحث قائمة getCategoriesSub()
+  void clearSubListSearch() {
+    final source = _subListCache ?? localSubCategories;
+    if (source == null) return;
+    emit(SubCategoriesSuccess(source));
   }
 }

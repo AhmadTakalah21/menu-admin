@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/customer_service/cubit/customer_service_cubit.dart';
 import 'package:user_admin/features/customer_service/model/service_model/service_model.dart';
 import 'package:user_admin/features/tables/cubit/tables_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
@@ -30,10 +31,12 @@ class AddServiceToOrderWidget extends StatefulWidget {
     required this.id,
     required this.onSuccess,
     required this.isTable,
+    required this.restaurant,
   });
 
   final bool isTable;
   final int id;
+  final RestaurantModel restaurant;
   final VoidCallback onSuccess;
 
   @override
@@ -140,6 +143,7 @@ class _AddServiceToOrderWidgetState extends State<AddServiceToOrderWidget>
               onSubmitted: onCountSubmitted,
               focusNode: countFocusNode,
               labelText: "quantity".tr(),
+              borderColor: widget.restaurant.color,
             ),
             const Divider(height: 30),
             Row(

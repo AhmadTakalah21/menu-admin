@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -16,43 +17,35 @@ import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
 import 'package:user_admin/global/widgets/main_text_field.dart';
 
+import '../../../global/widgets/main_app_bar.dart';
+
+/// —————————————————————————————————————————————————
+/// Callbacks كما هي
+/// —————————————————————————————————————————————————
 abstract class RestaurantViewCallbacks {
   Future<void> onRefresh();
-
   void onTryAgainTap();
-
   void onIgnoreTap();
-
   void onSaveTap();
 
   void onNameArChanged(String nameAr);
-
   void onNameEnChanged(String nameEn);
-
   void onUrlNameChanged(String urlName);
 
   void onFacebookChanged(String facebook);
-
   void onInstagramChanged(String instagram);
-
   void onWhatsappChanged(String whatsapp);
 
   void onNoteArChanged(String noteAr);
-
   void onNoteEnChanged(String noteEn);
 
   void onMessageBadChanged(String messageBad);
-
   void onMessageGoodChanged(String messageGood);
-
   void onMessagePerfectChanged(String messagePerfect);
 
   void onConsumerSpendingChanged(String consumerSpending);
-
   void onLocalAdministrationChanged(String localAdministration);
-
   void onReconstructionChanged(String reconstruction);
-
   void onPriceKmChanged(String priceKm);
 
   void onColorSelected(Color color);
@@ -93,6 +86,9 @@ class RestaurantPage extends StatefulWidget {
   State<RestaurantPage> createState() => _RestaurantPageState();
 }
 
+/// تبويب الواجهة
+enum _Section { basic, extra }
+
 class _RestaurantPageState extends State<RestaurantPage>
     implements RestaurantViewCallbacks {
   late final RestaurantCubit restaurantCubit = context.read();
@@ -100,26 +96,29 @@ class _RestaurantPageState extends State<RestaurantPage>
   Color? pickerColor;
   Color? pickerBackgroundColor;
 
-  TextEditingController nameArController = TextEditingController();
-  TextEditingController nameEnController = TextEditingController();
-  TextEditingController nameUrlController = TextEditingController();
-  TextEditingController facebookUrlController = TextEditingController();
-  TextEditingController instagramUrlController = TextEditingController();
-  TextEditingController whatsappPhoneController = TextEditingController();
-  TextEditingController noteEnController = TextEditingController();
-  TextEditingController noteArController = TextEditingController();
-  TextEditingController messageBadController = TextEditingController();
-  TextEditingController messageGoodController = TextEditingController();
-  TextEditingController messagePerfectController = TextEditingController();
-  TextEditingController consumerSpendingController = TextEditingController();
-  TextEditingController localAdminController = TextEditingController();
-  TextEditingController reconstructionController = TextEditingController();
-  TextEditingController priceKmController = TextEditingController();
+  final nameArController = TextEditingController();
+  final nameEnController = TextEditingController();
+  final nameUrlController = TextEditingController();
+  final facebookUrlController = TextEditingController();
+  final instagramUrlController = TextEditingController();
+  final whatsappPhoneController = TextEditingController();
+  final noteEnController = TextEditingController();
+  final noteArController = TextEditingController();
+  final messageBadController = TextEditingController();
+  final messageGoodController = TextEditingController();
+  final messagePerfectController = TextEditingController();
+  final consumerSpendingController = TextEditingController();
+  final localAdminController = TextEditingController();
+  final reconstructionController = TextEditingController();
+  final priceKmController = TextEditingController();
+
+  _Section _section = _Section.basic;
 
   @override
   void initState() {
     super.initState();
     restaurantCubit.getRestaurant();
+
     restaurantCubit.setNameAr(widget.restaurant.nameAr ?? "");
     restaurantCubit.setNameEn(widget.restaurant.nameEn ?? "");
     restaurantCubit.setNoteAr(widget.restaurant.noteAr ?? "");
@@ -131,231 +130,425 @@ class _RestaurantPageState extends State<RestaurantPage>
     restaurantCubit.setMessageBad(widget.restaurant.messageBad ?? "");
     restaurantCubit.setMessageGood(widget.restaurant.messageGood ?? "");
     restaurantCubit.setMessagePerfect(widget.restaurant.messagePerfect ?? "");
-    restaurantCubit
-        .setConsumerSpending(widget.restaurant.consumerSpending.toString());
-    restaurantCubit
-        .setLocalAdministration(widget.restaurant.localAdmin.toString());
-    restaurantCubit
-        .setReconstruction(widget.restaurant.reconstruction.toString());
+    restaurantCubit.setConsumerSpending(widget.restaurant.consumerSpending.toString());
+    restaurantCubit.setLocalAdministration(widget.restaurant.localAdmin.toString());
+    restaurantCubit.setReconstruction(widget.restaurant.reconstruction.toString());
     restaurantCubit.setPriceKm(widget.restaurant.priceKm.toString());
-
     restaurantCubit.setColor(widget.restaurant.color.toString());
-    restaurantCubit
-        .setBackgroundColor(widget.restaurant.backgroundColor.toString());
+    restaurantCubit.setBackgroundColor(widget.restaurant.backgroundColor.toString());
   }
 
+  // ——————— Callbacks (بدون تغيير المنطق) ———————
   @override
-  void onIgnoreTap() {
-    Navigator.pop(context);
-  }
+  void onIgnoreTap() => Navigator.pop(context);
 
-  void changeColor(Color color) {
-    setState(() {
-      pickerColor = color;
-    });
-  }
-
-  void changeBackgroundColor(Color color) {
-    setState(() {
-      pickerBackgroundColor = color;
-    });
-  }
+  void changeColor(Color color) => setState(() => pickerColor = color);
+  void changeBackgroundColor(Color color) => setState(() => pickerBackgroundColor = color);
 
   @override
   void onBackgroundColorSelected(Color color) {
     pickerBackgroundColor = color;
-
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Pick a color!'),
-          content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: pickerBackgroundColor!,
-              onColorChanged: changeBackgroundColor,
-            ),
+      builder: (_) => AlertDialog(
+        title: const Text('Pick a color!'),
+        content: SingleChildScrollView(
+          child: ColorPicker(pickerColor: pickerBackgroundColor!, onColorChanged: changeBackgroundColor),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              setState(() => restaurantCubit.setBackgroundColor(pickerBackgroundColor.toString()));
+              Navigator.pop(context);
+            },
+            child: const Text('Got it'),
           ),
-          actions: <Widget>[
-            ElevatedButton(
-              child: const Text('Got it'),
-              onPressed: () {
-                setState(() {
-                  restaurantCubit
-                      .setBackgroundColor(pickerBackgroundColor.toString());
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
   }
 
   @override
   void onColorSelected(Color color) {
     pickerColor = color;
-
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Pick a color!'),
-          content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: pickerColor!,
-              onColorChanged: changeColor,
+      builder: (_) => AlertDialog(
+        title: const Text('Pick a color!'),
+        content: SingleChildScrollView(
+          child: ColorPicker(pickerColor: pickerColor!, onColorChanged: changeColor),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              setState(() => restaurantCubit.setColor(pickerColor.toString()));
+              Navigator.pop(context);
+            },
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void onConsumerSpendingChanged(String v) => restaurantCubit.setConsumerSpending(v);
+  @override
+  void onFacebookChanged(String v) => restaurantCubit.setFacebookUrl(v);
+  @override
+  void onInstagramChanged(String v) => restaurantCubit.setInstagramUrl(v);
+  @override
+  void onLocalAdministrationChanged(String v) => restaurantCubit.setLocalAdministration(v);
+  @override
+  void onMessageBadChanged(String v) => restaurantCubit.setMessageBad(v);
+  @override
+  void onMessageGoodChanged(String v) => restaurantCubit.setMessageGood(v);
+  @override
+  void onMessagePerfectChanged(String v) => restaurantCubit.setMessagePerfect(v);
+  @override
+  void onNameArChanged(String v) => restaurantCubit.setNameAr(v);
+  @override
+  void onNameEnChanged(String v) => restaurantCubit.setNameEn(v);
+  @override
+  void onNoteArChanged(String v) => restaurantCubit.setNoteAr(v);
+  @override
+  void onNoteEnChanged(String v) => restaurantCubit.setNoteEn(v);
+  @override
+  void onPriceKmChanged(String v) => restaurantCubit.setPriceKm(v);
+  @override
+  void onReconstructionChanged(String v) => restaurantCubit.setReconstruction(v);
+  @override
+  void onSetCover() => restaurantCubit.setCover();
+  @override
+  void onSetLogo() => restaurantCubit.setLogo();
+  @override
+  void onUrlNameChanged(String v) => restaurantCubit.setNameUrl(v);
+  @override
+  void onWhatsappChanged(String v) => restaurantCubit.setWhatsappPhone(v);
+  @override
+  void onSaveTap() => restaurantCubit.updateRestaurant();
+  @override
+  void onQrOfflineTap(String qr) => showDialog(context: context, builder: (_) => TableDetailsWidget(qrCode: qr, title: "qr_offline".tr()));
+  @override
+  void onQrTakeoutTap(String qr) => showDialog(context: context, builder: (_) => TableDetailsWidget(qrCode: qr, title: "qr_takeout".tr()));
+  @override
+  Future<void> onRefresh() async => restaurantCubit.getRestaurant();
+  @override
+  void onTryAgainTap() => restaurantCubit.getRestaurant();
+
+  // ——————— UI Helpers ———————
+
+  Widget _segmentedTabs(Color brand) {
+    final isBasic = _section == _Section.basic;
+
+    return Container(
+      height: 46,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(.85),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(.08), blurRadius: 12, offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(28),
+              onTap: () => setState(() => _section = _Section.extra),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: !isBasic ? const Color(0xFFEAD25D) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Text(
+                  "extra_details".tr(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                    fontSize: 14.5,
+                  ),
+                ),
+              ),
             ),
           ),
-          actions: <Widget>[
-            ElevatedButton(
-              child: const Text('Got it'),
-              onPressed: () {
-                setState(() {
-                  restaurantCubit.setColor(pickerColor.toString());
-                });
-                Navigator.of(context).pop();
-              },
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(28),
+              onTap: () => setState(() => _section = _Section.basic),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isBasic ? const Color(0xFFEAD25D) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Text(
+                  "basic_info".tr(),
+                  style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black87, fontSize: 14.5),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _headerCard({
+    required String? coverUrl,
+    required String? logoUrl,
+    required VoidCallback onCoverTap,
+    required VoidCallback onLogoTap,
+    required Color brand,
+  }) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        InkWell(
+          onTap: onCoverTap,
+          child: Container(
+            height: 190,
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(18),
+              image: coverUrl == null
+                  ? null
+                  : DecorationImage(image: NetworkImage(coverUrl), fit: BoxFit.cover),
+            ),
+          ),
+        ),
+
+        Positioned(
+          left: 10,
+          bottom: -18,
+          child: _colorButton(
+            onTap: () => onBackgroundColorSelected(
+              pickerBackgroundColor ?? widget.restaurant.backgroundColor ?? AppColors.black,
+            ),
+          ),
+        ),
+
+        Positioned(
+          right: 10,
+          bottom: -18,
+          child: _colorButton(
+            onTap: () => onColorSelected(
+              pickerColor ?? widget.restaurant.color ?? AppColors.black,
+            ),
+          ),
+        ),
+
+        Positioned(
+          bottom: -45,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: InkWell(
+              onTap: onLogoTap,
+              borderRadius: BorderRadius.circular(70),
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 10, offset: const Offset(0, 6))],
+                  image: logoUrl == null ? null : DecorationImage(image: NetworkImage(logoUrl), fit: BoxFit.cover),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _colorButton({required VoidCallback onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(.18), blurRadius: 12, offset: const Offset(0, 6))],
+            gradient: const SweepGradient(colors: [
+              Colors.red, Colors.orange, Colors.yellow, Colors.green, Colors.cyan, Colors.blue, Colors.purple, Colors.red
+            ]),
+          ),
+          child: const Icon(Icons.color_lens, color: Colors.white, size: 18),
+        ),
+      ),
+    );
+  }
+
+  Widget _roundedField({
+    required String hint,
+    TextEditingController? controller,
+    ValueChanged<String>? onChanged,
+    TextInputType? type,
+  }) {
+    return Container(
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0xFFD9D9D9),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: TextField(
+          controller: controller,
+          onChanged: onChanged,
+          keyboardType: type,
+          style: const TextStyle(fontSize: 14),
+          decoration: InputDecoration(
+            isDense: true,
+            border: InputBorder.none,
+            hintText: hint,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _basicSection({
+    required String? welcomeLabel,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 36.0, bottom: 8),
+          child: Text(
+            welcomeLabel ?? 'Welcome Massage',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+        ),
+        _roundedField(hint: "facebook_link".tr(), controller: facebookUrlController, onChanged: onFacebookChanged),
+        const SizedBox(height: 10),
+        _roundedField(hint: "instagram_link".tr(), controller: instagramUrlController, onChanged: onInstagramChanged),
+        const SizedBox(height: 10),
+        _roundedField(hint: "whatsapp_number".tr(), controller: whatsappPhoneController, onChanged: onWhatsappChanged),
+        const SizedBox(height: 14),
+
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFBFD166),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(.06), blurRadius: 10, offset: const Offset(0, 4))],
+          ),
+          padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
+          child: Column(
+            children: [
+              _roundedField(hint: "الاسم باللغة الأساسية", controller: nameArController, onChanged: onNameArChanged),
+              const SizedBox(height: 10),
+              _roundedField(hint: "الاسم باللغة الثانوية", controller: nameEnController, onChanged: onNameEnChanged),
+              const SizedBox(height: 10),
+              _roundedField(hint: "اسم الرابط", controller: nameUrlController, onChanged: onUrlNameChanged),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _extraSection(Color brand, String? qrOffline, String? qrTakeout, Color? color, Color? bg) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 32.0, bottom: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Column(
+                children: [
+                  Text("offline".tr()),
+                  const SizedBox(height: 6),
+                  InkWell(onTap: () => onQrOfflineTap(qrOffline ?? ''), child: const Icon(Icons.qr_code, size: 40)),
+                ],
+              ),
+              Column(
+                children: [
+                  Text("takeout".tr()),
+                  const SizedBox(height: 6),
+                  InkWell(onTap: () => onQrTakeoutTap(qrTakeout ?? ''), child: const Icon(Icons.qr_code, size: 40)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        _roundedField(hint: "consumer_spending".tr(), controller: consumerSpendingController, onChanged: onConsumerSpendingChanged, type: TextInputType.number),
+        const SizedBox(height: 10),
+        _roundedField(hint: "local_administration".tr(), controller: localAdminController, onChanged: onLocalAdministrationChanged, type: TextInputType.number),
+        const SizedBox(height: 10),
+        _roundedField(hint: "reconstruction".tr(), controller: reconstructionController, onChanged: onReconstructionChanged, type: TextInputType.number),
+        const SizedBox(height: 10),
+        _roundedField(hint: "price_km".tr(), controller: priceKmController, onChanged: onPriceKmChanged, type: TextInputType.number),
+        const SizedBox(height: 14),
+
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: AppConstants.paddingH8,
+                    child: Text("color".tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(height: 6),
+                  MainActionButton(
+                    onPressed: () => onColorSelected(pickerColor ?? color ?? AppColors.black),
+                    text: "",
+                    buttonColor: pickerColor ?? color ?? widget.restaurant.color,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: AppConstants.paddingH8,
+                    child: Text("background_color".tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(height: 6),
+                  MainActionButton(
+                    onPressed: () => onBackgroundColorSelected(pickerBackgroundColor ?? bg ?? AppColors.black),
+                    text: "",
+                    buttonColor: pickerBackgroundColor ?? bg ?? widget.restaurant.backgroundColor,
+                  ),
+                ],
+              ),
             ),
           ],
-        );
-      },
+        ),
+      ],
     );
-  }
-
-  @override
-  void onConsumerSpendingChanged(String consumerSpending) {
-    restaurantCubit.setConsumerSpending(consumerSpending);
-  }
-
-  @override
-  void onFacebookChanged(String facebook) {
-    restaurantCubit.setFacebookUrl(facebook);
-  }
-
-  @override
-  void onInstagramChanged(String instagram) {
-    restaurantCubit.setInstagramUrl(instagram);
-  }
-
-  @override
-  void onLocalAdministrationChanged(String localAdministration) {
-    restaurantCubit.setLocalAdministration(localAdministration);
-  }
-
-  @override
-  void onMessageBadChanged(String messageBad) {
-    restaurantCubit.setMessageBad(messageBad);
-  }
-
-  @override
-  void onMessageGoodChanged(String messageGood) {
-    restaurantCubit.setMessageGood(messageGood);
-  }
-
-  @override
-  void onMessagePerfectChanged(String messagePerfect) {
-    restaurantCubit.setMessagePerfect(messagePerfect);
-  }
-
-  @override
-  void onNameArChanged(String nameAr) {
-    restaurantCubit.setNameAr(nameAr);
-  }
-
-  @override
-  void onNameEnChanged(String nameEn) {
-    restaurantCubit.setNameEn(nameEn);
-  }
-
-  @override
-  void onNoteArChanged(String noteAr) {
-    restaurantCubit.setNoteAr(noteAr);
-  }
-
-  @override
-  void onNoteEnChanged(String noteEn) {
-    restaurantCubit.setNoteEn(noteEn);
-  }
-
-  @override
-  void onPriceKmChanged(String priceKm) {
-    restaurantCubit.setPriceKm(priceKm);
-  }
-
-  @override
-  void onReconstructionChanged(String reconstruction) {
-    restaurantCubit.setReconstruction(reconstruction);
-  }
-
-  @override
-  void onSetCover() {
-    restaurantCubit.setCover();
-  }
-
-  @override
-  void onSetLogo() {
-    restaurantCubit.setLogo();
-  }
-
-  @override
-  void onUrlNameChanged(String urlName) {
-    restaurantCubit.setNameUrl(urlName);
-  }
-
-  @override
-  void onWhatsappChanged(String whatsapp) {
-    restaurantCubit.setWhatsappPhone(whatsapp);
-  }
-
-  @override
-  void onSaveTap() {
-    restaurantCubit.updateRestaurant();
-  }
-
-  @override
-  void onQrOfflineTap(String qrCode) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return TableDetailsWidget(
-          qrCode: qrCode,
-          title: "qr_offline".tr(),
-        );
-      },
-    );
-  }
-
-  @override
-  void onQrTakeoutTap(String qrCode) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return TableDetailsWidget(qrCode: qrCode, title: "qr_takeout".tr());
-      },
-    );
-  }
-
-  @override
-  Future<void> onRefresh() async {
-    restaurantCubit.getRestaurant();
-  }
-
-  @override
-  void onTryAgainTap() {
-    restaurantCubit.getRestaurant();
   }
 
   @override
   Widget build(BuildContext context) {
-    final restColor = widget.restaurant.color;
+    final restColor = widget.restaurant.color ?? AppColors.mainColor;
+
     return Scaffold(
-      appBar: AppBar(),
-      drawer: MainDrawer(
-        permissions: widget.permissions,
-        restaurant: widget.restaurant,
-      ),
+      appBar: MainAppBar(restaurant: widget.restaurant, title: "restaurant".tr()),
+      drawer: MainDrawer(permissions: widget.permissions, restaurant: widget.restaurant),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: SingleChildScrollView(
@@ -364,23 +557,9 @@ class _RestaurantPageState extends State<RestaurantPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor!),
-                const SizedBox(height: 20),
-                Text(
-                  "restaurant".tr(),
-                  style: const TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 40),
+                // MainBackButton(color: restColor),
                 BlocConsumer<RestaurantCubit, GeneralRestaurantState>(
-                  listener: (context, state) {
-                    if (state is RestaurantSuccess) {
-                      // profileCubit.setName(state.profile.name);
-                      // profileCubit.setUsername(state.profile.username);
-                    }
-                  },
+                  listener: (context, state) {},
                   builder: (context, state) {
                     Widget? indicator;
                     String? coverUrl;
@@ -389,335 +568,110 @@ class _RestaurantPageState extends State<RestaurantPage>
                     String? qrTakeout;
                     Color? color;
                     Color? backgroundColor;
+
                     if (state is RestaurantLoading) {
-                      indicator = const Center(
-                        child: LoadingIndicator(color: AppColors.black),
+                      indicator = const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: Center(child: LoadingIndicator(color: AppColors.black)),
                       );
                     } else if (state is RestaurantSuccess) {
-                      final restaurant = state.restaurant;
+                      final r = state.restaurant;
+                      coverUrl = r.cover;
+                      logoUrl = r.logo;
+                      qrOffline = r.qrOffline;
+                      qrTakeout = r.qrTakeout;
 
-                      coverUrl = restaurant.cover;
-                      logoUrl = restaurant.logo;
-                      qrOffline = restaurant.qrOffline;
-                      qrTakeout = restaurant.qrTakeout;
-                      nameArController.text = restaurant.nameAr ?? "";
-                      nameEnController.text = restaurant.nameEn ?? "";
-                      nameUrlController.text = restaurant.nameUrl ?? "";
-                      facebookUrlController.text = restaurant.facebookUrl ?? "";
-                      instagramUrlController.text =
-                          restaurant.instagramUrl ?? "";
-                      whatsappPhoneController.text =
-                          restaurant.whatsappPhone ?? "";
-                      noteEnController.text = restaurant.noteEn ?? "";
-                      noteArController.text = restaurant.noteAr ?? "";
-                      messageBadController.text = restaurant.messageBad ?? "";
-                      messageGoodController.text = restaurant.messageGood ?? "";
-                      messagePerfectController.text =
-                          restaurant.messagePerfect ?? "";
-                      consumerSpendingController.text =
-                          restaurant.consumerSpending.toString();
-                      localAdminController.text =
-                          restaurant.localAdmin.toString();
-                      reconstructionController.text =
-                          restaurant.reconstruction.toString();
-                      priceKmController.text = restaurant.priceKm != null
-                          ? restaurant.priceKm.toString()
-                          : "";
-                      color = restaurant.color;
-                      backgroundColor = restaurant.backgroundColor;
+                      nameArController.text = r.nameAr ?? "";
+                      nameEnController.text = r.nameEn ?? "";
+                      nameUrlController.text = r.nameUrl ?? "";
+                      facebookUrlController.text = r.facebookUrl ?? "";
+                      instagramUrlController.text = r.instagramUrl ?? "";
+                      whatsappPhoneController.text = r.whatsappPhone ?? "";
+                      noteEnController.text = r.noteEn ?? "";
+                      noteArController.text = r.noteAr ?? "";
+                      messageBadController.text = r.messageBad ?? "";
+                      messageGoodController.text = r.messageGood ?? "";
+                      messagePerfectController.text = r.messagePerfect ?? "";
+                      consumerSpendingController.text = r.consumerSpending.toString();
+                      localAdminController.text = r.localAdmin.toString();
+                      reconstructionController.text = r.reconstruction.toString();
+                      priceKmController.text = r.priceKm != null ? r.priceKm.toString() : "";
+
+                      color = r.color;
+                      backgroundColor = r.backgroundColor;
                     }
+
                     return Column(
                       children: [
                         if (indicator != null) indicator,
-                        if (indicator != null) const SizedBox(height: 20),
-                        Stack(
-                          children: [
-                            if (coverUrl != null)
-                              InkWell(
-                                onTap: onSetCover,
-                                child: AppImageWidget(
-                                  url: coverUrl,
-                                  borderRadius: AppConstants.borderRadius20,
-                                ),
-                              ),
-                            if (logoUrl != null)
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 220, left: 50),
-                                child: InkWell(
-                                  onTap: onSetLogo,
-                                  child: AppImageWidget(
-                                    width: 100,
-                                    height: 100,
-                                    url: logoUrl,
-                                    shadows: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.3),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                    borderRadius:
-                                        AppConstants.borderRadiusCircle,
-                                  ),
-                                ),
-                              ),
-                          ],
+
+                        _headerCard(
+                          coverUrl: coverUrl,
+                          logoUrl: logoUrl,
+                          onCoverTap: onSetCover,
+                          onLogoTap: onSetLogo,
+                          brand: restColor,
                         ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Column(
-                              children: [
-                                Text("offline".tr()),
-                                const SizedBox(height: 5),
-                                InkWell(
-                                  onTap: () => onQrOfflineTap(qrOffline ?? ""),
-                                  child: const Icon(Icons.qr_code, size: 40),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 40),
-                            Column(
-                              children: [
-                                Text("takeout".tr()),
-                                const SizedBox(height: 5),
-                                InkWell(
-                                  onTap: () => onQrTakeoutTap(qrTakeout ?? ""),
-                                  child: const Icon(Icons.qr_code, size: 40),
-                                ),
-                              ],
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: nameArController,
-                          onChanged: onNameArChanged,
-                          labelText: "name_ar".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: nameEnController,
-                          onChanged: onNameEnChanged,
-                          labelText: "name_en".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: nameUrlController,
-                          onChanged: onUrlNameChanged,
-                          labelText: "url_name".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: facebookUrlController,
-                          onChanged: onFacebookChanged,
-                          labelText: "facebook".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: instagramUrlController,
-                          onChanged: onInstagramChanged,
-                          labelText: "instagram".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: whatsappPhoneController,
-                          onChanged: onWhatsappChanged,
-                          labelText: "whatsapp".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: noteArController,
-                          onChanged: onNoteArChanged,
-                          labelText: "note_ar".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: noteEnController,
-                          onChanged: onNoteEnChanged,
-                          labelText: "note_en".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: messageBadController,
-                          onChanged: onMessageBadChanged,
-                          labelText: "message_bad".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: messageGoodController,
-                          onChanged: onMessageGoodChanged,
-                          labelText: "message_good".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: messagePerfectController,
-                          onChanged: onMessagePerfectChanged,
-                          labelText: "message_perfect".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: consumerSpendingController,
-                          onChanged: onConsumerSpendingChanged,
-                          labelText: "consumer_spending".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: localAdminController,
-                          onChanged: onLocalAdministrationChanged,
-                          labelText: "local_administration".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: reconstructionController,
-                          onChanged: onReconstructionChanged,
-                          labelText: "reconstruction".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: priceKmController,
-                          onChanged: onPriceKmChanged,
-                          labelText: "price_km".tr(),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: AppConstants.paddingH8,
-                                    child: Text(
-                                      "color".tr(),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: MainActionButton(
-                                          onPressed: () => onColorSelected(
-                                            pickerColor ??
-                                                color ??
-                                                AppColors.black,
-                                          ),
-                                          text: "",
-                                          buttonColor: pickerColor ??
-                                              color ??
-                                              widget.restaurant.color,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: AppConstants.paddingH8,
-                                    child: Text(
-                                      "background_color".tr(),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: MainActionButton(
-                                          onPressed: () =>
-                                              onBackgroundColorSelected(
-                                            pickerBackgroundColor ??
-                                                backgroundColor ??
-                                                AppColors.black,
-                                          ),
-                                          text: "",
-                                          buttonColor: pickerBackgroundColor ??
-                                              backgroundColor ??
-                                              widget.restaurant.backgroundColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                        const SizedBox(height: 60),
+
+                        _segmentedTabs(restColor),
+                        const SizedBox(height: 14),
+
+                        if (_section == _Section.basic)
+                          _basicSection(welcomeLabel: "Welcome to resturant")
+                        else
+                          _extraSection(restColor, qrOffline, qrTakeout, color, backgroundColor),
                       ],
                     );
                   },
                 ),
-                const SizedBox(height: 30),
+
+                const SizedBox(height: 24),
+
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    MainActionButton(
-                      padding: AppConstants.padding14,
-                      onPressed: onIgnoreTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
-                      text: "ignore".tr(),
-                      shadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                    Expanded(
+                      child: MainActionButton(
+                        padding: AppConstants.padding14,
+                        onPressed: onIgnoreTap,
+                        borderRadius: BorderRadius.circular(28),
+                        // buttonColor: const Color(0xFFE53935),
+                        text: "cancel".tr(),
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    BlocConsumer<RestaurantCubit, GeneralRestaurantState>(
-                      listener: (context, state) {
-                        if (state is UpdateRestaurantSuccess) {
-                          restaurantCubit.getRestaurant();
-                          MainSnackBar.showSuccessMessage(
-                              context, state.message);
-                        } else if (state is UpdateRestaurantFail) {
-                          MainSnackBar.showErrorMessage(context, state.error);
-                        }
-                      },
-                      builder: (context, state) {
-                        var onTap = onSaveTap;
-                        Widget? child;
-                        if (state is UpdateRestaurantLoading) {
-                          onTap = () {};
-                          child = const LoadingIndicator(size: 20);
-                        }
-                        return MainActionButton(
-                          padding: AppConstants.padding14,
-                          onPressed: onTap,
-                          borderRadius: AppConstants.borderRadius5,
-                          buttonColor: AppColors.blueShade3,
-                          text: "save".tr(),
-                          shadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                          child: child,
-                        );
-                      },
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: BlocConsumer<RestaurantCubit, GeneralRestaurantState>(
+                        listener: (context, state) {
+                          if (state is UpdateRestaurantSuccess) {
+                            restaurantCubit.getRestaurant();
+                            MainSnackBar.showSuccessMessage(context, state.message);
+                          } else if (state is UpdateRestaurantFail) {
+                            MainSnackBar.showErrorMessage(context, state.error);
+                          }
+                        },
+                        builder: (context, state) {
+                          var onTap = onSaveTap;
+                          Widget? child;
+                          if (state is UpdateRestaurantLoading) {
+                            onTap = () {};
+                            child = const LoadingIndicator(size: 20);
+                          }
+                          return MainActionButton(
+                            padding: AppConstants.padding14,
+                            onPressed: onTap,
+                            borderRadius: BorderRadius.circular(28),
+                            // buttonColor: const Color(0xFFE3170A),
+                            text: "save".tr(),
+                            child: child,
+                          );
+                        },
+                      ),
                     ),
-                    const SizedBox(width: 10),
                   ],
                 ),
+
+                const SizedBox(height: 24),
               ],
             ),
           ),

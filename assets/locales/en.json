@@ -229,6 +229,8 @@
     "apply_status_to_all": "Apply status to all",
     "status_changed": "Status is changed successfully",
     "extra_item": "Extra item",
+    "choose_toppings" : "choose toppings",
+    "choose_components" : "choose components",
     "are_you_sure": "Are you sure to do this operation?",
     "shared_successfully": "Shared successfully",
     "sales": "Sales",
@@ -251,6 +253,7 @@
     "is_qr_empty": "Is Qr can't be empty",
     "sizes": "Sizes",
     "add_size_item": "Add size item",
+    "choose_size" : "choose size",
     "product_image": "Product image",
     "product_icon": "Product icon",
     "components": "Components",
@@ -305,6 +308,80 @@
     "coupon_applied": "Coupon applied successfully",
     "print": "Print",
     "no_coupons_endpoint": "No coupons endpoint configured",
-    "change_coupon" : "change coupon"
+    "change_coupon" : "change coupon",
+    "choose_action" : "Choose Action",
+    "add_item_or_subcategory" : "Do you want to add item directly or add subcategory?",
+    "items_managment" : "Items Managment",
+    "subcategories_managment" : "Subcategories managment",
+
+
+    "restaurant": "Restaurant Profile",
+    "basic_info": "Basic Info",
+    "extra_details": "Additional Details",
+
+    "welcome_message": "Welcome Message",
+
+    "offline": "Offline",
+    "takeout": "Takeout",
+
+    "facebook_link": "Facebook link",
+    "instagram_link": "Instagram link",
+    "whatsapp_number": "WhatsApp number",
+
+    "color": "Brand color",
+    "background_color": "Background color",
+
+    "cancel": "Cancel",
+    "save": "Save",
+
+    "tables": "Tables",
+    "services": "Services",
+    "add_order": "Add Order",
+    "drivers_track": "Drivers",
+    "coupons": "Coupons",
+
+    "choose_coupon": "Choose a coupon",
+    "coupon_applied": "Coupon applied successfully",
+    "operation_not_supported": "This operation is not supported",
+    "add_coupon": "Add coupon",
+    "change_coupon": "Change coupon",
+
+    "share_pdf": "Share PDF",
+    "print": "Print",
+    "shared_successfully": "Shared successfully",
+    "share_dismissed": "Share dismissed",
+
+    "invoice_details": "Invoice Details",
+    "invoice_summary": "Invoice Summary",
+    "order_details": "Order Details",
+    "additional_info": "Additional Information",
+
+    "invoice_id": "Invoice ID",
+    "order_date": "Order Date",
+
+    "name": "Name",
+    "price": "Price",
+    "count": "Qty",
+    "total": "Total",
+
+    "sum": "Sum",
+    "consumer_spending": "Consumer Spending",
+    "local_administration": "Local Administration",
+    "reconstruction": "Reconstruction",
+    "delivery_price": "Delivery Price",
+    "discount": "Discount",
+    "coupon": "Coupon",
+    "table_orders" : "table orders",
+    "refresh" : "Refresh",
+    "try_again" : "Try Again",
+    "employees" : "Employees",
+    "email" : "Email",
+    "edit_employee" : "Edit Employee",
+    "add_employee" : "Add Employee",
+    "no_services" : "There is no services",
+    "driver_lat": "Driver Latitude",
+    "driver_lon": "Driver Longitude",
+    "restaurant_latitude": "Restaurant Latitude",
+    "restaurant_longitude": "Restaurant Longitude"
 
 }

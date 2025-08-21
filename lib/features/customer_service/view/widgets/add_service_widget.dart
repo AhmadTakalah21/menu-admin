@@ -3,28 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/customer_service/cubit/customer_service_cubit.dart';
 import 'package:user_admin/features/customer_service/model/service_model/service_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
-import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_action_button.dart';
 import 'package:user_admin/global/widgets/main_snack_bar.dart';
 import 'package:user_admin/global/widgets/main_text_field.dart';
 
 abstract class AddServiceWidgetCallBack {
   void onNameEnChanged(String nameEn);
-
   void onNameEnSubmitted(String nameEn);
-
   void onNameArChanged(String nameAr);
-
   void onNameArSubmitted(String nameAr);
-
   void onPriceChanged(String price);
-
   void onPriceSubmitted(String price);
-
   void onSaveTap();
-
   void onIgnoreTap();
 }
 
@@ -34,9 +27,11 @@ class AddServiceWidget extends StatefulWidget {
     required this.isEdit,
     this.service,
     required this.selectedPage,
+    required this.restaurant,
   });
 
   final ServiceModel? service;
+  final RestaurantModel restaurant;
   final bool isEdit;
   final int selectedPage;
 
@@ -104,9 +99,7 @@ class _AddServiceWidgetState extends State<AddServiceWidget>
   }
 
   @override
-  void onIgnoreTap() {
-    Navigator.pop(context);
-  }
+  void onIgnoreTap() => Navigator.pop(context);
 
   @override
   void dispose() {
@@ -144,52 +137,45 @@ class _AddServiceWidgetState extends State<AddServiceWidget>
                   onTap: onIgnoreTap,
                   child: const Icon(
                     Icons.close,
-                    color: AppColors.greyShade,
+                    color: AppColors.black,
                   ),
                 ),
               ],
             ),
-            const Divider(height: 30),
+            const SizedBox(height: 20),
             MainTextField(
               initialText: widget.service?.nameAr.toString(),
               onChanged: onNameArChanged,
               onSubmitted: onNameArSubmitted,
               focusNode: nameArFocusNode,
-              labelText: "name_ar".tr(),
+              title: "name_ar".tr(),
             ),
-            const SizedBox(height: 20),
             MainTextField(
               initialText: widget.service?.nameEn.toString(),
               onChanged: onNameEnChanged,
               onSubmitted: onNameEnSubmitted,
               focusNode: nameEnFocusNode,
-              labelText: "name_en".tr(),
+              title: "name_en".tr(),
             ),
-            const SizedBox(height: 20),
             MainTextField(
               initialText: widget.service?.price.toString(),
               onChanged: onPriceChanged,
               onSubmitted: onPriceSubmitted,
               focusNode: priceFocusNode,
-              labelText: "price".tr(),
+              title: "price".tr(),
             ),
-            const Divider(height: 30),
+            const SizedBox(height: 20),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                MainActionButton(
-                  padding: AppConstants.padding14,
-                  onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
-                  text: "ignore".tr(),
-                  shadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                const Spacer(),
+                Expanded(
+                  flex: 4,
+                  child: MainActionButton(
+                    onPressed: onIgnoreTap,
+                    padding: AppConstants.paddingV10,
+                    buttonColor: widget.restaurant.color,
+                    text: "cancel".tr(),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 BlocConsumer<CustomerServiceCubit, GeneralCustomerService>(
@@ -205,30 +191,19 @@ class _AddServiceWidgetState extends State<AddServiceWidget>
                     }
                   },
                   builder: (context, state) {
-                    var onTap = onSaveTap;
-                    Widget? child;
-                    if (state is AddrServiceLoading) {
-                      onTap = () {};
-                      child = const LoadingIndicator(size: 20);
-                    }
-                    return MainActionButton(
-                      padding: AppConstants.padding14,
-                      onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
-                      text: "save".tr(),
-                      shadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      child: child,
+                    return Expanded(
+                      flex: 4,
+                      child: MainActionButton(
+                        onPressed: onSaveTap,
+                        padding: AppConstants.paddingV10,
+                        buttonColor: widget.restaurant.color,
+                        text: "save".tr(),
+                        isLoading: state is AddrServiceLoading,
+                      ),
                     );
                   },
                 ),
-                const SizedBox(width: 10),
+                const Spacer(),
               ],
             ),
             const SizedBox(height: 20),

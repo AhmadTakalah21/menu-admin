@@ -106,7 +106,7 @@ class _MainDropDownWidgetState<T extends DropDownItemModel>
                   ),
                   buttonStyleData: ButtonStyleData(
                     height: widget.height,
-                    padding: AppConstants.padding4,
+                    padding: AppConstants.paddingH4,
                     decoration: BoxDecoration(
                       color: widget.backgrounColor ?? AppColors.white,
                       borderRadius: AppConstants.borderRadius15,
@@ -128,16 +128,16 @@ class _MainDropDownWidgetState<T extends DropDownItemModel>
                   ),
                   hint: widget.text != null
                       ? Text(
-                          widget.text!,
-                          style: TextStyle(
-                            color: errorText == null
-                                ? widget.color ?? AppColors.grey
-                                : AppColors.red,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            height: 1.19,
-                          ),
-                        )
+                    widget.text!,
+                    style: TextStyle(
+                      color: errorText == null
+                          ? widget.color ?? AppColors.grey
+                          : AppColors.red,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      height: 1.19,
+                    ),
+                  )
                       : null,
                   items: widget.items.map((T item) {
                     return DropdownMenuItem<T>(
@@ -145,10 +145,10 @@ class _MainDropDownWidgetState<T extends DropDownItemModel>
                       child: widget.itemBuilder != null
                           ? widget.itemBuilder!(context, item)
                           : Text(
-                              widget.itemToString?.call(item) ??
-                                  item.displayName,
-                              style: const TextStyle(fontSize: 14),
-                            ),
+                        widget.itemToString?.call(item) ??
+                            item.displayName,
+                        style: const TextStyle(fontSize: 14),
+                      ),
                     );
                   }).toList(),
                   onChanged: onChanged,

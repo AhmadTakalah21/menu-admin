@@ -81,7 +81,8 @@ class _MainTextFieldState extends State<MainTextField> {
   void initState() {
     super.initState();
 
-    floatingLabelColor = widget.floatingLabelColor ?? AppColors.blue;
+    floatingLabelColor =
+        widget.floatingLabelColor ?? widget.borderColor ?? AppColors.blue;
     _obscureText = widget.obscureText;
 
     _controller =
@@ -110,11 +111,11 @@ class _MainTextFieldState extends State<MainTextField> {
     final fillColor = widget.filled == false
         ? Colors.transparent
         : widget.fillColor ??
-            (widget.errorText == null
-                ? const Color(0xFFF9FBB2).withValues(alpha: 0.6)
-                : AppColors.red.withOpacity(0.1));
+        (widget.errorText == null
+            ? const Color(0xFFF9FBB2).withValues(alpha: 0.6)
+            : AppColors.red.withOpacity(0.1));
     final labelColor =
-        widget.errorText == null ? floatingLabelColor : AppColors.red;
+    widget.errorText == null ? floatingLabelColor : AppColors.red;
     final hintColor = widget.hintColor ?? Colors.grey.shade400;
     final textColor = widget.readOnly ? Colors.grey.shade700 : AppColors.black;
 
@@ -220,15 +221,15 @@ class _MainTextFieldState extends State<MainTextField> {
             fillColor: fillColor,
             suffixIcon: suffixWidgets.isNotEmpty
                 ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: suffixWidgets
-                        .map((w) => Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: w,
-                            ))
-                        .toList(),
-                  )
+              mainAxisSize: MainAxisSize.min,
+              children: suffixWidgets
+                  .map((w) => Padding(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 4),
+                child: w,
+              ))
+                  .toList(),
+            )
                 : null,
           ),
         ),

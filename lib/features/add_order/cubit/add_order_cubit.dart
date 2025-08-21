@@ -1,4 +1,4 @@
-
+import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:injectable/injectable.dart';
@@ -21,10 +21,61 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
 
   List<CartItemModel> cartItems = [];
   Map<String, dynamic> mapOrder = {};
-
   int total = 0;
   int totalPrice = 0;
   int? tableId;
+
+  List<CategoryModel>? _lastCategories;
+  String _searchQuery = '';
+  Timer? _debounce;
+
+  void _emitFilteredOrAll() {
+    final src = _lastCategories ?? const <CategoryModel>[];
+    if (_searchQuery.isEmpty) {
+      if (src.isEmpty) {
+        emit(CategoriesSubsItemsEmpty("no_categories".tr()));
+      } else {
+        emit(CategoriesSubsItemsSuccess(src));
+      }
+      return;
+    }
+
+    final q = _searchQuery.toLowerCase();
+    final filtered = src.where((c) => _categoryOrChildrenMatch(c, q)).toList();
+
+    if (filtered.isEmpty) {
+      emit(CategoriesSubsItemsEmpty("no_categories".tr()));
+    } else {
+      emit(CategoriesSubsItemsSuccess(filtered));
+    }
+  }
+
+  bool _categoryOrChildrenMatch(CategoryModel cat, String q) {
+    final catName = (cat.name).toLowerCase();
+    if (catName.contains(q)) return true;
+
+    if (cat.items.any((ItemModel it) => (it.name).toLowerCase().contains(q))) {
+      return true;
+    }
+
+    if (cat.subCategories.any((sub) => _categoryOrChildrenMatch(sub, q))) {
+      return true;
+    }
+
+    return false;
+  }
+
+  void searchByName(String query) {
+    _searchQuery = query.trim();
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), _emitFilteredOrAll);
+  }
+
+  void clearSearch() {
+    if (_searchQuery.isEmpty) return;
+    _searchQuery = '';
+    _emitFilteredOrAll();
+  }
 
   void resetParams() {
     cartItems.clear();
@@ -81,8 +132,6 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
     emit(CartSuccess(cartItems, total));
   }
 
-
-
   bool _isSameCartItem(CartItemModel a, CartItemModel b) {
     return a.item.id == b.item.id &&
         a.selectedSizeId == b.selectedSizeId &&
@@ -95,7 +144,6 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
     final components = [...item.selectedComponentIds]..sort();
     return "${item.item.id}-${item.selectedSizeId}-${toppings.join(",")}-${components.join(",")}";
   }
-
 
   bool _listEquals(List<int> a, List<int> b) {
     if (a.length != b.length) return false;
@@ -135,16 +183,19 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
       if (cartItem.selectedSizeId != null) {
         basePrice = _getSizePrice(cartItem.item, cartItem.selectedSizeId);
       } else {
-        basePrice = int.tryParse(cartItem.item.sizesTypes.first.price?.replaceAll(',', '') ?? '') ?? 0;
+        basePrice = int.tryParse(
+          cartItem.item.sizesTypes.first.price?.replaceAll(',', '') ?? '',
+        ) ??
+            0;
       }
     } else {
       basePrice = int.tryParse(cartItem.item.price.replaceAll(',', '')) ?? 0;
     }
 
-    final toppings = _getToppingsPrice(cartItem.item, cartItem.selectedToppingIds);
+    final toppings =
+    _getToppingsPrice(cartItem.item, cartItem.selectedToppingIds);
     return basePrice + toppings;
   }
-
 
   void addItem(CartItemModel item) {
     final index = cartItems.indexWhere((e) => _isSameCartItem(e, item));
@@ -157,7 +208,6 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
     emit(AddToCartSuccess());
     emit(CartSuccess(cartItems, total));
   }
-
 
   void removeItem(CartItemModel item) {
     final index = cartItems.indexWhere((e) => _isSameCartItem(e, item));
@@ -179,17 +229,15 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
     }
   }
 
-
-
   Future<void> getCategories(int restaurantId) async {
     emit(CategoriesSubsItemsLoading());
     try {
-      final categories = await addOrderService.getCategoriesSubsItems(restaurantId);
-      if (categories.isEmpty) {
-        emit(CategoriesSubsItemsEmpty("no_categories".tr()));
-      } else {
-        emit(CategoriesSubsItemsSuccess(categories));
-      }
+      final categories =
+      await addOrderService.getCategoriesSubsItems(restaurantId);
+
+      _lastCategories = categories;
+
+      _emitFilteredOrAll();
     } catch (e) {
       emit(CategoriesSubsItemsFail(e.toString()));
     }
@@ -218,8 +266,10 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
         "item_id": item.id,
         "count": cartItem.count,
         if (cartItem.selectedSizeId != null) "size_id": cartItem.selectedSizeId,
-        "toppings": cartItem.selectedToppingIds.map((id) => {"topping_id": id}).toList(),
-        "components": cartItem.selectedComponentIds.map((id) => {"component_id": id}).toList(),
+        "toppings": cartItem.selectedToppingIds
+            .map((id) => {"topping_id": id}).toList(),
+        "components": cartItem.selectedComponentIds
+            .map((id) => {"component_id": id}).toList(),
       });
     }
 
@@ -240,7 +290,9 @@ class AddOrderCubit extends Cubit<GeneralAddOrderState> {
     }
   }
 
-
-
-
+  @override
+  Future<void> close() {
+    _debounce?.cancel();
+    return super.close();
+  }
 }

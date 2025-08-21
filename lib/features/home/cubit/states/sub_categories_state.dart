@@ -11,6 +11,12 @@ class SubCategoriesSuccess extends SubCategoriesState {
   SubCategoriesSuccess(this.categories);
 }
 
+class SubCategoriesEmpty extends SubCategoriesState {
+  final String message;
+
+  SubCategoriesEmpty(this.message);
+}
+
 class SubCategoriesFail extends SubCategoriesState {
   final String error;
 

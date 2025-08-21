@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/add_order/cubit/add_order_cubit.dart';
-import 'package:user_admin/features/admins/cubit/admins_cubit.dart';
 import 'package:user_admin/features/advertisements/cubit/advertisements_cubit.dart';
 import 'package:user_admin/features/app/admin_material_app.dart';
 import 'package:user_admin/features/app_manager/cubit/app_manager_cubit.dart';
@@ -11,7 +10,6 @@ import 'package:user_admin/features/customer_service/cubit/customer_service_cubi
 import 'package:user_admin/features/drivers/cubit/drivers_cubit.dart';
 import 'package:user_admin/features/employees_details/cubit/employees_details_cubit.dart';
 import 'package:user_admin/features/home/cubit/home_cubit.dart';
-import 'package:user_admin/features/invoices/cubit/invoices_cubit.dart';
 import 'package:user_admin/features/items/cubit/items_cubit.dart';
 import 'package:user_admin/features/profile/cubit/profile_cubit.dart';
 import 'package:user_admin/features/ratings/cubit/ratings_cubit.dart';
@@ -73,9 +71,6 @@ class AdminApp extends StatelessWidget {
           create: (_) => get<UsersCubit>(),
         ),
         BlocProvider(
-          create: (_) => get<AdminsCubit>(),
-        ),
-        BlocProvider(
           create: (_) => get<RestaurantCubit>(),
         ),
         BlocProvider(
@@ -89,9 +84,6 @@ class AdminApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (_) => get<AddOrderCubit>(),
-        ),
-        BlocProvider(
-          create: (_) => get<InvoicesCubit>(),
         ),
         BlocProvider(
           create: (_) => get<ShowMapCubit>(),

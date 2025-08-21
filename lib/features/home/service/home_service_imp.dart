@@ -69,18 +69,7 @@ class HomeServiceImp implements HomeService {
 
       final categoryJson = response.data["data"] as Map<String, dynamic>;
       return CategoryModel.fromJson(categoryJson);
-    } on DioException catch (e) {
-      // طباعة مفصلة للخطأ في حالة DioException
-      print("❌ DioException in editCategory:");
-      print("🔹 URL: ${e.requestOptions.uri}");
-      print("🔹 Method: ${e.requestOptions.method}");
-      print("🔹 Status Code: ${e.response?.statusCode}");
-      print("🔹 Response Data: ${e.response?.data}");
-      print("🔹 Message: ${e.message}");
-      throw Exception("فشل تعديل التصنيف: ${e.response?.data}");
     } catch (e) {
-      // طباعة أي خطأ آخر غير معروف
-      print("❌ Unknown exception in editCategory: $e");
       rethrow;
     }
   }

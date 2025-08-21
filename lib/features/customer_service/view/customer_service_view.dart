@@ -6,34 +6,27 @@ import 'package:user_admin/features/customer_service/cubit/customer_service_cubi
 import 'package:user_admin/features/customer_service/model/service_model/service_model.dart';
 import 'package:user_admin/features/customer_service/view/widgets/add_service_widget.dart';
 import 'package:user_admin/global/blocs/delete_cubit/cubit/delete_cubit.dart';
+import 'package:user_admin/global/model/paginated_model/paginated_model.dart';
 import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
-import 'package:user_admin/global/widgets/main_action_button.dart';
-import 'package:user_admin/global/widgets/main_back_button.dart';
+import 'package:user_admin/global/widgets/main_add_button.dart';
+import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_data_table.dart';
 import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 import 'package:user_admin/global/widgets/select_page_tile.dart';
 
-import '../../../global/widgets/main_app_bar.dart';
-
 abstract class CustomerServiceViewCallBacks {
   void onAddTap();
-
   void onEditTap(ServiceModel service);
-
   void onDeleteTap(ServiceModel service);
-
   void onSaveDeleteTap(ServiceModel service);
-
   void onSelectPageTap(int page);
-
   Future<void> onRefresh();
-
   void onTryAgainTap();
 }
 
@@ -88,6 +81,7 @@ class _CustomerServicePageState extends State<CustomerServicePage>
     showDialog(
       context: context,
       builder: (context) => AddServiceWidget(
+        restaurant: widget.restaurant,
         isEdit: false,
         selectedPage: selectedPage,
       ),
@@ -118,6 +112,7 @@ class _CustomerServicePageState extends State<CustomerServicePage>
     showDialog(
       context: context,
       builder: (context) => AddServiceWidget(
+        restaurant: widget.restaurant,
         isEdit: true,
         service: service,
         selectedPage: selectedPage,
@@ -147,27 +142,7 @@ class _CustomerServicePageState extends State<CustomerServicePage>
 
   @override
   Widget build(BuildContext context) {
-    final List<String> titles = [
-      "service".tr(),
-      "price".tr(),
-    ];
-    int addIndex = widget.permissions.indexWhere(
-      (element) => element.name == "service.add",
-    );
-    int editIndex = widget.permissions.indexWhere(
-      (element) => element.name == "service.update",
-    );
-    int deleteIndex = widget.permissions.indexWhere(
-      (element) => element.name == "service.delete",
-    );
-    bool isAdd = addIndex != -1;
-    bool isEdit = editIndex != -1;
-    bool isDelete = deleteIndex != -1;
-
-    if (isEdit || isDelete) {
-      titles.add("event".tr());
-    }
-
+    bool isAdd = widget.permissions.any((e) => e.name == "service.add");
     final restColor = widget.restaurant.color;
 
     return BlocListener<AppManagerCubit, AppManagerState>(
@@ -177,126 +152,125 @@ class _CustomerServicePageState extends State<CustomerServicePage>
         }
       },
       child: Scaffold(
-        appBar: MainAppBar(restaurant: widget.restaurant, title: "Services".tr()),
-        drawer: MainDrawer(
-          permissions: widget.permissions,
-          restaurant: widget.restaurant,
-        ),
-        body: RefreshIndicator(
-          onRefresh: onRefresh,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: AppConstants.padding16,
-              child: Column(
-                children: [
-                  MainBackButton(color: restColor!),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "services".tr(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const Spacer(),
-                      MainActionButton(
-                        padding: AppConstants.padding10,
-                        onPressed: onRefresh,
-                        text: "",
-                        child:
-                            const Icon(Icons.refresh, color: AppColors.white),
-                      ),
-                      if (isAdd) const SizedBox(width: 10),
-                      if (isAdd)
-                        MainActionButton(
-                          padding: AppConstants.padding10,
-                          onPressed: onAddTap,
-                          text: "add_order".tr(),
-                          child: const Icon(
-                            Icons.add_circle,
-                            color: AppColors.white,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  BlocBuilder<CustomerServiceCubit, GeneralCustomerService>(
-                    buildWhen: (previous, current) =>
-                        current is CustomerServiceState,
-                    builder: (context, state) {
-                      List<DataRow> rows = [];
-                      if (state is CustomerServiceLoading) {
-                        return const LoadingIndicator(color: AppColors.black);
-                      } else if (state is CustomerServiceSuccess) {
-                        rows = List.generate(
-                          state.services.data.length,
-                          (index) {
-                            final order = state.services.data[index];
-                            final values = [
-                              Text(order.name),
-                              Text(order.price.toString()),
-                              if (isEdit || isDelete)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (isDelete)
-                                      InkWell(
-                                        onTap: () => onDeleteTap(order),
-                                        child: const Icon(Icons.delete),
-                                      ),
-                                    if (isDelete) const SizedBox(width: 10),
-                                    if (isEdit)
-                                      InkWell(
-                                        onTap: () => onEditTap(order),
-                                        child: const Icon(Icons.edit_outlined),
-                                      )
-                                  ],
-                                )
-                            ];
-                            return DataRow(
-                              cells: List.generate(
-                                values.length,
-                                (index2) {
-                                  return DataCell(
-                                    Center(child: values[index2]),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        );
-                        return Column(
-                          children: [
-                            MainDataTable(titles: titles, rows: rows),
-                            SelectPageTile(
-                              length: state.services.meta.totalPages,
-                              selectedPage: selectedPage,
-                              onSelectPageTap: onSelectPageTap,
-                            ),
-                          ],
-                        );
-                      } else if (state is CustomerServiceEmpty) {
-                        return Text("no_orders".tr());
-                      } else if (state is CustomerServiceFail) {
-                        return MainErrorWidget(
-                          error: state.error,
-                          onTryAgainTap: onTryAgainTap,
-                        );
-                      } else {
-                        return const SizedBox.shrink();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 50),
-                ],
+          appBar: MainAppBar(
+            restaurant: widget.restaurant,
+            title: "services".tr(),
+            onSearchChanged: (q) => customerServiceCubit.searchByName(q),
+            onSearchSubmitted: (q) => customerServiceCubit.searchByName(q),
+            onSearchClosed: () => customerServiceCubit.searchByName(''),
+            onLanguageToggle: (loc) {
+            },
+          ),
+          drawer: MainDrawer(
+            permissions: widget.permissions,
+            restaurant: widget.restaurant,
+          ),
+          body: RefreshIndicator(
+            onRefresh: onRefresh,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: AppConstants.padding16,
+                child: Column(
+                  children: [
+                    BlocBuilder<CustomerServiceCubit, GeneralCustomerService>(
+                      buildWhen: (previous, current) =>
+                      current is CustomerServiceState,
+                      builder: (context, state) {
+                        if (state is CustomerServiceLoading) {
+                          return const LoadingIndicator(color: AppColors.black);
+                        } else if (state is CustomerServiceSuccess) {
+                          return _buildTableView(state.services);
+                        } else if (state is CustomerServiceEmpty) {
+                          return MainErrorWidget(
+                            error: "no_services".tr(),
+                            isRefresh: true,
+                            buttonColor: widget.restaurant.color,
+                            onTryAgainTap: onTryAgainTap,
+                          );
+                        } else if (state is CustomerServiceFail) {
+                          return MainErrorWidget(
+                            error: state.error,
+                            buttonColor: widget.restaurant.color,
+                            onTryAgainTap: onTryAgainTap,
+                          );
+                        } else {
+                          return const SizedBox.shrink();
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 50),
+                  ],
+                ),
               ),
             ),
           ),
+          floatingActionButton:
+          isAdd ? MainAddButton(onTap: onAddTap, color: restColor) : null),
+    );
+  }
+
+  Widget _buildTableView(PaginatedModel<ServiceModel> services) {
+    final List<String> titles = [
+      "service".tr(),
+      "price".tr(),
+    ];
+
+    bool isEdit = widget.permissions.any((e) => e.name == "service.update");
+    bool isDelete = widget.permissions.any((e) => e.name == "service.delete");
+
+    if (isEdit || isDelete) {
+      titles.add("event".tr());
+    }
+
+    List<DataRow> rows = [];
+    rows = List.generate(
+      services.data.length,
+          (index) {
+        final order = services.data[index];
+        final values = [
+          Text(order.name),
+          Text(order.price.toString()),
+          if (isEdit || isDelete)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isDelete)
+                  InkWell(
+                    onTap: () => onDeleteTap(order),
+                    child: const Icon(Icons.delete),
+                  ),
+                if (isDelete) const SizedBox(width: 10),
+                if (isEdit)
+                  InkWell(
+                    onTap: () => onEditTap(order),
+                    child: const Icon(Icons.edit_outlined),
+                  )
+              ],
+            )
+        ];
+        return DataRow(
+          cells: List.generate(
+            values.length,
+                (index2) {
+              return DataCell(Center(child: values[index2]));
+            },
+          ),
+        );
+      },
+    );
+    return Column(
+      children: [
+        MainDataTable(
+          titles: titles,
+          rows: rows,
+          color: widget.restaurant.color,
         ),
-      ),
+        SelectPageTile(
+          length: services.meta.totalPages,
+          selectedPage: selectedPage,
+          onSelectPageTap: onSelectPageTap,
+        ),
+      ],
     );
   }
 }

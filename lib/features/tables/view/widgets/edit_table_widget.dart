@@ -166,10 +166,10 @@ class _EditTableWidgetState extends State<EditTableWidget>
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 MainActionButton(
-                  padding: AppConstants.padding14,
+                  // padding: AppConstants.padding14,
                   onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
+                  // borderRadius: AppConstants.borderRadius5,
+                  // buttonColor: AppColors.blueShade3,
                   text: "ignore".tr(),
                   shadow: [
                     BoxShadow(
@@ -198,10 +198,10 @@ class _EditTableWidgetState extends State<EditTableWidget>
                       child = const LoadingIndicator(size: 20);
                     }
                     return MainActionButton(
-                      padding: AppConstants.padding14,
+                      // padding: AppConstants.padding14,
                       onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
+                      // borderRadius: AppConstants.borderRadius5,
+                      // buttonColor: AppColors.blueShade3,
                       text: "save".tr(),
                       shadow: [
                         BoxShadow(

@@ -1,5 +1,4 @@
 import 'package:bloc/bloc.dart';
-import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
@@ -19,8 +18,13 @@ part 'states/general_takeout_orders_state.dart';
 class TakeoutOrdersCubit extends Cubit<GeneralTakeoutOrdersState> {
   TakeoutOrdersCubit(this.takeoutOrdersService)
       : super(GeneralTakeoutOrdersInitial());
+
   final TakeoutOrdersService takeoutOrdersService;
+
   int? deliveryId;
+
+  /// كاش آخر نتيجة لتمكين البحث المحلي بدون ضرب API
+  PaginatedModel<DrvierInvoiceModel>? _ordersCache;
 
   void setDeliveryId(DriverModel? driver) {
     deliveryId = driver?.id;
@@ -30,6 +34,10 @@ class TakeoutOrdersCubit extends Cubit<GeneralTakeoutOrdersState> {
     emit(TakeoutOrdersLoading());
     try {
       final response = await takeoutOrdersService.getTakeoutOrders(page);
+
+      // خزّن النتيجة للبحث المحلي
+      _ordersCache = response;
+
       if (response.data.isEmpty) {
         emit(TakeoutOrdersEmpty("no_orders".tr()));
       } else {
@@ -52,11 +60,7 @@ class TakeoutOrdersCubit extends Cubit<GeneralTakeoutOrdersState> {
       emit(ChangeDriverOfOrderSuccess("driver_changed".tr()));
       this.deliveryId = null;
     } catch (e) {
-      if (e is DioException) {
-        emit(ChangeDriverOfOrderFail(e.message ?? e.toString()));
-      } else {
-        emit(ChangeDriverOfOrderFail(e.toString()));
-      }
+      emit(ChangeDriverOfOrderFail(e.toString()));
     }
   }
 
@@ -66,26 +70,71 @@ class TakeoutOrdersCubit extends Cubit<GeneralTakeoutOrdersState> {
       await takeoutOrdersService.updateStatusToRecieved(invoiceId);
       emit(UpdateStatusToReceivedSuccess("status_updated".tr(), index));
     } catch (e) {
-      if (e is DioException) {
-        emit(UpdateStatusToReceivedFail(e.message ?? e.toString(), index));
-      } else {
-        emit(UpdateStatusToReceivedFail(e.toString(), index));
-      }
+      emit(UpdateStatusToReceivedFail(e.toString(), index));
     }
   }
 
   Future<void> updateTakeoutOrderStatus(int invoiceId, String status) async {
-    emit(UpdateTakeoutOrderStatusLoading()); // يمكن إزالة `index` من هنا
+    emit(UpdateTakeoutOrderStatusLoading());
     try {
       await takeoutOrdersService.updateTakeoutOrderStatus(invoiceId, status);
-      emit(UpdateTakeoutOrderStatusSuccess("status_updated".tr())); // نفس الشيء هنا
+      emit(UpdateTakeoutOrderStatusSuccess("status_updated".tr()));
     } catch (e) {
-      if (e is DioException) {
-        emit(UpdateTakeoutOrderStatusFail(e.message ?? e.toString()));
-      } else {
-        emit(UpdateTakeoutOrderStatusFail(e.toString()));
-      }
+      emit(UpdateTakeoutOrderStatusFail(e.toString()));
     }
   }
 
+  // ---------------------------
+  // البحث المحلي بالاسم/الهاتف/المنطقة/الرقم
+  // ---------------------------
+
+  /// يبحث محليًا في الكاش الحالي عن طريق الاسم (وحقول إضافية مفيدة).
+  /// لا يستدعي API ولا يضيف حقول جديدة، فقط يفلتر البيانات الموجودة.
+  void searchByName(String query) {
+    final q = query.trim().toLowerCase();
+    if (_ordersCache == null) return;
+
+    if (q.isEmpty) {
+      // رجّع الأصل
+      emit(TakeoutOrdersSuccess(_ordersCache!));
+      return;
+    }
+
+    final filtered = _ordersCache!.data.where((inv) {
+      final user = (inv.user ?? '').toLowerCase();
+      final username = (inv.username ?? '').toLowerCase();
+      final userPhone = (inv.userPhone ?? '').toLowerCase();
+      final deliveryName = (inv.deliveryName ?? '').toLowerCase();
+      final deliveryPhone = (inv.deliveryPhone ?? '').toLowerCase();
+      final region = (inv.region ?? '').toLowerCase();
+      final idStr = (inv.id?.toString() ?? '');
+      final priceStr = (inv.price?.toString() ?? '');
+
+      return user.contains(q) ||
+          username.contains(q) ||
+          userPhone.contains(q) ||
+          deliveryName.contains(q) ||
+          deliveryPhone.contains(q) ||
+          region.contains(q) ||
+          idStr.contains(q) ||
+          priceStr.contains(q);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      emit(TakeoutOrdersEmpty("no_orders".tr()));
+    } else {
+      final paged = PaginatedModel<DrvierInvoiceModel>(
+        data: filtered,
+        meta: _ordersCache!.meta,
+      );
+      emit(TakeoutOrdersSuccess(paged));
+    }
+  }
+
+  /// يلغي الفلترة ويعيد إظهار البيانات الأصلية من الكاش.
+  void clearSearch() {
+    if (_ordersCache != null) {
+      emit(TakeoutOrdersSuccess(_ordersCache!));
+    }
+  }
 }

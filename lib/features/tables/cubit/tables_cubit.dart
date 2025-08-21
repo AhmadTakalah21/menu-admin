@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
@@ -53,10 +54,63 @@ class TablesCubit extends Cubit<GeneralTablesState> {
   AddOrderItem addOrderItem = const AddOrderItem();
   AddServiceToOrderModel addServiceToOrderModel = const AddServiceToOrderModel();
 
+  // ---- بحث + ديباونس ----
+  String _searchQuery = '';
+  Timer? _debounce;
+  int _lastPage = 1;
+
 
   int? itemId;
   String? count;
 
+  /// تستدعى من شريط البحث
+  void searchByName(String q) {
+    _searchQuery = q.trim();
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      getTables(page: _lastPage); // نجلب ثم نفلتر محلياً
+    });
+  }
+
+  /// لمسح البحث عند إغلاق الشريط
+  void clearSearch() {
+    if (_searchQuery.isEmpty) return;
+    _searchQuery = '';
+    _lastPage = 1;
+    getTables(page: _lastPage);
+  }
+
+  void _emitTablesWithFilter(PaginatedModel<TableModel> src) {
+    if (_searchQuery.isEmpty) {
+      if (src.data.isEmpty) {
+        emit(TablesEmpty("no_tables".tr()));
+      } else {
+        emit(TablesSuccess(src));
+      }
+      return;
+    }
+
+    final q = _searchQuery.toLowerCase();
+    final filtered = src.data.where((t) {
+      final number = (t.tableNumber ?? '').toString().toLowerCase();
+      final idStr = t.id.toString();
+      return number.contains(q) || idStr.contains(q);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      emit(TablesEmpty("no_tables".tr()));
+      return;
+    }
+
+    final map = json.decode(src.toString()) as Map<String, dynamic>;
+    map['data'] = filtered.map((e) => e.toJson()).toList();
+    final rebuilt = PaginatedModel.fromString(
+      json.encode(map),
+          (json) => TableModel.fromJson(json as Map<String, dynamic>),
+    );
+
+    emit(TablesSuccess(rebuilt));
+  }
   void setContext(BuildContext ctx) {
     context = ctx;
   }
@@ -69,7 +123,7 @@ class TablesCubit extends Cubit<GeneralTablesState> {
     _channel?.sink.close();
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.1.35:8080/app/bqfkpognxb0xxeax5bjc'),
+      Uri.parse('ws://192.168.1.49:3030/app/bqfkpognxb0xxeax5bjc'),
     );
 
     _channel?.stream.listen(
@@ -184,14 +238,13 @@ class TablesCubit extends Cubit<GeneralTablesState> {
 
 
   Future<void> getTables({int? page}) async {
+    _lastPage = page ?? 1;
+
     emit(TablesLoading());
     try {
       final tables = await itemsService.getTables(page: page);
-      if (tables.data.isEmpty) {
-        emit(TablesEmpty("no_tables".tr()));
-      } else {
-        emit(TablesSuccess(tables));
-      }
+      // _lastTables = tables;
+      _emitTablesWithFilter(tables);
     } catch (e) {
       emit(TablesFail(e.toString()));
     }
@@ -349,5 +402,6 @@ class TablesCubit extends Cubit<GeneralTablesState> {
       emit(AddServiceToOrderFail(e.toString()));
     }
   }
+
 
 }

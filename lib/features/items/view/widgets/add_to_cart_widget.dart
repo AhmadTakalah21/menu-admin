@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/items/cubit/items_cubit.dart';
 
 import 'package:user_admin/features/items/model/item_model/item_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
@@ -16,20 +17,18 @@ import 'package:user_admin/global/widgets/main_text_field.dart';
 
 abstract class AddToCartWidgetCallBack {
   void onQuantityChanged(String quantity);
-
   void onQuantitySubmitted(String quantity);
-
   void onTableNumberSelected(TableModel? table);
-
   void onSaveTap();
-
   void onIgnoreTap();
 }
 
 class AddToCartWidget extends StatefulWidget {
-  const AddToCartWidget({super.key, required this.item});
+  const AddToCartWidget(
+      {super.key, required this.item, required this.restaurant});
 
   final ItemModel item;
+  final RestaurantModel restaurant;
 
   @override
   State<AddToCartWidget> createState() => _AddToCartWidgetState();
@@ -101,23 +100,18 @@ class _AddToCartWidgetState extends State<AddToCartWidget>
                 const Spacer(),
                 InkWell(
                   onTap: onIgnoreTap,
-                  child: const Icon(
-                    Icons.close,
-                    color: AppColors.greyShade,
-                  ),
+                  child: const Icon(Icons.close, color: AppColors.black),
                 ),
               ],
             ),
-            const Divider(height: 30),
             MainTextField(
               onChanged: onQuantityChanged,
               onSubmitted: onQuantitySubmitted,
               focusNode: quantityFocusNode,
-              labelText: "quantity".tr(),
+              borderColor: widget.restaurant.color,
+              title: "quantity".tr(),
               textInputType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             const SizedBox(height: 20),
             BlocBuilder<ItemsCubit, GeneralItemsState>(
@@ -138,23 +132,18 @@ class _AddToCartWidgetState extends State<AddToCartWidget>
                 }
               },
             ),
-            const Divider(height: 30),
+            const SizedBox(height: 20),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                MainActionButton(
-                  padding: AppConstants.padding14,
-                  onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
-                  text: "ignore".tr(),
-                  shadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                const Spacer(),
+                Expanded(
+                  flex: 4,
+                  child: MainActionButton(
+                    onPressed: onIgnoreTap,
+                    padding: AppConstants.paddingV10,
+                    buttonColor: widget.restaurant.color,
+                    text: "cancel".tr(),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 BlocConsumer<ItemsCubit, GeneralItemsState>(
@@ -167,30 +156,19 @@ class _AddToCartWidgetState extends State<AddToCartWidget>
                     }
                   },
                   builder: (context, state) {
-                    var onTap = onSaveTap;
-                    Widget? child;
-                    if (state is AddOrderLoading) {
-                      onTap = () {};
-                      child = const LoadingIndicator(size: 20);
-                    }
-                    return MainActionButton(
-                      padding: AppConstants.padding14,
-                      onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
-                      text: "save".tr(),
-                      shadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      child: child,
+                    return Expanded(
+                      flex: 4,
+                      child: MainActionButton(
+                        onPressed: onSaveTap,
+                        padding: AppConstants.paddingV10,
+                        buttonColor: widget.restaurant.color,
+                        text: "save".tr(),
+                        isLoading: state is AddOrderLoading,
+                      ),
                     );
                   },
                 ),
-                const SizedBox(width: 10),
+                const Spacer(),
               ],
             ),
             const SizedBox(height: 20),

@@ -11,6 +11,13 @@ class CategoriesSuccess extends CategoriesState {
   CategoriesSuccess(this.categories);
 }
 
+class CategoriesEmpty extends CategoriesState {
+  final String message;
+
+  CategoriesEmpty(this.message);
+}
+
+
 class CategoriesFail extends CategoriesState {
   final String error;
 

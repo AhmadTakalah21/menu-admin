@@ -8,6 +8,7 @@ import 'package:user_admin/features/admins/model/admin_model/admin_model.dart';
 import 'package:user_admin/features/admins/model/update_admin_model/update_admin_model.dart';
 import 'package:user_admin/features/admins/model/user_type_model/user_type_model.dart';
 import 'package:user_admin/features/home/model/category_model/category_model.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
@@ -19,35 +20,45 @@ import 'package:user_admin/global/widgets/main_text_field.dart';
 
 abstract class UpdateAdminWidgetCallBack {
   void onNameChanged(String name);
-
   void onNameSubmitted(String name);
-
   void onUsernameChanged(String username);
-
   void onUsernameSubmitted(String username);
-
   void onEmailChanged(String email);
-
   void onEmailSubmitted(String email);
-
-
   void onPasswordChanged(String password);
-
   void onPasswordSubmitted(String password);
-
   void onMobileChanged(String mobile);
-
   void onMobileSubmitted(String mobile);
-
   void onUserTypeSelected(UserTypeModel? userTypeModel);
-
-  void onUserRoleSelected(UserTypeModel? userTypeModel);
-
   void onCategorySelected(CategoryModel? category);
-
   void onSaveTap();
-
   void onIgnoreTap();
+}
+
+class UpdateAdminView extends StatelessWidget {
+  const UpdateAdminView({
+    super.key,
+    this.admin,
+    required this.adminsCubit,
+    required this.restaurant,
+    required this.selectedPage,
+  });
+
+  final AdminModel? admin;
+  final AdminsCubit adminsCubit;
+  final RestaurantModel restaurant;
+  final int selectedPage;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+        value: adminsCubit,
+        child: UpdateAdminWidget(
+          admin: admin,
+          selectedPage: selectedPage,
+          restaurant: restaurant,
+        ));
+  }
 }
 
 class UpdateAdminWidget extends StatefulWidget {
@@ -55,12 +66,12 @@ class UpdateAdminWidget extends StatefulWidget {
     super.key,
     this.admin,
     required this.selectedPage,
-    required this.isEdit,
+    required this.restaurant,
   });
 
   final AdminModel? admin;
+  final RestaurantModel restaurant;
   final int selectedPage;
-  final bool isEdit;
 
   @override
   State<UpdateAdminWidget> createState() => _UpdateAdminWidgetState();
@@ -76,7 +87,6 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
   final passwordFocusNode = FocusNode();
   final mobileFocusNode = FocusNode();
 
-  bool isShowTypes = false;
   bool isShowCategories = false;
 
   final List<CategoryModel> categories = [];
@@ -84,31 +94,15 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
   @override
   void initState() {
     super.initState();
-    adminsCubit.getUserRoles(isRefresh: false);
-    nameFocusNode.requestFocus();
     final admin = widget.admin;
-    if (admin != null) {
-      final role = admin.roles;
 
-      adminsCubit.setName(admin.name);
-      adminsCubit.setUsername(admin.userName);
-      adminsCubit.setMobile(admin.mobile);
-      if (role != null) {
-        adminsCubit.setRoleUpdate(UserTypeModel(id: 1, name: role));
-        if (role == "employee" || role == "موظف") {
-          adminsCubit.getUserTypes(isRefresh: false);
-          setState(() {
-            isShowTypes = true;
-          });
-        }
-      }
-      adminsCubit.setUserType(UserTypeModel(id: admin.typeId, name: ""));
-      if (admin.typeId == 4 || admin.typeId == 8) {
-        adminsCubit.getCategoriesSubInItem(isRefresh: false);
-        setState(() {
-          isShowCategories = true;
-        });
-      }
+    adminsCubit.setName(admin?.name);
+    adminsCubit.setUsername(admin?.userName);
+    adminsCubit.setMobile(admin?.mobile);
+    adminsCubit.setUserType(admin?.typeId);
+    if (admin?.typeId == 4 || admin?.typeId == 8) {
+      adminsCubit.getCategoriesSubInItem(isRefresh: false);
+      setState(() => isShowCategories = true);
     }
   }
 
@@ -142,7 +136,6 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
     passwordFocusNode.requestFocus();
   }
 
-
   @override
   void onPasswordChanged(String password) {
     adminsCubit.setPassword(password);
@@ -164,36 +157,19 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
   }
 
   @override
-  void onUserRoleSelected(UserTypeModel? userTypeModel) {
-    adminsCubit.setRoleUpdate(userTypeModel);
-    if (userTypeModel == null) {
-      setState(() {
-        isShowTypes = false;
-      });
-    } else {
-      if (userTypeModel.name == "موظف" || userTypeModel.name == "employee") {
-        adminsCubit.getUserTypes(isRefresh: false);
-        setState(() {
-          isShowTypes = true;
-        });
-      }
-    }
-  }
-
-  @override
   void onUserTypeSelected(UserTypeModel? userTypeModel) {
-    adminsCubit.setUserType(userTypeModel);
+    adminsCubit.setUserType(userTypeModel?.id);
+    bool newBool = false;
     if (userTypeModel != null &&
         (userTypeModel.id == 4 || userTypeModel.id == 8)) {
       adminsCubit.getCategoriesSubInItem(isRefresh: false);
-      setState(() {
-        isShowCategories = true;
-      });
+      newBool = true;
     } else {
-      setState(() {
-        isShowCategories = false;
-      });
+      newBool = false;
     }
+    setState(() {
+      isShowCategories = newBool;
+    });
   }
 
   @override
@@ -201,18 +177,14 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
     adminsCubit.setCategories(category);
 
     if (category != null) {
-      int index = categories.indexWhere(
-        (element) => element == category,
-      );
-      if (index == -1) {
-        setState(() {
+      final exist = categories.any((element) => element == category);
+      setState(() {
+        if (!exist) {
           categories.add(category);
-        });
-      } else {
-        setState(() {
+        } else {
           categories.remove(category);
-        });
-      }
+        }
+      });
     } else {
       setState(() {
         categories.clear();
@@ -222,18 +194,19 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
 
   @override
   void onSaveTap() {
-    adminsCubit.updateAdmin(adminAd: widget.admin?.id, isEdit: widget.isEdit);
+    adminsCubit.updateAdmin(
+      adminAd: widget.admin?.id,
+      isEdit: widget.admin != null,
+    );
   }
 
   @override
-  void onIgnoreTap() {
-    Navigator.pop(context);
-  }
+  void onIgnoreTap() => Navigator.pop(context);
 
   @override
   void dispose() {
     adminsCubit.updateAdminModel = const UpdateAdminModel();
-
+    adminsCubit.getUserTypes(isRefresh: true);
     nameFocusNode.dispose();
     usernameFocusNode.dispose();
     emailFocusNode.dispose();
@@ -245,6 +218,7 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
 
   @override
   Widget build(BuildContext context) {
+    final isEdit = widget.admin != null;
     return AlertDialog(
       insetPadding: AppConstants.padding16,
       contentPadding: AppConstants.padding16,
@@ -253,12 +227,11 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
           mainAxisSize: MainAxisSize.min,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const SizedBox(width: 20),
                 const Spacer(),
                 Text(
-                  widget.isEdit ? "edit_admin".tr() : "add_admin".tr(),
+                  isEdit ? "edit_employee".tr() : "add_employee".tr(),
                   style: const TextStyle(
                     color: AppColors.black,
                     fontWeight: FontWeight.w600,
@@ -268,112 +241,82 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
                 const Spacer(),
                 InkWell(
                   onTap: onIgnoreTap,
-                  child: const Icon(
-                    Icons.close,
-                    color: AppColors.greyShade,
-                  ),
+                  child: const Icon(Icons.close, color: AppColors.black),
                 ),
               ],
             ),
-            const Divider(height: 30),
+            const SizedBox(height: 20),
             MainTextField(
               initialText: widget.admin?.name,
               onChanged: onNameChanged,
               onSubmitted: onNameSubmitted,
               focusNode: nameFocusNode,
-              labelText: "name".tr(),
+              title: "name".tr(),
+              borderColor: widget.restaurant.color,
             ),
-            const SizedBox(height: 20),
             MainTextField(
               initialText: widget.admin?.userName,
               onChanged: onUsernameChanged,
               onSubmitted: onUsernameSubmitted,
               focusNode: usernameFocusNode,
-              labelText: "username".tr(),
+              title: "username".tr(),
+              borderColor: widget.restaurant.color,
             ),
-            const SizedBox(height: 20),
             MainTextField(
               initialText: widget.admin?.email,
               onChanged: onEmailChanged,
               onSubmitted: onEmailSubmitted,
               focusNode: emailFocusNode,
-              labelText: "email".tr(),
+              title: "email".tr(),
+              borderColor: widget.restaurant.color,
               textInputType: TextInputType.emailAddress,
             ),
-
-            const SizedBox(height: 20),
             MainTextField(
               onChanged: onPasswordChanged,
               onSubmitted: onPasswordSubmitted,
               focusNode: passwordFocusNode,
-              labelText: "password".tr(),
+              title: "password".tr(),
+              borderColor: widget.restaurant.color,
             ),
-            const SizedBox(height: 20),
             MainTextField(
               initialText: widget.admin?.mobile,
               onChanged: onMobileChanged,
               onSubmitted: onMobileSubmitted,
               focusNode: mobileFocusNode,
-              labelText: "phone_number".tr(),
+              title: "phone_number".tr(),
+              borderColor: widget.restaurant.color,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               textInputType: TextInputType.phone,
             ),
             const SizedBox(height: 20),
             BlocBuilder<AdminsCubit, GeneralAdminsState>(
-              buildWhen: (previous, current) => current is UserRolesState,
+              buildWhen: (previous, current) => current is UserTypesState,
               builder: (context, state) {
-                if (state is UserRolesLoading) {
+                if (state is UserTypesLoading) {
                   return const LoadingIndicator(color: AppColors.black);
-                } else if (state is UserRolesSuccess) {
-                  final selectedRole = state.userRoles.firstWhereOrNull(
-                    (role) => role.name == widget.admin?.roles,
+                } else if (state is UserTypesSuccess) {
+                  final selectedType = state.userTypes.firstWhereOrNull(
+                        (role) => role.id == widget.admin?.typeId,
                   );
-
                   return MainDropDownWidget(
-                    items: state.userRoles,
-                    text: "role".tr(),
-                    onChanged: onUserRoleSelected,
+                    items: state.userTypes,
+                    text: "type".tr(),
+                    onChanged: onUserTypeSelected,
                     focusNode: FocusNode(),
-                    selectedValue: selectedRole,
+                    selectedValue: selectedType,
                   );
-                } else if (state is UserRolesFail) {
-                  return MainErrorWidget(error: state.error);
                 } else {
                   return const SizedBox.shrink();
                 }
               },
             ),
-            if (isShowTypes) const SizedBox(height: 20),
-            if (isShowTypes)
-              BlocBuilder<AdminsCubit, GeneralAdminsState>(
-                buildWhen: (previous, current) => current is UserTypesState,
-                builder: (context, state) {
-                  if (state is UserTypesLoading) {
-                    return const LoadingIndicator(color: AppColors.black);
-                  } else if (state is UserTypesSuccess) {
-                    final selectedType = state.userTypes.firstWhereOrNull(
-                      (role) => role.id == widget.admin?.typeId,
-                    );
-
-                    return MainDropDownWidget(
-                      items: state.userTypes,
-                      text: "type".tr(),
-                      onChanged: onUserTypeSelected,
-                      focusNode: FocusNode(),
-                      selectedValue: selectedType,
-                    );
-                  } else {
-                    return const SizedBox.shrink();
-                  }
-                },
-              ),
             if (isShowCategories) const SizedBox(height: 20),
             if (isShowCategories)
               Column(
                 children: [
                   BlocBuilder<AdminsCubit, GeneralAdminsState>(
                     buildWhen: (previous, current) =>
-                        current is CategoriesSubInItemState,
+                    current is CategoriesSubInItemState,
                     builder: (context, state) {
                       if (state is CategoriesSubInItemLoading) {
                         return const LoadingIndicator(color: AppColors.black);
@@ -396,32 +339,25 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
                     Wrap(
                       spacing: 8,
                       runSpacing: 4,
-                      children: List.generate(
-                        categories.length,
-                        (index) {
-                          return Text(categories[index].name);
-                        },
-                      ),
+                      children: List.generate(categories.length, (index) {
+                        return Text(categories[index].name);
+                      }),
                     )
                 ],
               ),
-            const Divider(height: 30),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                MainActionButton(
-                  padding: AppConstants.padding14,
-                  onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
-                  text: "ignore".tr(),
-                  shadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                const Spacer(),
+                Expanded(
+                  flex: 4,
+                  child: MainActionButton(
+                    padding: AppConstants.paddingV10,
+                    buttonColor: widget.restaurant.color,
+                    onPressed: onIgnoreTap,
+                    text: "cancel".tr(),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 BlocConsumer<AdminsCubit, GeneralAdminsState>(
@@ -435,30 +371,19 @@ class _UpdateAdminWidgetState extends State<UpdateAdminWidget>
                     }
                   },
                   builder: (context, state) {
-                    var onTap = onSaveTap;
-                    Widget? child;
-                    if (state is UpdateAdminLoading) {
-                      onTap = () {};
-                      child = const LoadingIndicator(size: 20);
-                    }
-                    return MainActionButton(
-                      padding: AppConstants.padding14,
-                      onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
-                      text: "save".tr(),
-                      shadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      child: child,
+                    return Expanded(
+                      flex: 4,
+                      child: MainActionButton(
+                        padding: AppConstants.paddingV10,
+                        buttonColor: widget.restaurant.color,
+                        onPressed: onSaveTap,
+                        text: "save".tr(),
+                        isLoading: state is UpdateAdminLoading,
+                      ),
                     );
                   },
                 ),
-                const SizedBox(width: 10),
+                const Spacer(),
               ],
             ),
             const SizedBox(height: 20),

@@ -137,7 +137,7 @@ class _UserInvoicesPageState extends State<UserInvoicesPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor!),
+                MainBackButton(color: restColor),
                 const SizedBox(height: 20),
                 _buildHeader(),
                 const SizedBox(height: 20),
@@ -181,6 +181,7 @@ class _UserInvoicesPageState extends State<UserInvoicesPage>
               MainDataTable(
                 titles: titles,
                 rows: _generateInvoiceRows(state.paginatedModel.data),
+                color: widget.restaurant.color,
               ),
               SelectPageTile(
                 length: state.paginatedModel.meta.totalPages,
@@ -208,7 +209,7 @@ class _UserInvoicesPageState extends State<UserInvoicesPage>
   List<DataRow> _generateInvoiceRows(List<DrvierInvoiceModel> invoices) {
     return List.generate(
       invoices.length,
-      (index) {
+          (index) {
         final invoice = invoices[index];
         return DataRow(
           cells: [

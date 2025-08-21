@@ -6,7 +6,6 @@ import 'package:user_admin/features/advertisements/view/advertisements_view.dart
 import 'package:user_admin/features/coupons/view/coupons_view.dart';
 import 'package:user_admin/features/customer_service/view/customer_service_view.dart';
 import 'package:user_admin/features/drivers/view/drivers_view.dart';
-import 'package:user_admin/features/employees_details/view/employees_details_view.dart';
 import 'package:user_admin/features/home/view/home_view.dart';
 import 'package:user_admin/features/invoices/view/invoices_view.dart';
 import 'package:user_admin/features/profile/view/profile_view.dart';
@@ -28,7 +27,7 @@ enum DrawerTileEnum {
   salesInventory,
   invoices,
   addOrder,
-  employeesDetails,
+  //employeesDetails,
   users,
   drivers,
   takeOutOrders,
@@ -40,41 +39,41 @@ enum DrawerTileEnum {
 
   String get displayName {
     switch (this) {
-      case DrawerTileEnum.categories:
+      case categories:
         return "categories".tr();
-      case DrawerTileEnum.advertisements:
+      case advertisements:
         return "advertisements".tr();
-      case DrawerTileEnum.admins:
+      case admins:
         return "admins".tr();
-      case DrawerTileEnum.restaurant:
+      case restaurant:
         return "restaurant".tr();
-      case DrawerTileEnum.tables:
+      case tables:
         return "tables".tr();
-      case DrawerTileEnum.coupons:
+      case coupons:
         return "coupons".tr();
-      case DrawerTileEnum.salesInventory:
+      case salesInventory:
         return "sales_inventory".tr();
-      case DrawerTileEnum.invoices:
+      case invoices:
         return "invoices".tr();
-      case DrawerTileEnum.addOrder:
+      case addOrder:
         return "add_order".tr();
-      case DrawerTileEnum.employeesDetails:
-        return "employees_details".tr();
-      case DrawerTileEnum.users:
+    // case employeesDetails:
+    //   return "employees_details".tr();
+      case users:
         return "users".tr();
-      case DrawerTileEnum.drivers:
+      case drivers:
         return "drivers".tr();
-      case DrawerTileEnum.takeOutOrders:
+      case takeOutOrders:
         return "takeout_orders".tr();
-      case DrawerTileEnum.ratings:
+      case ratings:
         return "ratings".tr();
-      case DrawerTileEnum.services:
+      case services:
         return "services".tr();
-      case DrawerTileEnum.profile:
+      case profile:
         return "profile".tr();
-      case DrawerTileEnum.userUi:
+      case userUi:
         return "go_to_user_interface".tr();
-      case DrawerTileEnum.logout:
+      case logout:
         return "logout".tr();
     }
   }
@@ -103,8 +102,8 @@ enum DrawerTileEnum {
         return Icons.receipt_long;
       case addOrder:
         return Icons.add_circle_outline;
-      case employeesDetails:
-        return Icons.add_shopping_cart_outlined;
+    // case employeesDetails:
+    //   return Icons.add_shopping_cart_outlined;
       case users:
         return Icons.people;
       case drivers:
@@ -144,8 +143,8 @@ enum DrawerTileEnum {
         return "order.index";
       case addOrder:
         return "order.add";
-      case employeesDetails:
-        return "user.index";
+    // case employeesDetails:
+    //   return "user.index";
       case users:
         return "user.index";
       case drivers:
@@ -170,7 +169,7 @@ enum DrawerTileEnum {
       return true;
     }
     int index = permissions.indexWhere(
-      (element) => element.name == getTileShowName,
+          (element) => element.name == getTileShowName,
     );
     if (index != -1) {
       return true;
@@ -289,18 +288,18 @@ enum DrawerTileEnum {
             ),
           );
         };
-      case employeesDetails:
-        return () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EmployeesDetailsView(
-                restaurant: restaurant,
-                permissions: permissions,
-              ),
-            ),
-          );
-        };
+    // case employeesDetails:
+    //   return () {
+    //     Navigator.push(
+    //       context,
+    //       MaterialPageRoute(
+    //         builder: (context) => EmployeesDetailsView(
+    //           restaurant: restaurant,
+    //           permissions: permissions,
+    //         ),
+    //       ),
+    //     );
+    //   };
       case users:
         return () {
           Navigator.push(

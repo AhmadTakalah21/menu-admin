@@ -109,7 +109,7 @@ class InvoicesCubit extends Cubit<GeneralInvoicesState> {
     emit(AddInvoiceToTableLoading());
     try {
       final invoice = await invoicesService.addInvoiceToTable(id);
-      emit(AddInvoiceToTableSuccess(invoice));
+      emit(AddInvoiceToTableSuccess(invoice,"status_updated".tr()));
     } on DioException catch (e) {
       emit(AddInvoiceToTableFail(e.message ?? e.toString()));
     } catch (e) {

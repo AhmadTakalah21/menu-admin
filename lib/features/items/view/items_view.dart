@@ -23,7 +23,7 @@ import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_add_button.dart';
 import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
-import 'package:user_admin/global/widgets/switch_view_button.dart';
+import 'package:user_admin/global/widgets/more_options_widget.dart';
 
 abstract class ItemsViewCallBacks {
   void onAddTap();
@@ -36,7 +36,6 @@ abstract class ItemsViewCallBacks {
   void onShowDetailsTap(ItemModel item);
   void onAddToCart(ItemModel item);
   void onMoreOptionsTap(ItemModel item);
-  void onSwichViewTap();
   void onTryAgainTap();
 }
 
@@ -82,8 +81,6 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
   late final ItemsCubit itemsCubit = context.read();
   late final DeleteCubit deleteCubit = context.read();
 
-  bool isCardView = true;
-
   late final StreamSubscription<List<ConnectivityResult>> subscription;
 
   @override
@@ -122,6 +119,7 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
       context: context,
       builder: (context) {
         return EditItemWidget(
+          restaurant: widget.restaurant,
           isEdit: false,
           category: widget.category,
         );
@@ -134,7 +132,7 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
     showDialog(
       context: context,
       builder: (context) {
-        return AddToCartWidget(item: item);
+        return AddToCartWidget(item: item, restaurant: widget.restaurant);
       },
     );
   }
@@ -144,7 +142,7 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
     showDialog(
       context: context,
       builder: (context) {
-        return ItemDetailsWidget(item: item);
+        return ItemDetailsWidget(restaurant: widget.restaurant, item: item);
       },
     );
   }
@@ -174,6 +172,7 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
       context: context,
       builder: (context) {
         return EditItemWidget(
+          restaurant: widget.restaurant,
           category: widget.category,
           item: item,
           isEdit: true,
@@ -202,40 +201,14 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ActionTile(
-                icon: Icons.remove_red_eye_outlined,
-                label: 'عرض التفاصيل',
-                onTap: () => onShowDetailsTap(item),
-              ),
-              _ActionTile(
-                icon: Icons.edit_outlined,
-                label: 'تعديل',
-                onTap: () => onEditTap(item),
-              ),
-              _ActionTile(
-                icon: Icons.delete_outline,
-                label: 'حذف',
-                isDestructive: true,
-                onTap: () => onDeleteTap(item),
-              ),
-              const SizedBox(height: 6),
-            ],
-          ),
+        return MoreOptionsWidget(
+          item: item,
+          onShowDetailsTap: onShowDetailsTap,
+          onEditTap: onEditTap,
+          onDeleteTap: onDeleteTap,
         );
       },
     );
-  }
-
-  @override
-  void onSwichViewTap() {
-    setState(() {
-      isCardView = !isCardView;
-    });
   }
 
   @override
@@ -251,6 +224,7 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
 
   @override
   Widget build(BuildContext context) {
+    final restColor = widget.restaurant.color;
     final permissions = widget.permissions;
 
     bool isAdd = Utils.hasPermission(permissions, "item.add");
@@ -266,7 +240,14 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
         }
       },
       child: Scaffold(
-        appBar: MainAppBar(restaurant: widget.restaurant, title: "items".tr()),
+        appBar: MainAppBar(restaurant: widget.restaurant,
+            title: "items".tr(),
+          onSearchChanged: (q) => itemsCubit.searchByName(q),
+          onSearchSubmitted: (q) => itemsCubit.searchByName(q),
+          onSearchClosed: () => itemsCubit.searchByName(''),
+          onLanguageToggle: (loc) {
+          },
+        ),
         // drawer: MainDrawer(
         //   restaurant: widget.restaurant,
         //   permissions: widget.permissions,
@@ -278,29 +259,15 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
               padding: AppConstants.padding16,
               child: Column(
                 children: [
-                  // Row(
-                  //   children: [
-                  //     MainBackButton(color: restColor),
-                  //     const Spacer(),
-                  //     if (isAdd) ...[
-                  //       const SizedBox(width: 10),
-                  //       MainAddButton(onTap: onAddTap, title: "add_item".tr()),
-                  //     ],
-                  //   ],
-                  // ),
-                  // const SizedBox(height: 20),
                   BlocBuilder<ItemsCubit, GeneralItemsState>(
                     buildWhen: (previous, current) => current is ItemsState,
                     builder: (context, state) {
                       if (state is ItemsLoading) {
                         return const LoadingIndicator(color: AppColors.black);
                       } else if (state is ItemsSuccess) {
-                        if (state.items.isEmpty) {
-                          return Text("no_items".tr());
-                        }
                         return GridView.builder(
                           gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             mainAxisSpacing: 10,
                             crossAxisSpacing: 20,
@@ -312,8 +279,6 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
                           itemBuilder: (context, index) {
                             final item = state.items[index];
                             return CategoryTile(
-                              // onEditTap: isEdit ? onEditTap : null,
-                              // onDeleteTap: isDelete ? onDeleteTap : null,
                               onMoreOptionsTap: (isEdit && isDelete)
                                   ? onMoreOptionsTap
                                   : null,
@@ -328,8 +293,16 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
                             );
                           },
                         );
+                      } else if (state is ItemsEmpty) {
+                        return MainErrorWidget(
+                          buttonColor: restColor,
+                          error: state.message,
+                          isRefresh: true,
+                          onTryAgainTap: onTryAgainTap,
+                        );
                       } else if (state is ItemsFail) {
                         return MainErrorWidget(
+                          buttonColor: restColor,
                           error: state.error,
                           onTryAgainTap: onTryAgainTap,
                         );
@@ -338,7 +311,7 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
                       }
                     },
                   ),
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 600),
                 ],
               ),
             ),
@@ -347,45 +320,10 @@ class _ItemsPageState extends State<ItemsPage> implements ItemsViewCallBacks {
         floatingActionButton: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            SwitchViewButton(
-              onTap: onSwichViewTap,
-              isCardView: isCardView,
-              color: widget.restaurant.color!,
-            ),
-            const SizedBox(width: 10),
-            if (isAdd)
-              MainAddButton(onTap: onAddTap, color: widget.restaurant.color!)
+            if (isAdd) MainAddButton(onTap: onAddTap, color: restColor)
           ],
         ),
       ),
-    );
-  }
-}
-
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.icon,
-    required this.label,
-    this.onTap,
-    this.isDestructive = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  final bool isDestructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isDestructive ? const Color(0xFFE53935) : Colors.black87;
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(label,
-          style: TextStyle(color: color, fontWeight: FontWeight.w600)),
-      onTap: () {
-        Navigator.of(context).pop();
-        onTap?.call();
-      },
     );
   }
 }

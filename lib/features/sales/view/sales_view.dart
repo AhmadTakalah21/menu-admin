@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:user_admin/features/sales/cubit/sales_cubit.dart';
 import 'package:user_admin/features/tables/model/order_details_model/order_details_model.dart';
+import 'package:user_admin/global/model/paginated_model/paginated_model.dart';
 import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
@@ -17,7 +18,7 @@ import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/utils/utils.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_action_button.dart';
-import 'package:user_admin/global/widgets/main_back_button.dart';
+import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_data_table.dart';
 import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
@@ -89,9 +90,9 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
     super.initState();
     salesCubit.getSales(selectedPage);
     startDateController.text =
-        "$selectedStartMonth/$selectedStartDay/$selectedStartYear";
+    "$selectedStartMonth/$selectedStartDay/$selectedStartYear";
     endDateController.text =
-        "$selectedEndMonth/$selectedEndDay/$selectedEndYear";
+    "$selectedEndMonth/$selectedEndDay/$selectedEndYear";
   }
 
   @override
@@ -108,7 +109,7 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
         selectedEndDay = dateTime.day.toString();
         selectedEndYear = dateTime.year.toString();
         endDateController.text =
-            "$selectedEndMonth/$selectedEndDay/$selectedEndYear";
+        "$selectedEndMonth/$selectedEndDay/$selectedEndYear";
       });
       salesCubit.setEndDate(
         Utils.convertToIsoFormat(endDateController.text),
@@ -131,7 +132,7 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
         selectedStartDay = dateTime.day.toString();
         selectedStartYear = dateTime.year.toString();
         startDateController.text =
-            "$selectedStartMonth/$selectedStartDay/$selectedStartYear";
+        "$selectedStartMonth/$selectedStartDay/$selectedStartYear";
       });
       salesCubit.setStartDate(
         Utils.convertToIsoFormat(startDateController.text),
@@ -180,7 +181,7 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
     ];
     final listOfData = List.generate(
       orders.length,
-      (index) {
+          (index) {
         return [
           TextCellValue(orders[index].name),
           TextCellValue(orders[index].price.toString()),
@@ -259,21 +260,15 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
 
   @override
   Widget build(BuildContext context) {
-    int excelIndex = widget.permissions.indexWhere(
-      (element) => element.name == "excel",
-    );
-    bool isExcel = excelIndex != -1;
-
-    final List<String> titles = [
-      "product_name".tr(),
-      "price".tr(),
-      "count".tr(),
-      "created_at".tr(),
-    ];
-    final restColor = widget.restaurant.color;
-
     return Scaffold(
-      appBar: AppBar(),
+      appBar: MainAppBar(restaurant: widget.restaurant,
+          title: "orders".tr(),
+        onSearchChanged: (q) => salesCubit.searchByName(q),
+        onSearchSubmitted: (q) => salesCubit.searchByName(q),
+        onSearchClosed: () => salesCubit.searchByName(''),
+        onLanguageToggle: (loc) {
+        },
+      ),
       drawer: MainDrawer(
         permissions: widget.permissions,
         restaurant: widget.restaurant,
@@ -286,115 +281,7 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor!),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Text(
-                      "orders".tr(),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (isExcel)
-                      BlocBuilder<SalesCubit, GeneralSalesState>(
-                        buildWhen: (previous, current) => current is SalesState,
-                        builder: (context, state) {
-                          if (state is SalesSuccess) {
-                            final sales = state.paginatedModel.data;
-                            return MainActionButton(
-                              padding: AppConstants.padding10,
-                              onPressed: () => onExportToExcelTap(sales),
-                              text: "export_excel".tr(),
-                              icon: const Icon(
-                                FontAwesomeIcons.fileExcel,
-                                color: AppColors.white,
-                              ),
-                            );
-                          } else {
-                            return const SizedBox.shrink();
-                          }
-                        },
-                      ),
-                    const SizedBox(width: 10),
-                    MainActionButton(
-                      padding: AppConstants.padding10,
-                      onPressed: onRefresh,
-                      text: "",
-                      child: const Icon(Icons.refresh, color: AppColors.white),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: AppConstants.paddingH20,
-                  child: MainActionButton(
-                    padding: AppConstants.padding4,
-                    onPressed: onShowFilters,
-                    text: "text",
-                    child: const Icon(
-                      Icons.filter_alt,
-                      color: AppColors.white,
-                      size: 30,
-                    ),
-                  ),
-                ),
-                if (isShowFilters)
-                  Padding(
-                    padding: AppConstants.paddingH20,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          hintText: "search".tr(),
-                          onChanged: onSearchChanged,
-                          onSubmitted: onSearchSubmitted,
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: startDateController,
-                          labelText: "start_date".tr(),
-                          readOnly: true,
-                          onTap: onStartDateSelected,
-                          onClearTap: () {
-                            salesCubit.setStartDate(null);
-                            setState(() {
-                              startDateController.text = "mm/dd/yyyy";
-                            });
-                            salesCubit.getSales(selectedPage);
-                          },
-                          showCloseIcon:
-                              startDateController.text != "mm/dd/yyyy",
-                          suffixIcon: IconButton(
-                            onPressed: onStartDateSelected,
-                            icon: const Icon(Icons.calendar_today),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        MainTextField(
-                          controller: endDateController,
-                          labelText: "end_date".tr(),
-                          readOnly: true,
-                          onTap: onEndDateSelected,
-                          onClearTap: () {
-                            salesCubit.setEndDate(null);
-                            setState(() {
-                              endDateController.text = "mm/dd/yyyy";
-                            });
-                            salesCubit.getSales(selectedPage);
-                          },
-                          showCloseIcon: endDateController.text != "mm/dd/yyyy",
-                          suffixIcon: IconButton(
-                            onPressed: onEndDateSelected,
-                            icon: const Icon(Icons.calendar_today),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 20),
+                if (isShowFilters) _buildFilters(),
                 Center(
                   child: BlocBuilder<SalesCubit, GeneralSalesState>(
                     buildWhen: (previous, current) => current is SalesState,
@@ -402,39 +289,7 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
                       if (state is SalesLoading) {
                         return const LoadingIndicator(color: AppColors.black);
                       } else if (state is SalesSuccess) {
-                        List<DataRow> rows = [];
-                        rows = List.generate(
-                          state.paginatedModel.data.length,
-                          (index) {
-                            final order = state.paginatedModel.data[index];
-                            final values = [
-                              Text(order.name),
-                              Text(order.price.toString()),
-                              Text(order.count.toString()),
-                              Text(order.createdAt),
-                            ];
-                            return DataRow(
-                              cells: List.generate(
-                                values.length,
-                                (index2) {
-                                  return DataCell(
-                                    Center(child: values[index2]),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        );
-                        return Column(
-                          children: [
-                            MainDataTable(titles: titles, rows: rows),
-                            SelectPageTile(
-                              length: state.paginatedModel.meta.totalPages,
-                              selectedPage: selectedPage,
-                              onSelectPageTap: onSelectPageTap,
-                            ),
-                          ],
-                        );
+                        return _buildTablesView(state.paginatedModel);
                       } else if (state is SalesEmpty) {
                         return Center(child: Text(state.message));
                       } else if (state is SalesFail) {
@@ -456,6 +311,154 @@ class _SalesPageState extends State<SalesPage> implements SalesViewCallBacks {
           ),
         ),
       ),
+      floatingActionButton: _buildFloatingButtons(),
+    );
+  }
+
+  Widget _buildFilters() {
+    return Column(
+      children: [
+        const SizedBox(height: 10),
+        MainTextField(
+          hintText: "search".tr(),
+          onChanged: onSearchChanged,
+          onSubmitted: onSearchSubmitted,
+          borderColor: widget.restaurant.color,
+        ),
+        const SizedBox(height: 20),
+        MainTextField(
+          controller: startDateController,
+          labelText: "start_date".tr(),
+          borderColor: widget.restaurant.color,
+          readOnly: true,
+          onTap: onStartDateSelected,
+          onClearTap: () {
+            salesCubit.setStartDate(null);
+            setState(() {
+              startDateController.text = "mm/dd/yyyy";
+            });
+            salesCubit.getSales(selectedPage);
+          },
+          showCloseIcon: startDateController.text != "mm/dd/yyyy",
+          suffixIcon: IconButton(
+            onPressed: onStartDateSelected,
+            icon: const Icon(Icons.calendar_today),
+          ),
+        ),
+        const SizedBox(height: 20),
+        MainTextField(
+          controller: endDateController,
+          labelText: "end_date".tr(),
+          borderColor: widget.restaurant.color,
+          readOnly: true,
+          onTap: onEndDateSelected,
+          onClearTap: () {
+            salesCubit.setEndDate(null);
+            setState(() {
+              endDateController.text = "mm/dd/yyyy";
+            });
+            salesCubit.getSales(selectedPage);
+          },
+          showCloseIcon: endDateController.text != "mm/dd/yyyy",
+          suffixIcon: IconButton(
+            onPressed: onEndDateSelected,
+            icon: const Icon(Icons.calendar_today),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildTablesView(PaginatedModel<OrderDetailsModel> orders) {
+    final List<String> titles = [
+      "product_name".tr(),
+      "price".tr(),
+      "count".tr(),
+      "created_at".tr(),
+    ];
+    List<DataRow> rows = [];
+    rows = List.generate(
+      orders.data.length,
+          (index) {
+        final order = orders.data[index];
+        final values = [
+          Text(order.name),
+          Text(order.price.toString()),
+          Text(order.count.toString()),
+          Text(order.createdAt),
+        ];
+        return DataRow(
+          cells: List.generate(
+            values.length,
+                (index2) {
+              return DataCell(Center(child: values[index2]));
+            },
+          ),
+        );
+      },
+    );
+    return Column(
+      children: [
+        MainDataTable(
+          titles: titles,
+          rows: rows,
+          color: widget.restaurant.color,
+        ),
+        SelectPageTile(
+          length: orders.meta.totalPages,
+          selectedPage: selectedPage,
+          onSelectPageTap: onSelectPageTap,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFloatingButtons() {
+    final isExcel = widget.permissions.any((e) => e.name == "excel");
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            if (isExcel) ...[
+              const SizedBox(width: 30),
+              BlocBuilder<SalesCubit, GeneralSalesState>(
+                buildWhen: (previous, current) => current is SalesState,
+                builder: (context, state) {
+                  if (state is SalesSuccess) {
+                    final sales = state.paginatedModel.data;
+                    return MainActionButton(
+                      padding: AppConstants.padding14,
+                      onPressed: () => onExportToExcelTap(sales),
+                      buttonColor: widget.restaurant.color,
+                      text: "export_excel".tr(),
+                      icon: const Icon(
+                        FontAwesomeIcons.fileExcel,
+                        color: AppColors.white,
+                      ),
+                    );
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                },
+              ),
+            ],
+            const Spacer(),
+            MainActionButton(
+              padding: AppConstants.padding10,
+              onPressed: onShowFilters,
+              text: "text",
+              buttonColor: widget.restaurant.color,
+              child: const Icon(
+                Icons.filter_alt,
+                color: AppColors.white,
+                size: 30,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

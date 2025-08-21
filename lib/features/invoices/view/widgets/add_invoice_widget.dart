@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_admin/features/invoices/cubit/invoices_cubit.dart';
 import 'package:user_admin/features/items/cubit/items_cubit.dart';
+import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
 import 'package:user_admin/global/utils/app_colors.dart';
 import 'package:user_admin/global/utils/constants.dart';
@@ -14,16 +15,42 @@ import 'package:user_admin/global/widgets/main_snack_bar.dart';
 
 abstract class AddInvoiceWidgetCallBack {
   void onTableSelected(TableModel? table);
-
   void onSaveTap();
-
   void onIgnoreTap();
 }
 
+class AddInvoiceView extends StatelessWidget {
+  const AddInvoiceView({
+    super.key,
+    required this.selectedPage,
+    required this.invoicesCubit,
+    required this.restaurant,
+  });
+  final int selectedPage;
+  final RestaurantModel restaurant;
+  final InvoicesCubit invoicesCubit;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: invoicesCubit,
+      child: AddInvoiceWidget(
+        selectedPage: selectedPage,
+        restaurant: restaurant,
+      ),
+    );
+  }
+}
+
 class AddInvoiceWidget extends StatefulWidget {
-  const AddInvoiceWidget({super.key, required this.selectedPage});
+  const AddInvoiceWidget({
+    super.key,
+    required this.selectedPage,
+    required this.restaurant,
+  });
 
   final int selectedPage;
+  final RestaurantModel restaurant;
 
   @override
   State<AddInvoiceWidget> createState() => _AddInvoiceWidgetState();
@@ -49,9 +76,7 @@ class _AddInvoiceWidgetState extends State<AddInvoiceWidget>
   }
 
   @override
-  void onIgnoreTap() {
-    Navigator.pop(context);
-  }
+  void onIgnoreTap() => Navigator.pop(context);
 
   @override
   Widget build(BuildContext context) {
@@ -80,12 +105,12 @@ class _AddInvoiceWidgetState extends State<AddInvoiceWidget>
                   onTap: onIgnoreTap,
                   child: const Icon(
                     Icons.close,
-                    color: AppColors.greyShade,
+                    color: AppColors.black,
                   ),
                 ),
               ],
             ),
-            const Divider(height: 30),
+            const SizedBox(height: 20),
             BlocBuilder<ItemsCubit, GeneralItemsState>(
               buildWhen: (previous, current) => current is TablesState,
               builder: (context, state) {
@@ -108,23 +133,16 @@ class _AddInvoiceWidgetState extends State<AddInvoiceWidget>
                 }
               },
             ),
-            const Divider(height: 30),
+            const SizedBox(height: 20),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                MainActionButton(
-                  padding: AppConstants.padding14,
-                  onPressed: onIgnoreTap,
-                  borderRadius: AppConstants.borderRadius5,
-                  buttonColor: AppColors.blueShade3,
-                  text: "ignore".tr(),
-                  shadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                Expanded(
+                  child: MainActionButton(
+                    onPressed: onIgnoreTap,
+                    padding: AppConstants.paddingV10,
+                    buttonColor: widget.restaurant.color,
+                    text: "cancel".tr(),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 BlocConsumer<InvoicesCubit, GeneralInvoicesState>(
@@ -132,39 +150,26 @@ class _AddInvoiceWidgetState extends State<AddInvoiceWidget>
                     if (state is AddInvoiceToTableSuccess) {
                       invoicesCubit.getInvoices(widget.selectedPage);
                       onIgnoreTap();
-                      MainSnackBar.showSuccessMessage(context, state.invoice.toString());
+                      MainSnackBar.showSuccessMessage(context, state.message);
                     } else if (state is AddInvoiceToTableFail) {
                       MainSnackBar.showErrorMessage(context, state.error);
                     }
                   },
                   builder: (context, state) {
-                    var onTap = onSaveTap;
-                    Widget? child;
-                    if (state is AddInvoiceToTableLoading) {
-                      onTap = () {};
-                      child = const LoadingIndicator(size: 20);
-                    }
-                    return MainActionButton(
-                      padding: AppConstants.padding14,
-                      onPressed: onTap,
-                      borderRadius: AppConstants.borderRadius5,
-                      buttonColor: AppColors.blueShade3,
-                      text: "save".tr(),
-                      shadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      child: child,
+                    return Expanded(
+                      child: MainActionButton(
+                        onPressed: onSaveTap,
+                        padding: AppConstants.paddingV10,
+                        buttonColor: widget.restaurant.color,
+                        text: "save".tr(),
+                        isLoading: state is AddInvoiceToTableLoading,
+                      ),
                     );
                   },
                 ),
-                const SizedBox(width: 10),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
           ],
         ),
       ),

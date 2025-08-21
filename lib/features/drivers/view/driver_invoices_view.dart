@@ -133,7 +133,7 @@ class _DriverInvoicesPageState extends State<DriverInvoicesPage>
             children: [
               Padding(
                 padding: AppConstants.paddingH16,
-                child: MainBackButton(color: restColor!),
+                child: MainBackButton(color: restColor),
               ),
               const SizedBox(height: 20),
               Padding(
@@ -149,7 +149,7 @@ class _DriverInvoicesPageState extends State<DriverInvoicesPage>
               const SizedBox(height: 30),
               BlocBuilder<DriversCubit, GeneralDriversState>(
                 buildWhen: (previous, current) =>
-                    current is DriverInvoicesState,
+                current is DriverInvoicesState,
                 builder: (context, state) {
                   List<DataRow> rows = [];
                   if (state is DriverInvoicesLoading) {
@@ -157,7 +157,7 @@ class _DriverInvoicesPageState extends State<DriverInvoicesPage>
                   } else if (state is DriverInvoicesSuccess) {
                     rows = List.generate(
                       state.invoices.data.length,
-                      (index) {
+                          (index) {
                         final invoice = state.invoices.data[index];
                         final values = [
                           Text(invoice.number.toString()),
@@ -178,7 +178,7 @@ class _DriverInvoicesPageState extends State<DriverInvoicesPage>
                         return DataRow(
                           cells: List.generate(
                             values.length,
-                            (index2) {
+                                (index2) {
                               return DataCell(
                                 Center(child: values[index2]),
                               );
@@ -189,7 +189,7 @@ class _DriverInvoicesPageState extends State<DriverInvoicesPage>
                     );
                     return Column(
                       children: [
-                        MainDataTable(titles: titles, rows: rows),
+                        MainDataTable(titles: titles, rows: rows,color: widget.restaurant.color,),
                         SelectPageTile(
                           length: state.invoices.meta.totalPages,
                           selectedPage: selectedPage,

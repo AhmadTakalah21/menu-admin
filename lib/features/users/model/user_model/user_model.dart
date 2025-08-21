@@ -9,7 +9,7 @@ part 'user_model.g.dart';
 
 @JsonSerializable()
 @immutable
-class UserModel implements DeleteModel{
+class UserModel implements DeleteModel {
   const UserModel({
     required this.id,
     required this.name,
@@ -25,13 +25,13 @@ class UserModel implements DeleteModel{
     required this.isActive,
     this.token,
     required this.image,
-    required this.restaurantLongitude,
-    required this.restaurantLatitude,
+    this.restaurantLongitude,
+    this.restaurantLatitude,
     this.distance,
     this.longitude,
     this.latitude,
   });
-  
+
   final int id;
   final String name;
   final String username;
@@ -56,10 +56,10 @@ class UserModel implements DeleteModel{
   final String image;
 
   @JsonKey(name: 'restaurant_longitude')
-  final String restaurantLongitude;
+  final String? restaurantLongitude;
 
   @JsonKey(name: 'restaurant_latitude')
-  final String restaurantLatitude;
+  final String? restaurantLatitude;
 
   final String? distance;
   final String? longitude;
@@ -78,10 +78,10 @@ class UserModel implements DeleteModel{
   factory UserModel.fromString(String jsonString) {
     return UserModel.fromJson(json.decode(jsonString));
   }
-  
+
   @override
   String get apiDeactivateUrl => "active_user_takeout?id=$id";
-  
+
   @override
   String get apiDeleteUrl => "delete_user_takeout?id=$id";
 }

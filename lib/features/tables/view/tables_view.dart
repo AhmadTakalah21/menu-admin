@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,7 +22,9 @@ import '../../../global/di/di.dart';
 import '../../../global/model/restaurant_model/restaurant_model.dart';
 import '../../../global/model/role_model/role_model.dart';
 import '../../../global/widgets/invoice_widget.dart';
+import '../../../global/widgets/main_add_button.dart';
 import '../../../global/widgets/main_app_bar.dart';
+import '../../../global/widgets/main_snack_bar.dart';
 import '../../add_order/view/add_order_view.dart';
 import '../../coupons/service/coupon_service.dart';
 import '../../drivers/model/drvier_invoice_model/drvier_invoice_model.dart';
@@ -54,8 +58,10 @@ class TablesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TablesPage(permissions: permissions, restaurant: restaurant);
-  }
+    return BlocProvider(
+      create: (context) => get<InvoicesCubit>(),
+      child: TablesPage(permissions: permissions, restaurant: restaurant),
+    );  }
 }
 
 class TablesPage extends StatefulWidget {
@@ -79,6 +85,10 @@ class _TablesPageState extends State<TablesPage>
   late final InvoicesCubit invoicesCubit = context.read<InvoicesCubit>();
   bool _waitingInvoice = false;
 
+  bool canAdd = false;
+  bool canEdit = false;
+  bool canDelete = false;
+
 
   int selectedPage = 1;
 
@@ -92,6 +102,10 @@ class _TablesPageState extends State<TablesPage>
   void initState() {
     super.initState();
     tablesCubit.getTables(page: selectedPage);
+    final names = widget.permissions.map((e) => e.name).toSet();
+    canAdd    = names.contains('table.add')    || names.contains('tables.add');
+    canEdit   = names.contains('table.update') || names.contains('tables.update');
+    canDelete = names.contains('table.delete') || names.contains('tables.delete');
 
   }
 
@@ -193,6 +207,92 @@ class _TablesPageState extends State<TablesPage>
     if (w >= 600) return 2;
     return 2;
   }
+  String _prettyError(BuildContext context, Object? error) {
+    // 'error.network'           : 'تحقّق من اتصال الإنترنت ثم أعد المحاولة'
+    // 'error.timeout'           : 'انتهت مهلة الطلب، حاول مجدداً'
+    // 'error.unauthorized'      : 'ليست لديك صلاحية لتنفيذ هذه العملية'
+    // 'error.server'            : 'خطأ في الخادم، حاول لاحقاً'
+    // 'error.unknown'           : 'حدث خطأ غير متوقع'
+    // 'invoice.export_failed'   : 'فشل تصدير الفاتورة'
+
+    String t(String k) => k.tr();
+
+    if (error == null) {
+      return '${t('invoice.export_failed')} • ${t('error.unknown')}';
+    }
+
+    // إن كان String من السيرفر
+    final raw = error.toString();
+
+    // كشف أخطاء الشبكة الشائعة
+    final lower = raw.toLowerCase();
+    if (error is SocketException ||
+        lower.contains('failed host lookup') ||
+        lower.contains('network') ||
+        lower.contains('connection')) {
+      return '${t('invoice.export_failed')} • ${t('error.network')}';
+    }
+
+    if (lower.contains('timeout')) {
+      return '${t('invoice.export_failed')} • ${t('error.timeout')}';
+    }
+
+    if (lower.contains('unauthorized') ||
+        lower.contains('forbidden') ||
+        lower.contains('401') ||
+        lower.contains('403')) {
+      return '${t('invoice.export_failed')} • ${t('error.unauthorized')}';
+    }
+
+    if (lower.contains('500') ||
+        lower.contains('server') ||
+        lower.contains('format')) {
+      return '${t('invoice.export_failed')} • ${t('error.server')}';
+    }
+
+    final safe = raw.trim();
+    if (safe.isNotEmpty && safe.length < 160) {
+      return '${t('invoice.export_failed')} • $safe';
+    }
+
+    return '${t('invoice.export_failed')} • ${t('error.unknown')}';
+  }
+
+  void _showSnack(
+      BuildContext context, {
+        required String msg,
+        IconData icon = Icons.info_outline,
+        Color color = const Color(0xFF2E7D32),
+      }) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: color,
+          elevation: 8,
+          margin: const EdgeInsets.all(12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Row(
+            children: [
+              Icon(icon, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  msg,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    height: 1.25,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +340,6 @@ class _TablesPageState extends State<TablesPage>
               return;
             }
 
-            // أغلق دايلوج التحميل إن كان مفتوحًا
             if (_waitingInvoice) {
               Navigator.of(context, rootNavigator: true).pop();
               _waitingInvoice = false;
@@ -275,25 +374,48 @@ class _TablesPageState extends State<TablesPage>
                       );
                     },
                   );
+
                 },
               );
+              MainSnackBar.showSuccessMessage(context, 'invoice.export_success'.tr());
+
               return;
             }
 
             if (state is AddInvoiceToTableFail) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.error)),
+              final msg = _prettyError(context, state.error);
+              _showSnack(
+                context,
+                msg: msg,
+                icon: Icons.error_outline,
+                color: const Color(0xFFE53935),
               );
             }
+
           },
         ),
       ],
       child: Scaffold(
-        appBar: MainAppBar(restaurant: widget.restaurant, title: "tables".tr()),
+        appBar: MainAppBar(restaurant: widget.restaurant,
+            title: "tables".tr(),
+          onSearchChanged: (q) => tablesCubit.searchByName(q),
+          onSearchSubmitted: (q) => tablesCubit.searchByName(q),
+          onSearchClosed: () => tablesCubit.searchByName(''),
+        ),
+
         drawer: MainDrawer(
           permissions: widget.permissions,
           restaurant: widget.restaurant,
         ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: canAdd
+            ? MainAddButton(
+          onTap: onAddTableTap,
+          color: widget.restaurant.color ?? const Color(0xFFE3170A),
+          // heroTag: 'fab-add-coupons',
+          // tooltip: 'add_coupon',
+        )
+            : null,
         body: RefreshIndicator(
           onRefresh: onRefresh,
           child: SingleChildScrollView(
@@ -302,23 +424,23 @@ class _TablesPageState extends State<TablesPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  MainBackButton(color: restColor),
-                  const SizedBox(height: 20),
+                  // MainBackButton(color: restColor),
+                  // const SizedBox(height: 20),
 
-                  Row(
-                    children: [
-                      Text(
-                        "tables".tr(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (isAdd) const SizedBox(width: 10),
-                      if (isAdd) _AddTableChip(onTap: onAddTableTap),
-                    ],
-                  ),
+                  // Row(
+                  //   children: [
+                  //     Text(
+                  //       "tables".tr(),
+                  //       style: const TextStyle(
+                  //         fontSize: 20,
+                  //         fontWeight: FontWeight.w700,
+                  //       ),
+                  //     ),
+                  //     const Spacer(),
+                  //     if (isAdd) const SizedBox(width: 10),
+                  //     if (isAdd) _AddTableChip(onTap: onAddTableTap),
+                  //   ],
+                  // ),
 
                   const SizedBox(height: 20),
 
@@ -405,8 +527,6 @@ class _TablesPageState extends State<TablesPage>
                                     inv.addInvoiceToTable();
                                   },
 
-                                  onAddCoupon: () =>
-                                      _todo(context, 'add_coupon'),
                                 );
                               },
                             );
@@ -433,15 +553,6 @@ class _TablesPageState extends State<TablesPage>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _todo(BuildContext context, String key) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$key — TODO'),
-        duration: const Duration(milliseconds: 900),
       ),
     );
   }

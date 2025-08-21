@@ -1,11 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:user_admin/features/admins/cubit/admins_cubit.dart';
 import 'package:user_admin/features/admins/model/admin_model/admin_model.dart';
 import 'package:user_admin/features/employees_details/cubit/employees_details_cubit.dart';
 import 'package:user_admin/features/employees_details/model/employee_type_enum.dart';
+import 'package:user_admin/features/employees_details/model/order_request_model/order_request_model.dart';
 import 'package:user_admin/features/items/cubit/items_cubit.dart';
+import 'package:user_admin/global/model/paginated_model/paginated_model.dart';
 import 'package:user_admin/global/model/restaurant_model/restaurant_model.dart';
 import 'package:user_admin/global/model/role_model/role_model.dart';
 import 'package:user_admin/global/model/table_model/table_model.dart';
@@ -14,33 +17,27 @@ import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/utils/utils.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
 import 'package:user_admin/global/widgets/main_action_button.dart';
-import 'package:user_admin/global/widgets/main_back_button.dart';
+import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_data_table.dart';
 import 'package:user_admin/global/widgets/main_drawer.dart';
 import 'package:user_admin/global/widgets/main_drop_down_widget.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
 import 'package:user_admin/global/widgets/main_text_field.dart';
 import 'package:user_admin/global/widgets/select_page_tile.dart';
+import 'package:user_admin/global/widgets/switch_view_button.dart';
 
 abstract class EmployeesDetailsViewCallBacks {
   Future<void> onRefresh();
-
   Future<void> onDateSelected();
-
   void onShowFilters();
-
   void onSelectPageTap(int page);
-
   void onSearchSubmitted(String search);
-
   void onSearchonChanged(String search);
-
   void onEmployeeChanged(AdminModel? employee);
-
   void onTableChanged(TableModel? table);
-
   void onTypeChanged(EmployeeTypeEnum? type);
-
+  void onShowDetails(OrderRequestModel user);
+  void onSwichViewTap();
   void onTryAgainTap();
 }
 
@@ -84,6 +81,7 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
   late final AdminsCubit adminsCubit = context.read();
 
   bool isShowFilters = false;
+  bool isCardView = true;
 
   int selectedPage = 1;
 
@@ -183,6 +181,18 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
   }
 
   @override
+  void onSwichViewTap() {
+    setState(() {
+      isCardView = !isCardView;
+    });
+  }
+
+  @override
+  void onShowDetails(OrderRequestModel user) {
+    // TODO: implement onShowDetails
+  }
+
+  @override
   void onSelectPageTap(int page) {
     if (selectedPage != page) {
       setState(() {
@@ -194,16 +204,13 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
 
   @override
   Widget build(BuildContext context) {
-    final List<String> titles = [
-      "name".tr(),
-      "role".tr(),
-      "table_num".tr(),
-      "response_time".tr(),
-    ];
     final restColor = widget.restaurant.color;
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: MainAppBar(
+        restaurant: widget.restaurant,
+        title: "employees_details".tr(),
+      ),
       drawer: MainDrawer(
         permissions: widget.permissions,
         restaurant: widget.restaurant,
@@ -216,37 +223,6 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MainBackButton(color: restColor!),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Text(
-                      "employees_details".tr(),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Spacer(),
-                    MainActionButton(
-                      padding: AppConstants.padding8,
-                      onPressed: onShowFilters,
-                      text: "text",
-                      child: const Icon(
-                        Icons.filter_alt,
-                        color: AppColors.white,
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    MainActionButton(
-                      padding: AppConstants.padding10,
-                      onPressed: onRefresh,
-                      text: "",
-                      child: const Icon(Icons.refresh, color: AppColors.white),
-                    ),
-                  ],
-                ),
                 if (isShowFilters)
                   Padding(
                     padding: AppConstants.paddingH20,
@@ -334,10 +310,10 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
                             icon: const Icon(Icons.calendar_today),
                           ),
                         ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
-                const SizedBox(height: 20),
                 BlocBuilder<EmployeesDetailsCubit,
                     GeneralEmployeesDetailsState>(
                   buildWhen: (previous, current) =>
@@ -346,39 +322,11 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
                     if (state is EmployeesDetailsLoading) {
                       return const LoadingIndicator(color: AppColors.black);
                     } else if (state is EmployeesDetailsSuccess) {
-                      List<DataRow> rows = [];
-                      rows = List.generate(
-                        state.paginatedModel.data.length,
-                        (index) {
-                          final details = state.paginatedModel.data[index];
-                          final values = [
-                            Text(details.name),
-                            Text(details.type),
-                            Text(details.numberTable.toString()),
-                            Text(details.responseTime),
-                          ];
-                          return DataRow(
-                            cells: List.generate(
-                              values.length,
-                              (index2) {
-                                return DataCell(
-                                  Center(child: values[index2]),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      );
-                      return Column(
-                        children: [
-                          MainDataTable(titles: titles, rows: rows),
-                          SelectPageTile(
-                            length: state.paginatedModel.meta.totalPages,
-                            selectedPage: selectedPage,
-                            onSelectPageTap: onSelectPageTap,
-                          ),
-                        ],
-                      );
+                      if (isCardView) {
+                        return _buildCardView(state.paginatedModel);
+                      } else {
+                        return _buildTableView(state.paginatedModel);
+                      }
                     } else if (state is EmployeesDetailsEmpty) {
                       return Center(child: Text(state.message));
                     } else if (state is EmployeesDetailsFail) {
@@ -399,6 +347,185 @@ class _EmployeesDetailsPageState extends State<EmployeesDetailsPage>
           ),
         ),
       ),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          SwitchViewButton(
+            onTap: onSwichViewTap,
+            isCardView: isCardView,
+            color: widget.restaurant.color,
+          ),
+          const SizedBox(width: 10),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  MainActionButton(
+                    padding: AppConstants.padding10,
+                    onPressed: onShowFilters,
+                    text: "text",
+                    buttonColor: restColor,
+                    child: const Icon(
+                      Icons.filter_alt,
+                      color: AppColors.white,
+                      size: 30,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardView(PaginatedModel<OrderRequestModel> data) {
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 3 / 2.5,
+      ),
+      itemCount: data.data.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemBuilder: (context, index) {
+        final user = data.data[index];
+        Widget textWidget(String text) {
+          return Text(
+            text,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              color: AppColors.black,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          );
+        }
+
+        return Container(
+          decoration: const BoxDecoration(
+            borderRadius: AppConstants.borderRadius25,
+            color: Color(0xFFD9D9D9),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: widget.restaurant.color,
+                  borderRadius: AppConstants.borderRadiusT25,
+                ),
+                child: Padding(
+                  padding: AppConstants.paddingH12V4,
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          user.type,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                            color: AppColors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      InkWell(
+                        onTap: () => onShowDetails(user),
+                        child: const Icon(
+                          Icons.visibility_outlined,
+                          color: AppColors.white,
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: AppConstants.padding10,
+                child: Row(
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFBDD358)),
+                        borderRadius: AppConstants.borderRadius15,
+                      ),
+                      child: Padding(
+                        padding: AppConstants.padding8,
+                        child: SvgPicture.asset("assets/images/person.svg"),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          textWidget("${"name".tr()} : ${user.name}"),
+                          textWidget(
+                              "${"table_num".tr()} : ${user.numberTable}"),
+                          textWidget(
+                              "${"response_time".tr()} : ${user.responseTime}"),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTableView(PaginatedModel<OrderRequestModel> data) {
+    final List<String> titles = [
+      "name".tr(),
+      "role".tr(),
+      "table_num".tr(),
+      "response_time".tr(),
+    ];
+    List<DataRow> rows = [];
+    rows = List.generate(
+      data.data.length,
+      (index) {
+        final details = data.data[index];
+        final values = [
+          Text(details.name),
+          Text(details.type),
+          Text(details.numberTable.toString()),
+          Text(details.responseTime),
+        ];
+        return DataRow(
+          cells: List.generate(
+            values.length,
+            (index2) {
+              return DataCell(
+                Center(child: values[index2]),
+              );
+            },
+          ),
+        );
+      },
+    );
+    return Column(
+      children: [
+        MainDataTable(titles: titles, rows: rows),
+        SelectPageTile(
+          length: data.meta.totalPages,
+          selectedPage: selectedPage,
+          onSelectPageTap: onSelectPageTap,
+        ),
+      ],
     );
   }
 }

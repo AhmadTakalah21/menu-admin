@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/app_image_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
 
@@ -52,15 +53,20 @@ class _EditItemImageSectionState extends State<EditItemImageSection> {
     if (isLoading) {
       imageWidget = const LoadingIndicator();
     } else if (localImage != null) {
-      imageWidget = Image.file(
-        File(localImage!.path),
-        width: 150,
-        height: 150,
-        fit: BoxFit.cover,
+      imageWidget = DecoratedBox(
+        decoration:
+        const BoxDecoration(borderRadius: AppConstants.borderRadius15),
+        child: Image.file(
+          File(localImage!.path),
+          width: 150,
+          height: 150,
+          fit: BoxFit.cover,
+        ),
       );
     } else if (widget.networkImage != null && widget.networkImage!.isNotEmpty) {
       imageWidget = AppImageWidget(
         url: widget.networkImage!,
+        borderRadius: AppConstants.borderRadius15,
         width: 150,
         height: 150,
         fit: BoxFit.cover,

@@ -8,8 +8,9 @@ final class AddInvoiceToTableInitial extends AddInvoiceToTableState {}
 final class AddInvoiceToTableLoading extends AddInvoiceToTableState {}
 
 final class AddInvoiceToTableSuccess extends AddInvoiceToTableState {
+  final String message;
   final DrvierInvoiceModel invoice;
-  AddInvoiceToTableSuccess(this.invoice);
+  AddInvoiceToTableSuccess(this.invoice, this.message);
 }
 
 final class AddInvoiceToTableFail extends AddInvoiceToTableState {

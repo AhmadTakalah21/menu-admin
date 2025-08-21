@@ -191,14 +191,22 @@ class _CouponsPageState extends State<CouponsPage>
           permissions: widget.permissions,
           restaurant: widget.restaurant,
         ),
-        appBar: MainAppBar(restaurant: widget.restaurant, title: "coupons".tr()),
+        appBar: MainAppBar(
+            restaurant: widget.restaurant,
+            title: "coupons".tr(),
+      onSearchChanged: (q) => couponsCubit.searchByName(q),
+      onSearchSubmitted: (q) => couponsCubit.searchByName(q),
+      onSearchClosed: () => couponsCubit.searchByName(''),
+      onLanguageToggle: (loc) {
+      },
+        ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         floatingActionButton: canAdd
             ? MainAddButton(
           onTap: onAddTap,
           color: widget.restaurant.color ?? const Color(0xFFE3170A),
-          heroTag: 'fab-add-coupons',
-          tooltip: 'add_coupon',
+          // heroTag: 'fab-add-coupons',
+          // tooltip: 'add_coupon',
         )
             : null,
 

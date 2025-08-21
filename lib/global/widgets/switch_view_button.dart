@@ -16,11 +16,11 @@ class SwitchViewButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
-      heroTag:"SwitchViewButton",
+      heroTag: "SwitchViewButton",
       backgroundColor: color,
       onPressed: onTap,
-      child:  Icon(
-        isCardView? Icons.rectangle_outlined : Icons.table_view_outlined,
+      child: Icon(
+        isCardView ? Icons.table_view_outlined : Icons.rectangle_outlined,
         color: AppColors.white,
         size: 35,
       ),

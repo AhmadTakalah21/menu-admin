@@ -11,6 +11,13 @@ class SubCategoriesInMasterSuccess extends SubCategoriesInMasterState {
   SubCategoriesInMasterSuccess(this.categories);
 }
 
+class SubCategoriesInMasterEmpty extends SubCategoriesInMasterState {
+  final String message;
+
+  SubCategoriesInMasterEmpty(this.message);
+}
+
+
 class SubCategoriesInMasterFail extends SubCategoriesInMasterState {
   final String error;
 

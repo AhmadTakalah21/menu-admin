@@ -6,20 +6,14 @@ class MainAddButton extends StatelessWidget {
     super.key,
     required this.onTap,
     this.color = const Color(0xFFE3170A),
-    this.heroTag,
-    this.tooltip,
   });
-
   final VoidCallback onTap;
   final Color color;
-  final Object? heroTag;
-  final String? tooltip;
-
+  
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
-      heroTag: heroTag,
-      tooltip: tooltip ?? 'Add',
+      heroTag: "MainAddButton",
       backgroundColor: AppColors.white,
       onPressed: onTap,
       child: Padding(

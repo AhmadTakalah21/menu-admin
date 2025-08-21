@@ -17,10 +17,10 @@ import 'package:user_admin/global/utils/constants.dart';
 import 'package:user_admin/global/widgets/edit_category_widget.dart';
 import 'package:user_admin/global/widgets/insure_delete_widget.dart';
 import 'package:user_admin/global/widgets/loading_indicator.dart';
+import 'package:user_admin/global/widgets/main_action_button.dart';
 import 'package:user_admin/global/widgets/main_add_button.dart';
 import 'package:user_admin/global/widgets/main_app_bar.dart';
 import 'package:user_admin/global/widgets/main_error_widget.dart';
-import 'package:user_admin/global/widgets/switch_view_button.dart';
 
 import '../../items/view/items_view.dart';
 
@@ -33,7 +33,7 @@ abstract class HomeViewCallBacks {
   void onSaveActivateTap(CategoryModel category);
   Future<bool> onActivateTap(CategoryModel category);
   void onCategoryTap(CategoryModel category);
-  void onSwichViewTap();
+  //void onSwichViewTap();
   void onTryAgainTap();
 }
 
@@ -116,19 +116,19 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
       context: context,
       builder: (context) {
         return EditCategoryWidget(
-          btnColor: widget.restaurant.color!,
+          btnColor: widget.restaurant.color,
           isEdit: false,
         );
       },
     );
   }
 
-  @override
-  void onSwichViewTap() {
-    setState(() {
-      isCardView = !isCardView;
-    });
-  }
+  // @override
+  // void onSwichViewTap() {
+  //   setState(() {
+  //     isCardView = !isCardView;
+  //   });
+  // }
 
   @override
   void onSaveActivateTap(CategoryModel category) {
@@ -172,11 +172,14 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.category,
-                      size: 48, color: Theme.of(context).primaryColor),
+                  Icon(
+                    Icons.category,
+                    size: 48,
+                    color: widget.restaurant.color,
+                  ),
                   const SizedBox(height: 16),
                   Text(
-                    'اختيار الإجراء'.tr(),
+                    "choose_action".tr(),
                     style: Theme.of(context)
                         .textTheme
                         .titleLarge
@@ -185,8 +188,7 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'هل ترغب بإضافة عنصر مباشرة أو إدارة التصنيفات الفرعية؟'
-                        .tr(),
+                    "add_item_or_subcategory".tr(),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -194,8 +196,9 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.add),
+                        child: MainActionButton(
+                          padding: AppConstants.paddingH4V10,
+                          isTextExpanded: true,
                           onPressed: () {
                             Navigator.pop(context);
                             Navigator.push(
@@ -209,21 +212,14 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
                               ),
                             );
                           },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          label: Text('إضافة عنصر'.tr()),
+                          text: "items_managment".tr(),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.list),
+                        child: MainActionButton(
+                          padding: AppConstants.paddingH4V10,
+                          isTextExpanded: true,
                           onPressed: () {
                             Navigator.pop(context);
                             Navigator.push(
@@ -237,19 +233,7 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
                               ),
                             );
                           },
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: BorderSide(
-                                color: Theme.of(context).primaryColor),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          label: Text(
-                            'إدارة التصنيفات الفرعية'.tr(),
-                            style: TextStyle(
-                                color: Theme.of(context).primaryColor),
-                          ),
+                          text: "subcategories_managment".tr(),
                         ),
                       ),
                     ],
@@ -279,15 +263,13 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
 
   @override
   void onEditTap(CategoryModel category) {
-    // 🟢 إعداد بيانات الصنف للتعديل
     context.read<HomeCubit>().setCategory(category);
 
-    // 🔄 فتح نافذة التعديل
     showDialog(
       context: context,
       builder: (context) {
         return EditCategoryWidget(
-          btnColor: widget.restaurant.color!,
+          btnColor: widget.restaurant.color,
           category: category,
           isEdit: true,
         );
@@ -327,7 +309,14 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
       },
       child: Scaffold(
         appBar:
-            MainAppBar(restaurant: widget.restaurant, title: "categories".tr()),
+            MainAppBar(restaurant: widget.restaurant,
+                title: "categories".tr(),
+              onSearchChanged: (q) => homeCubit.searchCategoriesByName(q),
+              onSearchSubmitted: (q) => homeCubit.searchCategoriesByName(q),
+              onSearchClosed: () => homeCubit.searchCategoriesByName(''),
+              onLanguageToggle: (loc) {
+              },
+            ),
         // drawer: MainDrawer(
         //   permissions: widget.permissions,
         //   restaurant: widget.restaurant,
@@ -345,7 +334,8 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
                         current is CategoriesState || current is ImageState,
                     builder: (context, state) => _buildCategoriesList(state),
                   ),
-                  const SizedBox(height: 50),
+
+                  const SizedBox(height: 600),
                 ],
               ),
             ),
@@ -354,48 +344,19 @@ class _HomePageState extends State<HomePage> implements HomeViewCallBacks {
         floatingActionButton: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            SwitchViewButton(
-              onTap: onSwichViewTap,
-              isCardView: isCardView,
-              color: widget.restaurant.color!,
-            ),
-            const SizedBox(width: 10),
+            // SwitchViewButton(
+            //   onTap: onSwichViewTap,
+            //   isCardView: isCardView,
+            //   color: widget.restaurant.color,
+            // ),
+            // const SizedBox(width: 10),
             if (isAdd)
-              MainAddButton(onTap: onAddTap, color: widget.restaurant.color!)
+              MainAddButton(onTap: onAddTap, color: widget.restaurant.color)
           ],
         ),
       ),
     );
   }
-
-  // Widget _buildHeader() {
-  //   bool isAdd = hasPermission("category.add");
-  //   final restColor = widget.restaurant.color;
-  //   return Column(
-  //     mainAxisSize: MainAxisSize.min,
-  //     children: [
-  //       const SizedBox(height: 25),
-  //       Row(
-  //         children: [
-  //           MainBackButton(color: restColor),
-  //           const Spacer(flex: 4),
-  //           Text(
-  //             "categories".tr(),
-  //             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-  //           ),
-  //           const Spacer(),
-  //           if (isAdd) ...[
-  //             const SizedBox(width: 10),
-  //             MainAddButton(
-  //               onTap: onAddTap,
-  //               title: "add_category".tr(),
-  //             )
-  //           ],
-  //         ],
-  //       ),
-  //     ],
-  //   );
-  // }
 
   Widget _buildCategoriesList(GeneralHomeState state) {
     bool isEdit = hasPermission("category.update");
