@@ -92,6 +92,7 @@ class _CouponsPageState extends State<CouponsPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchFirstPage());
     subscription = Connectivity()
         .onConnectivityChanged
         .listen((List<ConnectivityResult> result) {
@@ -110,6 +111,16 @@ class _CouponsPageState extends State<CouponsPage>
       }
     });
   }
+  Future<void> _fetchFirstPage() async {
+    final results = await Connectivity().checkConnectivity();
+    final online = results.isNotEmpty && !results.contains(ConnectivityResult.none);
+
+    driversCubit.getDrivers(
+      isActive: false,
+      isRefresh: online,
+      page: selectedPage,
+    );
+  }
 
   @override
   void onAddTap() {
@@ -124,32 +135,67 @@ class _CouponsPageState extends State<CouponsPage>
   }
 
   @override
-  void onShowMapTap(DriverModel driver) {
-    final inv = (driver.invoice.isNotEmpty) ? driver.invoice.first : null;
-    if (inv == null || inv.lat == null || inv.lon == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لا يوجد موقع للزبون في الفاتورة')),
-      );
-      return;
-    }
+  void onShowMapTap(DriverModel driver) async {
+    // قد لا تكون هناك فاتورة/موقع عميل—لا نمنع فتح الصفحة
+    final inv = driver.invoice.isNotEmpty ? driver.invoice.first : null;
 
-    final driverPos = (driver.driverLat != null && driver.driverLon != null)
+    final LatLng? driverPos = (driver.driverLat != null && driver.driverLon != null)
         ? LatLng(driver.driverLat!, driver.driverLon!)
         : null;
 
-    final customerPos = LatLng(inv.lat!, inv.lon!);
+    final LatLng? customerPos = (inv?.lat != null && inv?.lon != null)
+        ? LatLng(inv!.lat!, inv.lon!)
+        : null;
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => MapView(
-          invoiceId: inv.id,
+          invoiceId: inv?.id ?? 0,
           initialPosition: driverPos,
           customerPosition: customerPos,
+
+          loadDrivers: () async {
+            final driversCubit = context.read<DriversCubit>();
+            final page1 = await driversCubit.driversService.getDrivers(
+              isActive: true,
+              page: 1,
+            );
+
+            return page1.data.map((d) {
+              final dInv = d.invoice.isNotEmpty ? d.invoice.first : null;
+              return DriverOption(
+                id: d.id,
+                name: d.name,
+                invoiceId: dInv?.id,
+                lat: d.driverLat,
+                lon: d.driverLon,
+                customerLat: dInv?.lat,
+                customerLon: dInv?.lon,
+              );
+            }).toList();
+          },
+
+          resolveInvoiceId: (driverId) async {
+            try {
+              final driversCubit = context.read<DriversCubit>();
+              final invs = await driversCubit.driversService.getDriverInvoices(
+                driverId,
+                page: 1,
+              );
+              final first = invs.data.isNotEmpty ? invs.data.first : null;
+              return first?.id;
+            } catch (_) {
+              return null;
+            }
+          },
         ),
       ),
     );
   }
+
+
+
 
 
 

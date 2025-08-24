@@ -1,6 +1,6 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:user_admin/features/app_manager/cubit/app_manager_cubit.dart';
 import 'package:user_admin/features/sign_in/model/sign_in_model/sign_in_model.dart';
@@ -12,8 +12,13 @@ import '../../navigation_bar/navigation_bar.dart';
 import 'package:user_admin/features/tables/view/tables_view.dart';
 import 'package:user_admin/features/customer_service/view/customer_service_view.dart';
 import 'package:user_admin/features/add_order/view/add_order_view.dart';
-import 'package:user_admin/features/drivers/view/drivers_view.dart';
 import 'package:user_admin/features/coupons/view/coupons_view.dart';
+
+import 'package:user_admin/features/drivers/view/widgets/map_view.dart'
+    show MapView, DriverOption;
+
+import 'package:user_admin/global/di/di.dart';
+import 'package:user_admin/features/drivers/service/drivers_service.dart';
 
 class WelcomeView extends StatefulWidget {
   const WelcomeView({
@@ -30,6 +35,7 @@ class WelcomeView extends StatefulWidget {
 }
 
 class _WelcomeViewState extends State<WelcomeView> {
+  // لو تحتاجه لاحقاً
   late final AppManagerCubit appManagerCubit = context.read();
 
   int _currentIndex = 0;
@@ -47,7 +53,6 @@ class _WelcomeViewState extends State<WelcomeView> {
   @override
   void initState() {
     super.initState();
-    // نبني الصفحات مرة واحدة (تحافظ على حالتها داخل IndexedStack)
     final perms = widget.admin.permissions;
     final rest = widget.restaurant;
 
@@ -55,7 +60,37 @@ class _WelcomeViewState extends State<WelcomeView> {
       TablesView(permissions: perms, restaurant: rest),
       CustomerServiceView(permissions: perms, restaurant: rest),
       AddOrderView(permissions: perms, restaurant: rest),
-      DriversView(permissions: perms, restaurant: rest),
+
+      MapView(
+        invoiceId: 0,
+        initialPosition: null,
+        customerPosition: null,
+
+        loadDrivers: () async {
+          final service = get<DriversService>();
+          final res = await service.getDrivers(isActive: true, page: 1);
+          return res.data.map((d) {
+            final inv = d.invoice.isNotEmpty ? d.invoice.first : null;
+            return DriverOption(
+              id: d.id,
+              name: d.name,
+              invoiceId: inv?.id,
+              lat: d.driverLat,
+              lon: d.driverLon,
+              customerLat: inv?.lat,
+              customerLon: inv?.lon,
+            );
+          }).toList();
+        },
+
+        resolveInvoiceId: (driverId) async {
+          final service = get<DriversService>();
+          final invs = await service.getDriverInvoices(driverId, page: 1);
+          final first = invs.data.isNotEmpty ? invs.data.first : null;
+          return first?.id;
+        },
+      ),
+
       CouponsView(permissions: perms, restaurant: rest),
     ];
   }
@@ -65,18 +100,19 @@ class _WelcomeViewState extends State<WelcomeView> {
     final brand = widget.restaurant.color ?? AppColors.mainColor;
 
     return Scaffold(
-      // مافيش AppBar هنا — كل شاشة داخلية عندها AppBar/Drawer الخاص بها.
-      // نخلي الجسم يتمد تحت الناف (شكلاً أجمل مع فقاعة منحنية)
       extendBody: true,
-
       body: SafeArea(
         top: false,
         child: IndexedStack(
           index: _currentIndex,
-          children: _pages,
+          children: List.generate(_pages.length, (i) {
+            return HeroMode(
+              enabled: i == _currentIndex,
+              child: _pages[i],
+            );
+          }),
         ),
       ),
-
       bottomNavigationBar: SafeArea(
         top: false,
         child: CurvedBottomNav(
